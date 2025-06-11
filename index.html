@@ -1292,32 +1292,8 @@
         }
 
         async function loadGrades() {
-    const { data: grades, error } = await supabase.from('grados').select('*');
-    if (error) {
-        console.error('Error al cargar grados:', error);
-        return;
-    }
-
-    const select = document.getElementById('studentGrade');
-    const gradeSelect = document.getElementById('gradeSelect');
-
-    select.innerHTML = '<option value="">Seleccionar grado</option>';
-    gradeSelect.innerHTML = '<option value="">Seleccionar grado</option>';
-
-    grades.forEach(grade => {
-        if (grade.nombre && grade.nivel) {
-            const option1 = document.createElement('option');
-            option1.value = grade.id;
-            option1.textContent = `${grade.nombre} - ${grade.nivel}`;
-            select.appendChild(option1);
-
-            const option2 = document.createElement('option');
-            option2.value = grade.id;
-            option2.textContent = `${grade.nombre} - ${grade.nivel}`;
-            gradeSelect.appendChild(option2);
-        }
-    });
-} = await supabase
+            try {
+                const { data: grades, error } = await supabase
                     .from('grados')
                     .select('*')
                     .eq('activo', true)
