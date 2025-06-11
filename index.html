@@ -3,606 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Salidas - Colegio Gemelli</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js"></script>
+    <title>DIAGNÓSTICO - Sistema Colegio Gemelli</title>
+    <!-- Múltiples CDNs de Supabase para asegurar carga -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Verificar si Supabase está disponible y cargar alternativa si no
+        if (typeof window.supabase === 'undefined') {
+            console.log('⚠️ Supabase no cargó desde CDN principal, intentando alternativa...');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js';
+            script.onload = function() {
+                console.log('✅ Supabase cargado desde CDN alternativa');
+                initApp();
+            };
+            script.onerror = function() {
+                console.error('❌ Error cargando Supabase desde todas las fuentes');
+                document.getElementById('connectionStatus').innerHTML = '❌ Error: No se pudo cargar la librería de Supabase';
+            };
+            document.head.appendChild(script);
+        } else {
+            console.log('✅ Supabase cargado correctamente');
+            initApp();
+        }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
         }
-
         .container {
+            max-width: 800px;
+            margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            max-width: 1200px;
-            width: 95%;
-            min-height: 80vh;
-        }
-
-        .header {
-            background: #2c3e50;
-            color: white;
             padding: 20px;
-            text-align: center;
-            position: relative;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
         }
-
-        .header .subtitle {
-            opacity: 0.8;
-            font-size: 1.1em;
-        }
-
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #e74c3c;
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .btn {
+            background: #007bff;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            display: none;
-        }
-
-        .connection-status {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .connection-status.connected {
-            background: rgba(46, 204, 113, 0.2);
-        }
-
-        .connection-status.disconnected {
-            background: rgba(231, 76, 60, 0.2);
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .login-form {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
             margin: 5px;
         }
-
-        .btn:hover {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: #2ecc71;
-        }
-
-        .btn-success:hover {
-            background: #27ae60;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-        }
-
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-
-        .btn-secondary {
-            background: #95a5a6;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
-        }
-
-        .dashboard {
-            display: none;
-        }
-
-        .nav-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-            justify-content: center;
-        }
-
-        .section {
-            display: none;
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        .section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .table th {
-            background: #34495e;
-            color: white;
+        .btn:hover { background: #0056b3; }
+        .log-area {
+            background: #000;
+            color: #00ff00;
             padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        .table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .table tbody tr:hover {
-            background: #f5f5f5;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 300px;
             overflow-y: auto;
+            margin: 20px 0;
         }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
-            cursor: pointer;
         }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-left: 5px solid #667eea;
-        }
-
-        .verification-card {
-            text-align: center;
-            padding: 30px;
-        }
-
-        .verification-card.authorized {
-            border-left-color: #2ecc71;
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-        }
-
-        .verification-card.not-authorized {
-            border-left-color: #e74c3c;
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-        }
-
-        .search-box {
+        .form-group input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                width: 100%;
-                margin: 10px;
-                border-radius: 10px;
-            }
-            
-            .nav-buttons {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                margin: 5px 0;
-            }
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🏫 Colegio Gemelli</h1>
-            <div class="subtitle">Sistema de Control de Salidas Estudiantiles</div>
-            <div class="connection-status" id="connectionStatus">
-                <span id="connectionIcon">🔴</span>
-                <span id="connectionText">Verificando conexión...</span>
-            </div>
-            <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+        <h1>🔧 DIAGNÓSTICO - Sistema Colegio Gemelli</h1>
+        
+        <div id="connectionStatus" class="status warning">
+            🔄 Iniciando diagnóstico...
         </div>
 
-        <div class="content">
-            <!-- Login Form -->
-            <div id="loginSection" class="login-form">
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" placeholder="sistemas@colgemelli.edu.co">
-                </div>
-                <div class="form-group">
-                    <label for="password">Contraseña:</label>
-                    <input type="password" id="password" placeholder="••••••••">
-                </div>
-                <button class="btn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
-                <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
-                <div id="loginError" class="alert alert-error" style="display: none; margin-top: 15px;"></div>
-                <div id="loginInfo" class="alert alert-success" style="display: none; margin-top: 15px;"></div>
-            </div>
-
-            <!-- Dashboard -->
-            <div id="dashboard" class="dashboard">
-                <div class="nav-buttons" id="navButtons">
-                    <!-- Botones se cargarán dinámicamente según el rol -->
-                </div>
-
-                <!-- Sección para Autorizar Salidas -->
-                <div id="authorizeSectionDiv" class="section">
-                    <h2>✅ Autorizar Salida de Estudiante</h2>
-                    <form id="authorizeForm">
-                        <div class="grid">
-                            <div class="form-group">
-                                <label for="studentSelect">Estudiante:</label>
-                                <select id="studentSelect" required>
-                                    <option value="">Seleccionar estudiante...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="reasonSelect">Motivo:</label>
-                                <select id="reasonSelect" required>
-                                    <option value="">Seleccionar motivo...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="exitDate">Fecha de Salida:</label>
-                                <input type="date" id="exitDate" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="exitTime">Hora de Salida:</label>
-                                <input type="time" id="exitTime" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="observations">Observaciones:</label>
-                            <textarea id="observations" rows="3" placeholder="Observaciones adicionales (opcional)"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-success">Autorizar Salida</button>
-                    </form>
-                </div>
-
-                <!-- Sección para Verificar Salidas (Vigilante) -->
-                <div id="verifySectionDiv" class="section">
-                    <h2>🔍 Verificar Autorización de Salida</h2>
-                    <input type="text" id="studentSearch" class="search-box" placeholder="Buscar estudiante por nombre...">
-                    <div id="verificationResult"></div>
-                </div>
-
-                <!-- Sección de Administración -->
-                <div id="adminSectionDiv" class="section">
-                    <h2>⚙️ Panel de Administración</h2>
-                    <div class="nav-buttons">
-                        <button class="btn" onclick="showAdminSection('students')">Gestionar Estudiantes</button>
-                        <button class="btn" onclick="showAdminSection('users')">Gestionar Usuarios</button>
-                        <button class="btn" onclick="showAdminSection('reasons')">Gestionar Motivos</button>
-                        <button class="btn" onclick="showAdminSection('grades')">Gestionar Grados</button>
-                    </div>
-
-                    <div id="adminStudents" class="admin-subsection" style="display: none;">
-                        <h3>👨‍🎓 Gestión de Estudiantes</h3>
-                        <button class="btn btn-success" onclick="openModal('studentModal')">Agregar Estudiante</button>
-                        <table class="table" id="studentsTable">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Apellidos</th>
-                                    <th>Documento</th>
-                                    <th>Grado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div id="adminUsers" class="admin-subsection" style="display: none;">
-                        <h3>👥 Gestión de Usuarios</h3>
-                        <button class="btn btn-success" onclick="openModal('userModal')">Agregar Usuario</button>
-                        <table class="table" id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Rol</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div id="adminReasons" class="admin-subsection" style="display: none;">
-                        <h3>📝 Gestión de Motivos</h3>
-                        <button class="btn btn-success" onclick="openModal('reasonModal')">Agregar Motivo</button>
-                        <table class="table" id="reasonsTable">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div id="adminGrades" class="admin-subsection" style="display: none;">
-                        <h3>🎓 Gestión de Grados</h3>
-                        <button class="btn btn-success" onclick="openModal('gradeModal')">Agregar Grado</button>
-                        <table class="table" id="gradesTable">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Nivel</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Sección de Historial -->
-                <div id="historySectionDiv" class="section">
-                    <h2>📋 Historial de Autorizaciones</h2>
-                    <div class="form-group">
-                        <input type="date" id="historyDate" onchange="loadHistory()">
-                        <button class="btn" onclick="loadHistory()">Filtrar por Fecha</button>
-                        <button class="btn btn-secondary" onclick="loadHistory(true)">Ver Todo el Historial</button>
-                    </div>
-                    <table class="table" id="historyTable">
-                        <thead>
-                            <tr>
-                                <th>Estudiante</th>
-                                <th>Grado</th>
-                                <th>Motivo</th>
-                                <th>Fecha Salida</th>
-                                <th>Hora Salida</th>
-                                <th>Autorizado por</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="form-group">
+            <h3>📋 Pasos de Diagnóstico:</h3>
+            <button class="btn" onclick="step1()">1. Verificar URLs de Supabase</button>
+            <button class="btn" onclick="step2()">2. Probar Conexión Básica</button>
+            <button class="btn" onclick="step3()">3. Verificar Tablas</button>
+            <button class="btn" onclick="step4()">4. Verificar Usuarios</button>
+            <button class="btn" onclick="step5()">5. Probar Login</button>
+            <button class="btn" onclick="clearLog()">🗑️ Limpiar Log</button>
         </div>
-    </div>
 
-    <!-- Modals -->
-    <div id="studentModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('studentModal')">&times;</span>
-            <h2>Agregar/Editar Estudiante</h2>
-            <form id="studentForm">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" id="studentName" required>
-                </div>
-                <div class="form-group">
-                    <label>Apellidos:</label>
-                    <input type="text" id="studentLastName" required>
-                </div>
-                <div class="form-group">
-                    <label>Documento:</label>
-                    <input type="text" id="studentDocument">
-                </div>
-                <div class="form-group">
-                    <label>Grado:</label>
-                    <select id="studentGrade" required></select>
-                </div>
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Cancelar</button>
-            </form>
+        <div class="log-area" id="logArea">
+            Sistema de diagnóstico iniciado...\n
         </div>
-    </div>
 
-    <div id="userModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('userModal')">&times;</span>
-            <h2>Agregar/Editar Usuario</h2>
-            <form id="userForm">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" id="userName" required>
-                </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="userEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Contraseña:</label>
-                    <input type="password" id="userPassword" required>
-                </div>
-                <div class="form-group">
-                    <label>Rol:</label>
-                    <select id="userRole" required></select>
-                </div>
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
-            </form>
+        <div class="form-group">
+            <h3>🔐 Prueba de Login:</h3>
+            <label>Email:</label>
+            <input type="email" id="testEmail" value="sistemas@colgemelli.edu.co">
         </div>
-    </div>
-
-    <div id="reasonModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('reasonModal')">&times;</span>
-            <h2>Agregar/Editar Motivo</h2>
-            <form id="reasonForm">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" id="reasonName" required>
-                </div>
-                <div class="form-group">
-                    <label>Descripción:</label>
-                    <textarea id="reasonDescription" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal('reasonModal')">Cancelar</button>
-            </form>
+        <div class="form-group">
+            <label>Contraseña:</label>
+            <input type="password" id="testPassword" value="G3m3ll1.202*">
         </div>
-    </div>
+        <button class="btn" onclick="testLogin()">🚀 Probar Login</button>
 
-    <div id="gradeModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('gradeModal')">&times;</span>
-            <h2>Agregar/Editar Grado</h2>
-            <form id="gradeForm">
-                <div class="form-group">
-                    <label>Nombre:</label>
-                    <input type="text" id="gradeName" required>
-                </div>
-                <div class="form-group">
-                    <label>Nivel:</label>
-                    <select id="gradeLevel" required>
-                        <option value="Primaria">Primaria</option>
-                        <option value="Bachillerato">Bachillerato</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal('gradeModal')">Cancelar</button>
-            </form>
+        <div class="form-group">
+            <h3>📊 Información del Sistema:</h3>
+            <div id="systemInfo"></div>
         </div>
     </div>
 
@@ -612,135 +132,197 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
         
         let supabase;
-        let currentUser = null;
-        let currentEditingId = null;
 
-        // Inicializar Supabase
-        async function initSupabase() {
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Función para escribir en el log
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                'success': '#00ff00',
+                'error': '#ff0000',
+                'warning': '#ffaa00',
+                'info': '#00aaff'
+            };
+            
+            logArea.innerHTML += `<span style="color: ${colors[type]}">[${timestamp}] ${message}</span>\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = 'Log limpiado...\n';
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        // Paso 1: Verificar configuración
+        function step1() {
+            log('=== PASO 1: Verificando URLs de Supabase ===');
+            log(`URL: ${SUPABASE_URL}`);
+            log(`API Key length: ${SUPABASE_ANON_KEY.length} caracteres`);
+            log(`API Key empieza con: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
+            
+            if (SUPABASE_URL.includes('supabase.co') && SUPABASE_ANON_KEY.length > 100) {
+                log('✅ URLs parecen correctas', 'success');
+                updateStatus('✅ URLs verificadas', 'success');
+            } else {
+                log('❌ URLs parecen incorrectas', 'error');
+                updateStatus('❌ Error en URLs', 'error');
+            }
+        }
+
+        // Paso 2: Probar conexión básica
+        async function step2() {
+            log('=== PASO 2: Probando conexión básica ===');
+            
+            // Verificar si Supabase está disponible
+            log(`window.supabase existe: ${typeof window.supabase !== 'undefined'}`);
+            log(`Objeto window.supabase: ${window.supabase ? 'SÍ' : 'NO'}`);
+            
+            if (typeof window.supabase === 'undefined') {
+                log('❌ window.supabase no está definido', 'error');
+                log('💡 Intentando cargar manualmente...', 'warning');
                 
-                // Verificar conexión
+                // Intentar cargar manualmente
+                try {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/@supabase/supabase-js@2';
+                    document.head.appendChild(script);
+                    
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        setTimeout(reject, 5000); // timeout de 5 segundos
+                    });
+                    
+                    log('✅ Librería cargada manualmente', 'success');
+                } catch (error) {
+                    log('❌ No se pudo cargar la librería manualmente', 'error');
+                    updateStatus('❌ Error cargando librería Supabase', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                // Verificar que createClient existe
+                if (typeof window.supabase.createClient !== 'function') {
+                    log('❌ createClient no es una función', 'error');
+                    log(`Tipo de createClient: ${typeof window.supabase.createClient}`, 'error');
+                    updateStatus('❌ Error en librería Supabase', 'error');
+                    return;
+                }
+                
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                log('✅ Cliente Supabase creado', 'success');
+                
+                // Probar una consulta muy simple
                 const { data, error } = await supabase
                     .from('roles')
-                    .select('count')
-                    .limit(1);
+                    .select('count');
                 
                 if (error) {
-                    throw error;
-                }
-                
-                updateConnectionStatus(true, 'Conectado a la base de datos');
-                return true;
-            } catch (error) {
-                console.error('Error connecting to Supabase:', error);
-                updateConnectionStatus(false, 'Error de conexión: ' + error.message);
-                return false;
-            }
-        }
-
-        // Actualizar estado de conexión
-        function updateConnectionStatus(connected, message) {
-            const statusElement = document.getElementById('connectionStatus');
-            const iconElement = document.getElementById('connectionIcon');
-            const textElement = document.getElementById('connectionText');
-            
-            if (connected) {
-                statusElement.className = 'connection-status connected';
-                iconElement.textContent = '🟢';
-                textElement.textContent = message || 'Conectado';
-            } else {
-                statusElement.className = 'connection-status disconnected';
-                iconElement.textContent = '🔴';
-                textElement.textContent = message || 'Desconectado';
-            }
-        }
-
-        // Funciones de utilidad
-        function showError(message) {
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            const infoDiv = document.getElementById('loginInfo');
-            if (infoDiv) {
-                infoDiv.textContent = message;
-                infoDiv.style.display = 'block';
-                setTimeout(() => {
-                    infoDiv.style.display = 'none';
-                }, 5000);
-            } else {
-                alert('✅ ' + message);
-            }
-        }
-
-        // Función para probar conexión manualmente
-        async function testConnection() {
-            updateConnectionStatus(false, 'Probando conexión...');
-            
-            try {
-                console.log('🔄 Probando conexión con Supabase...');
-                console.log('URL:', SUPABASE_URL);
-                console.log('Key length:', SUPABASE_ANON_KEY.length);
-                
-                const connected = await initSupabase();
-                
-                if (connected) {
-                    // Probar consultas específicas
-                    const { data: roles, error: rolesError } = await supabase.from('roles').select('*');
-                    const { data: usuarios, error: usuariosError } = await supabase.from('usuarios').select('*');
-                    
-                    console.log('📊 Datos de prueba:');
-                    console.log('Roles encontrados:', roles?.length || 0);
-                    console.log('Usuarios encontrados:', usuarios?.length || 0);
-                    
-                    if (rolesError) console.error('Error roles:', rolesError);
-                    if (usuariosError) console.error('Error usuarios:', usuariosError);
-                    
-                    showSuccess(`✅ Conexión exitosa! Roles: ${roles?.length || 0}, Usuarios: ${usuarios?.length || 0}`);
+                    log(`❌ Error en consulta: ${error.message}`, 'error');
+                    log(`Código de error: ${error.code}`, 'error');
+                    log(`Detalles: ${JSON.stringify(error, null, 2)}`, 'error');
+                    updateStatus('❌ Error de conexión a BD', 'error');
                 } else {
-                    showError('❌ Error en la conexión. Revisa la consola para más detalles.');
+                    log('✅ Conexión establecida correctamente', 'success');
+                    updateStatus('✅ Conectado a Supabase', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Error de conexión: ${error.message}`, 'error');
+                log(`Stack trace: ${error.stack}`, 'error');
+                updateStatus('❌ Error de conexión', 'error');
+            }
+        }
+
+        // Paso 3: Verificar tablas
+        async function step3() {
+            log('=== PASO 3: Verificando tablas ===');
+            
+            const tables = ['roles', 'usuarios', 'grados', 'estudiantes', 'motivos', 'autorizaciones_salida'];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`❌ Tabla '${table}': ${error.message}`, 'error');
+                    } else {
+                        log(`✅ Tabla '${table}': OK`, 'success');
+                    }
+                } catch (error) {
+                    log(`❌ Error al verificar tabla '${table}': ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Paso 4: Verificar usuarios
+        async function step4() {
+            log('=== PASO 4: Verificando usuarios ===');
+            
+            try {
+                const { data: users, error } = await supabase
+                    .from('usuarios')
+                    .select('id, nombre, email, rol_id, activo');
+                
+                if (error) {
+                    log(`❌ Error al buscar usuarios: ${error.message}`, 'error');
+                } else {
+                    log(`✅ Usuarios encontrados: ${users.length}`, 'success');
+                    users.forEach(user => {
+                        log(`   - ${user.nombre} (${user.email}) - Rol: ${user.rol_id} - Activo: ${user.activo}`, 'info');
+                    });
                 }
             } catch (error) {
-                console.error('❌ Error en test de conexión:', error);
-                showError('Error de conexión: ' + error.message);
+                log(`❌ Error al verificar usuarios: ${error.message}`, 'error');
             }
         }
 
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('es-ES');
-        }
-
-        function formatTime(timeString) {
-            return timeString.substring(0, 5);
-        }
-
-        // Funciones de autenticación
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            if (!email || !password) {
-                showError('Por favor, ingresa email y contraseña');
-                return;
-            }
-
-            // Verificar conexión primero
-            const connected = await initSupabase();
-            if (!connected) {
-                showError('No se puede conectar a la base de datos. Verifica tu conexión a internet.');
-                return;
-            }
-
+        // Paso 5: Probar login específico
+        async function step5() {
+            log('=== PASO 5: Probando login específico ===');
+            
             try {
-                console.log('Intentando login con:', email);
+                const { data: user, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', 'sistemas@colgemelli.edu.co')
+                    .single();
                 
-                // Buscar usuario en la base de datos
+                if (error) {
+                    log(`❌ Error al buscar usuario: ${error.message}`, 'error');
+                    if (error.code === 'PGRST116') {
+                        log('   💡 Este error significa que no se encontró el usuario', 'warning');
+                    }
+                } else {
+                    log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
+                    log(`   Email: ${user.email}`, 'info');
+                    log(`   Password hash: ${user.password_hash}`, 'info');
+                    log(`   Rol ID: ${user.rol_id}`, 'info');
+                    log(`   Activo: ${user.activo}`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Error en paso 5: ${error.message}`, 'error');
+            }
+        }
+
+        // Función de login de prueba
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log('=== PRUEBA DE LOGIN ===');
+            log(`Intentando login con: ${email}`);
+            
+            try {
                 const { data: user, error } = await supabase
                     .from('usuarios')
                     .select(`
@@ -751,888 +333,77 @@
                     .eq('activo', true)
                     .single();
 
-                console.log('Resultado de búsqueda:', { user, error });
-
                 if (error) {
-                    console.error('Error en consulta:', error);
-                    if (error.code === 'PGRST116') {
-                        showError('Usuario no encontrado. Verifica tu email.');
+                    log(`❌ Error en login: ${error.message}`, 'error');
+                    log(`Código: ${error.code}`, 'error');
+                } else if (!user) {
+                    log('❌ Usuario no encontrado', 'error');
+                } else {
+                    log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
+                    
+                    if (user.password_hash === password) {
+                        log('✅ Contraseña correcta', 'success');
+                        log(`✅ LOGIN EXITOSO! Rol: ${user.rol.nombre}`, 'success');
+                        updateStatus('✅ Login exitoso', 'success');
                     } else {
-                        showError('Error al buscar usuario: ' + error.message);
-                    }
-                    return;
-                }
-
-                if (!user) {
-                    showError('Usuario no encontrado o inactivo');
-                    return;
-                }
-
-                console.log('Usuario encontrado:', user.nombre);
-
-                // Verificar contraseña (en producción debería ser con hash)
-                if (user.password_hash !== password) {
-                    showError('Contraseña incorrecta');
-                    return;
-                }
-
-                console.log('Login exitoso para:', user.nombre);
-                currentUser = user;
-                showDashboard();
-                
-            } catch (error) {
-                console.error('Error general en login:', error);
-                showError('Error al iniciar sesión: ' + error.message);
-            }
-        }
-
-        function logout() {
-            currentUser = null;
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-            document.querySelector('.logout-btn').style.display = 'none';
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-        }
-
-        function showDashboard() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            document.querySelector('.logout-btn').style.display = 'block';
-            
-            setupNavigation();
-            loadInitialData();
-        }
-
-        function setupNavigation() {
-            const navButtons = document.getElementById('navButtons');
-            const role = currentUser.rol.nombre;
-            
-            navButtons.innerHTML = '';
-
-            // Botones según el rol
-            if (role === 'administrador') {
-                navButtons.innerHTML = `
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
-                    <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
-                    <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
-                `;
-            } else if (role === 'vigilante') {
-                navButtons.innerHTML = `
-                    <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
-                `;
-            } else {
-                navButtons.innerHTML = `
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
-                `;
-            }
-
-            // Mostrar la primera sección disponible
-            if (role === 'vigilante') {
-                showSection('verifySectionDiv');
-            } else {
-                showSection('authorizeSectionDiv');
-            }
-        }
-
-        function showSection(sectionId) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Mostrar la sección seleccionada
-            document.getElementById(sectionId).classList.add('active');
-        }
-
-        async function loadInitialData() {
-            await loadStudents();
-            await loadReasons();
-            await loadGrades();
-            await loadRoles();
-            
-            if (currentUser.rol.nombre === 'administrador') {
-                await loadUsers();
-            }
-            
-            setupEventListeners();
-        }
-
-        function setupEventListeners() {
-            // Autorización de salidas
-            document.getElementById('authorizeForm').addEventListener('submit', authorizeExit);
-            
-            // Búsqueda de estudiantes para verificación
-            document.getElementById('studentSearch').addEventListener('input', searchStudent);
-            
-            // Formularios de administración
-            document.getElementById('studentForm').addEventListener('submit', saveStudent);
-            document.getElementById('userForm').addEventListener('submit', saveUser);
-            document.getElementById('reasonForm').addEventListener('submit', saveReason);
-            document.getElementById('gradeForm').addEventListener('submit', saveGrade);
-
-            // Establecer fecha actual por defecto
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('exitDate').value = today;
-            document.getElementById('historyDate').value = today;
-        }
-
-        // Funciones de carga de datos
-        async function loadStudents() {
-            try {
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        *,
-                        grado:grados(nombre)
-                    `)
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('studentSelect');
-                const gradeSelect = document.getElementById('studentGrade');
-                
-                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                students.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = student.id;
-                    option.textContent = `${student.nombre} ${student.apellidos} - ${student.grado.nombre}`;
-                    select.appendChild(option);
-                });
-
-                // Actualizar tabla de administración si está visible
-                updateStudentsTable(students);
-                
-            } catch (error) {
-                console.error('Error loading students:', error);
-            }
-        }
-
-        async function loadReasons() {
-            try {
-                const { data: reasons, error } = await supabase
-                    .from('motivos')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('reasonSelect');
-                select.innerHTML = '<option value="">Seleccionar motivo...</option>';
-                
-                reasons.forEach(reason => {
-                    const option = document.createElement('option');
-                    option.value = reason.id;
-                    option.textContent = reason.nombre;
-                    select.appendChild(option);
-                });
-
-                updateReasonsTable(reasons);
-                
-            } catch (error) {
-                console.error('Error loading reasons:', error);
-            }
-        }
-
-        async function loadGrades() {
-            try {
-                const { data: grades, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('studentGrade');
-                select.innerHTML = '<option value="">Seleccionar grado...</option>';
-                
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                    select.appendChild(option);
-                });
-
-                updateGradesTable(grades);
-                
-            } catch (error) {
-                console.error('Error loading grades:', error);
-            }
-        }
-
-        async function loadRoles() {
-            try {
-                const { data: roles, error } = await supabase
-                    .from('roles')
-                    .select('*')
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('userRole');
-                select.innerHTML = '<option value="">Seleccionar rol...</option>';
-                
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.descripcion;
-                    select.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Error loading roles:', error);
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const { data: users, error } = await supabase
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                updateUsersTable(users);
-                
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-
-        // Función para autorizar salida
-        async function authorizeExit(e) {
-            e.preventDefault();
-            
-            const studentId = document.getElementById('studentSelect').value;
-            const reasonId = document.getElementById('reasonSelect').value;
-            const exitDate = document.getElementById('exitDate').value;
-            const exitTime = document.getElementById('exitTime').value;
-            const observations = document.getElementById('observations').value;
-
-            if (!studentId || !reasonId || !exitDate || !exitTime) {
-                showError('Por favor, completa todos los campos obligatorios');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .insert([{
-                        estudiante_id: studentId,
-                        motivo_id: reasonId,
-                        usuario_autorizador_id: currentUser.id,
-                        fecha_salida: exitDate,
-                        hora_salida: exitTime,
-                        observaciones: observations || null
-                    }]);
-
-                if (error) throw error;
-
-                showSuccess('Autorización de salida creada exitosamente');
-                document.getElementById('authorizeForm').reset();
-                
-                // Establecer fecha actual por defecto
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('exitDate').value = today;
-                
-            } catch (error) {
-                showError('Error al crear la autorización: ' + error.message);
-            }
-        }
-
-        // Función para buscar y verificar estudiante
-        async function searchStudent() {
-            const searchTerm = document.getElementById('studentSearch').value.trim();
-            const resultDiv = document.getElementById('verificationResult');
-            
-            if (searchTerm.length < 3) {
-                resultDiv.innerHTML = '';
-                return;
-            }
-
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                
-                const { data: authorizations, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes(nombre, apellidos),
-                        grado:estudiantes(grado:grados(nombre)),
-                        motivo:motivos(nombre),
-                        autorizador:usuarios(nombre)
-                    `)
-                    .eq('fecha_salida', today)
-                    .eq('autorizada', true)
-                    .ilike('estudiantes.nombre', `%${searchTerm}%`);
-
-                if (error) throw error;
-
-                if (authorizations && authorizations.length > 0) {
-                    let html = '';
-                    authorizations.forEach(auth => {
-                        html += `
-                            <div class="verification-card authorized">
-                                <h3>✅ AUTORIZADO PARA SALIR</h3>
-                                <p><strong>Estudiante:</strong> ${auth.estudiante.nombre} ${auth.estudiante.apellidos}</p>
-                                <p><strong>Grado:</strong> ${auth.grado.grado.nombre}</p>
-                                <p><strong>Motivo:</strong> ${auth.motivo.nombre}</p>
-                                <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
-                                <p><strong>Autorizado por:</strong> ${auth.autorizador.nombre}</p>
-                                ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                                <button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>
-                            </div>
-                        `;
-                    });
-                    resultDiv.innerHTML = html;
-                } else {
-                    resultDiv.innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>❌ NO AUTORIZADO</h3>
-                            <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
-                        </div>
-                    `;
-                }
-                
-            } catch (error) {
-                showError('Error al buscar autorizaciones: ' + error.message);
-            }
-        }
-
-        async function confirmExit(authId) {
-            try {
-                const { data, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .update({
-                        salida_efectiva: new Date().toISOString(),
-                        vigilante_id: currentUser.id
-                    })
-                    .eq('id', authId);
-
-                if (error) throw error;
-
-                showSuccess('Salida confirmada exitosamente');
-                document.getElementById('studentSearch').value = '';
-                document.getElementById('verificationResult').innerHTML = '';
-                
-            } catch (error) {
-                showError('Error al confirmar la salida: ' + error.message);
-            }
-        }
-
-        // Funciones de administración
-        function showAdminSection(section) {
-            document.querySelectorAll('.admin-subsection').forEach(sub => {
-                sub.style.display = 'none';
-            });
-            document.getElementById(`admin${section.charAt(0).toUpperCase() + section.slice(1)}`).style.display = 'block';
-        }
-
-        // Funciones de modales
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-            currentEditingId = null;
-            
-            // Limpiar formularios
-            if (modalId === 'studentModal') {
-                document.getElementById('studentForm').reset();
-            } else if (modalId === 'userModal') {
-                document.getElementById('userForm').reset();
-            } else if (modalId === 'reasonModal') {
-                document.getElementById('reasonForm').reset();
-            } else if (modalId === 'gradeModal') {
-                document.getElementById('gradeForm').reset();
-            }
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            currentEditingId = null;
-        }
-
-        // Funciones CRUD
-        async function saveStudent(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('studentName').value;
-            const lastName = document.getElementById('studentLastName').value;
-            const document = document.getElementById('studentDocument').value;
-            const gradeId = document.getElementById('studentGrade').value;
-
-            try {
-                if (currentEditingId) {
-                    const { data, error } = await supabase
-                        .from('estudiantes')
-                        .update({
-                            nombre: name,
-                            apellidos: lastName,
-                            documento: document,
-                            grado_id: gradeId
-                        })
-                        .eq('id', currentEditingId);
-                } else {
-                    const { data, error } = await supabase
-                        .from('estudiantes')
-                        .insert([{
-                            nombre: name,
-                            apellidos: lastName,
-                            documento: document,
-                            grado_id: gradeId
-                        }]);
-                }
-
-                if (error) throw error;
-
-                showSuccess('Estudiante guardado exitosamente');
-                closeModal('studentModal');
-                await loadStudents();
-                
-            } catch (error) {
-                showError('Error al guardar el estudiante: ' + error.message);
-            }
-        }
-
-        async function saveUser(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('userName').value;
-            const email = document.getElementById('userEmail').value;
-            const password = document.getElementById('userPassword').value;
-            const roleId = document.getElementById('userRole').value;
-
-            try {
-                if (currentEditingId) {
-                    const { data, error } = await supabase
-                        .from('usuarios')
-                        .update({
-                            nombre: name,
-                            email: email,
-                            rol_id: roleId
-                        })
-                        .eq('id', currentEditingId);
-                } else {
-                    const { data, error } = await supabase
-                        .from('usuarios')
-                        .insert([{
-                            nombre: name,
-                            email: email,
-                            password_hash: password, // En producción, hash la contraseña
-                            rol_id: roleId
-                        }]);
-                }
-
-                if (error) throw error;
-
-                showSuccess('Usuario guardado exitosamente');
-                closeModal('userModal');
-                await loadUsers();
-                
-            } catch (error) {
-                showError('Error al guardar el usuario: ' + error.message);
-            }
-        }
-
-        async function saveReason(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('reasonName').value;
-            const description = document.getElementById('reasonDescription').value;
-
-            try {
-                if (currentEditingId) {
-                    const { data, error } = await supabase
-                        .from('motivos')
-                        .update({
-                            nombre: name,
-                            descripcion: description
-                        })
-                        .eq('id', currentEditingId);
-                } else {
-                    const { data, error } = await supabase
-                        .from('motivos')
-                        .insert([{
-                            nombre: name,
-                            descripcion: description
-                        }]);
-                }
-
-                if (error) throw error;
-
-                showSuccess('Motivo guardado exitosamente');
-                closeModal('reasonModal');
-                await loadReasons();
-                
-            } catch (error) {
-                showError('Error al guardar el motivo: ' + error.message);
-            }
-        }
-
-        async function saveGrade(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('gradeName').value;
-            const level = document.getElementById('gradeLevel').value;
-
-            try {
-                if (currentEditingId) {
-                    const { data, error } = await supabase
-                        .from('grados')
-                        .update({
-                            nombre: name,
-                            nivel: level
-                        })
-                        .eq('id', currentEditingId);
-                } else {
-                    const { data, error } = await supabase
-                        .from('grados')
-                        .insert([{
-                            nombre: name,
-                            nivel: level
-                        }]);
-                }
-
-                if (error) throw error;
-
-                showSuccess('Grado guardado exitosamente');
-                closeModal('gradeModal');
-                await loadGrades();
-                
-            } catch (error) {
-                showError('Error al guardar el grado: ' + error.message);
-            }
-        }
-
-        // Funciones de actualización de tablas
-        function updateStudentsTable(students) {
-            const tbody = document.querySelector('#studentsTable tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            students.forEach(student => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${student.nombre}</td>
-                    <td>${student.apellidos}</td>
-                    <td>${student.documento || 'N/A'}</td>
-                    <td>${student.grado.nombre}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editStudent(${student.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteStudent(${student.id})">Eliminar</button>
-                    </td>
-                `;
-            });
-        }
-
-        function updateUsersTable(users) {
-            const tbody = document.querySelector('#usersTable tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            users.forEach(user => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${user.nombre}</td>
-                    <td>${user.email}</td>
-                    <td>${user.rol.descripcion}</td>
-                    <td>${user.activo ? 'Activo' : 'Inactivo'}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editUser(${user.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteUser(${user.id})">Eliminar</button>
-                    </td>
-                `;
-            });
-        }
-
-        function updateReasonsTable(reasons) {
-            const tbody = document.querySelector('#reasonsTable tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            reasons.forEach(reason => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${reason.nombre}</td>
-                    <td>${reason.descripcion || 'N/A'}</td>
-                    <td>${reason.activo ? 'Activo' : 'Inactivo'}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editReason(${reason.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteReason(${reason.id})">Eliminar</button>
-                    </td>
-                `;
-            });
-        }
-
-        function updateGradesTable(grades) {
-            const tbody = document.querySelector('#gradesTable tbody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            grades.forEach(grade => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${grade.nombre}</td>
-                    <td>${grade.nivel}</td>
-                    <td>${grade.activo ? 'Activo' : 'Inactivo'}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editGrade(${grade.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteGrade(${grade.id})">Eliminar</button>
-                    </td>
-                `;
-            });
-        }
-
-        // Funciones de historial
-        async function loadHistory(all = false) {
-            try {
-                let query = supabase
-                    .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes(nombre, apellidos),
-                        grado:estudiantes(grado:grados(nombre)),
-                        motivo:motivos(nombre),
-                        autorizador:usuarios(nombre)
-                    `)
-                    .order('fecha_creacion', { ascending: false });
-
-                if (!all) {
-                    const date = document.getElementById('historyDate').value;
-                    if (date) {
-                        query = query.eq('fecha_salida', date);
+                        log(`❌ Contraseña incorrecta`, 'error');
+                        log(`   Esperada: '${password}'`, 'error');
+                        log(`   En BD: '${user.password_hash}'`, 'error');
                     }
                 }
-
-                const { data: history, error } = await query;
-
-                if (error) throw error;
-
-                const tbody = document.querySelector('#historyTable tbody');
-                tbody.innerHTML = '';
-                
-                history.forEach(record => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${record.estudiante.nombre} ${record.estudiante.apellidos}</td>
-                        <td>${record.grado.grado.nombre}</td>
-                        <td>${record.motivo.nombre}</td>
-                        <td>${formatDate(record.fecha_salida)}</td>
-                        <td>${formatTime(record.hora_salida)}</td>
-                        <td>${record.autorizador.nombre}</td>
-                        <td>${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}</td>
-                    `;
-                });
-                
             } catch (error) {
-                showError('Error al cargar el historial: ' + error.message);
+                log(`❌ Error general en login: ${error.message}`, 'error');
             }
         }
 
-        // Funciones de edición y eliminación (solo para admin)
-        async function editStudent(id) {
-            try {
-                const { data: student, error } = await supabase
-                    .from('estudiantes')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('studentName').value = student.nombre;
-                document.getElementById('studentLastName').value = student.apellidos;
-                document.getElementById('studentDocument').value = student.documento || '';
-                document.getElementById('studentGrade').value = student.grado_id;
-                
-                openModal('studentModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del estudiante: ' + error.message);
-            }
-        }
-
-        async function deleteStudent(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('estudiantes')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Estudiante eliminado exitosamente');
-                    await loadStudents();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el estudiante: ' + error.message);
-                }
-            }
-        }
-
-        // Funciones similares para otros elementos...
-        async function editUser(id) {
-            try {
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('userName').value = user.nombre;
-                document.getElementById('userEmail').value = user.email;
-                document.getElementById('userPassword').value = '';
-                document.getElementById('userRole').value = user.rol_id;
-                
-                openModal('userModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del usuario: ' + error.message);
-            }
-        }
-
-        async function deleteUser(id) {
-            if (id === currentUser.id) {
-                showError('No puedes eliminar tu propio usuario');
-                return;
-            }
+        // Ejecutar diagnóstico automático al cargar
+        function initApp() {
+            log('🚀 Sistema de diagnóstico iniciado');
             
-            if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('usuarios')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Usuario eliminado exitosamente');
-                    await loadUsers();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el usuario: ' + error.message);
-                }
-            }
-        }
-
-        async function editReason(id) {
-            try {
-                const { data: reason, error } = await supabase
-                    .from('motivos')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('reasonName').value = reason.nombre;
-                document.getElementById('reasonDescription').value = reason.descripcion || '';
-                
-                openModal('reasonModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del motivo: ' + error.message);
-            }
-        }
-
-        async function deleteReason(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este motivo?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('motivos')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Motivo eliminado exitosamente');
-                    await loadReasons();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el motivo: ' + error.message);
-                }
-            }
-        }
-
-        async function editGrade(id) {
-            try {
-                const { data: grade, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('gradeName').value = grade.nombre;
-                document.getElementById('gradeLevel').value = grade.nivel;
-                
-                openModal('gradeModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del grado: ' + error.message);
-            }
-        }
-
-        async function deleteGrade(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este grado?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('grados')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Grado eliminado exitosamente');
-                    await loadGrades();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el grado: ' + error.message);
-                }
-            }
-        }
-
-        // Cerrar modales al hacer clic fuera
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        }
-
-        // Inicializar la aplicación cuando se carga la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Sistema de Salidas - Colegio Gemelli iniciado');
+            // Información del sistema
+            document.getElementById('systemInfo').innerHTML = `
+                <div class="info status">
+                    <strong>Navegador:</strong> ${navigator.userAgent}<br>
+                    <strong>URL actual:</strong> ${window.location.href}<br>
+                    <strong>Fecha/Hora:</strong> ${new Date().toLocaleString()}<br>
+                    <strong>Supabase URL:</strong> ${SUPABASE_URL}<br>
+                    <strong>Supabase disponible:</strong> ${typeof window.supabase !== 'undefined' ? 'SÍ' : 'NO'}
+                </div>
+            `;
             
-            // Verificar conexión inmediatamente
-            updateConnectionStatus(false, 'Verificando conexión...');
-            const connected = await initSupabase();
-            
-            if (connected) {
-                console.log('✅ Conexión establecida con Supabase');
+            // Ejecutar pasos automáticamente solo si Supabase está disponible
+            if (typeof window.supabase !== 'undefined') {
+                setTimeout(() => step1(), 1000);
+                setTimeout(() => step2(), 2000);
+                setTimeout(() => step3(), 4000);
+                setTimeout(() => step4(), 6000);
             } else {
-                console.log('❌ Error de conexión con Supabase');
+                log('❌ Supabase no está disponible, no se pueden ejecutar los pasos automáticos', 'error');
+                updateStatus('❌ Librería Supabase no disponible', 'error');
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un momento para que las librerías se carguen
+            setTimeout(() => {
+                if (typeof window.supabase !== 'undefined') {
+                    initApp();
+                } else {
+                    // Intentar cargar una vez más
+                    log('⚠️ Intentando cargar Supabase nuevamente...', 'warning');
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+                    script.onload = () => {
+                        log('✅ Supabase cargado desde Skypack', 'success');
+                        initApp();
+                    };
+                    script.onerror = () => {
+                        log('❌ Error cargando desde todas las fuentes', 'error');
+                        updateStatus('❌ No se pudo cargar Supabase', 'error');
+                    };
+                    document.head.appendChild(script);
+                }
+            }, 1000);
         });
     </script>
 </body>
