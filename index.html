@@ -4,74 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Salidas - Colegio Gemelli</title>
-    <!-- Múltiples CDNs de Supabase para asegurar carga -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Verificar y cargar Supabase si no está disponible
-        function ensureSupabaseLoaded() {
-            return new Promise((resolve, reject) => {
-                if (typeof window.supabase !== 'undefined') {
-                    console.log('✅ Supabase ya está cargado');
-                    resolve();
-                    return;
-                }
-                
-                console.log('⚠️ Cargando Supabase desde CDN alternativa...');
-                
-                // Intentar cargar desde múltiples CDNs
-                const cdns = [
-                    'https://unpkg.com/@supabase/supabase-js@2',
-                    'https://cdn.skypack.dev/@supabase/supabase-js@2',
-                    'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js'
-                ];
-                
-                let currentCdn = 0;
-                
-                function tryNextCdn() {
-                    if (currentCdn >= cdns.length) {
-                        reject(new Error('No se pudo cargar Supabase desde ningún CDN'));
-                        return;
-                    }
-                    
-                    const script = document.createElement('script');
-                    script.src = cdns[currentCdn];
-                    script.timeout = 5000;
-                    
-                    script.onload = () => {
-                        if (typeof window.supabase !== 'undefined') {
-                            console.log(`✅ Supabase cargado desde CDN ${currentCdn + 1}`);
-                            resolve();
-                        } else {
-                            currentCdn++;
-                            tryNextCdn();
-                        }
-                    };
-                    
-                    script.onerror = () => {
-                        console.log(`❌ Error cargando desde CDN ${currentCdn + 1}, intentando siguiente...`);
-                        currentCdn++;
-                        tryNextCdn();
-                    };
-                    
-                    document.head.appendChild(script);
-                    
-                    // Timeout individual por CDN
-                    setTimeout(() => {
-                        if (typeof window.supabase === 'undefined') {
-                            script.onerror();
-                        }
-                    }, 5000);
-                }
-                
-                tryNextCdn();
-                
-                // Timeout global
-                setTimeout(() => {
-                    reject(new Error('Timeout global cargando Supabase'));
-                }, 15000);
-            });
-        }
-    </script>
+    <!-- Supabase CDN - Usando cdnjs.cloudflare.com que está permitido -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/dist/umd/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -687,47 +621,31 @@
         let currentUser = null;
         let currentEditingId = null;
 
-        // Inicializar Supabase
+        // Inicializar Supabase - SIMPLIFICADO
         async function initSupabase() {
             try {
-                // Asegurar que Supabase esté cargado con timeout
-                const loadPromise = ensureSupabaseLoaded();
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout cargando Supabase')), 8000)
-                );
+                console.log('🔄 Inicializando Supabase...');
                 
-                await Promise.race([loadPromise, timeoutPromise]);
-                
-                if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
-                    throw new Error('La librería de Supabase no está disponible');
+                if (!window.supabase) {
+                    console.error('❌ window.supabase no está disponible');
+                    throw new Error('Supabase no está cargado');
                 }
                 
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log('✅ Cliente Supabase creado');
                 
-                // Verificar conexión con consulta simple y timeout
-                const queryPromise = supabase
-                    .from('roles')
-                    .select('count')
-                    .limit(1);
+                // Verificar conexión
+                const { data, error } = await supabase.from('roles').select('*').limit(1);
                 
-                const queryTimeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout en consulta de prueba')), 5000)
-                );
+                if (error) throw error;
                 
-                const { data, error } = await Promise.race([queryPromise, queryTimeoutPromise]);
-                
-                if (error) {
-                    throw error;
-                }
-                
-                updateConnectionStatus(true, 'Conectado a la base de datos');
-                console.log('✅ Conexión verificada exitosamente');
+                updateConnectionStatus(true, 'Conectado');
+                console.log('✅ Conexión exitosa');
                 return true;
                 
             } catch (error) {
-                console.error('Error connecting to Supabase:', error);
-                updateConnectionStatus(false, 'Error: ' + error.message);
+                console.error('❌ Error:', error);
+                updateConnectionStatus(false, 'Error de conexión');
                 return false;
             }
         }
@@ -772,41 +690,28 @@
             }
         }
 
-        // Función para probar conexión manualmente
+        // Función para probar conexión - SIMPLIFICADA
         async function testConnection() {
-            updateConnectionStatus(false, 'Probando conexión...');
+            updateConnectionStatus(false, 'Probando...');
             
             try {
-                console.log('🔄 Probando conexión con Supabase...');
-                console.log('URL:', SUPABASE_URL);
-                console.log('Key length:', SUPABASE_ANON_KEY.length);
-                console.log('window.supabase disponible:', typeof window.supabase !== 'undefined');
+                console.log('🔄 Test de conexión');
+                console.log('window.supabase:', !!window.supabase);
                 
-                // Asegurar que Supabase esté cargado
-                await ensureSupabaseLoaded();
+                if (!window.supabase) {
+                    throw new Error('Supabase no está cargado. Recarga la página.');
+                }
                 
                 const connected = await initSupabase();
                 
                 if (connected) {
-                    // Probar consultas específicas
-                    const { data: roles, error: rolesError } = await supabase.from('roles').select('*');
-                    const { data: usuarios, error: usuariosError } = await supabase.from('usuarios').select('*');
-                    
-                    console.log('📊 Datos de prueba:');
-                    console.log('Roles encontrados:', roles?.length || 0);
-                    console.log('Usuarios encontrados:', usuarios?.length || 0);
-                    
-                    if (rolesError) console.error('Error roles:', rolesError);
-                    if (usuariosError) console.error('Error usuarios:', usuariosError);
-                    
-                    showSuccess(`✅ Conexión exitosa! Roles: ${roles?.length || 0}, Usuarios: ${usuarios?.length || 0}`);
+                    showSuccess('✅ Conexión exitosa!');
                 } else {
-                    showError('❌ Error en la conexión. Revisa la consola para más detalles.');
+                    showError('❌ Error en la conexión');
                 }
             } catch (error) {
-                console.error('❌ Error en test de conexión:', error);
-                showError('Error de conexión: ' + error.message);
-                updateConnectionStatus(false, 'Error: ' + error.message);
+                console.error('❌ Error:', error);
+                showError('Error: ' + error.message);
             }
         }
 
@@ -1675,6 +1580,8 @@
                 debugContent.innerHTML = `❌ Error en debug: ${error.message}`;
             }
         }
+
+        async function editStudent(id) {
             try {
                 const { data: student, error } = await supabase
                     .from('estudiantes')
@@ -1854,52 +1761,15 @@
             });
         }
 
-        // Inicializar la aplicación cuando se carga la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Sistema de Salidas - Colegio Gemelli iniciado');
+        // Inicializar la aplicación - SIMPLIFICADO
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Sistema iniciado');
+            updateConnectionStatus(false, 'Conectando...');
             
-            // Verificar conexión con timeout
-            updateConnectionStatus(false, 'Verificando conexión...');
-            
-            try {
-                // Timeout de 10 segundos para evitar quedarse colgado
-                const connectionPromise = (async () => {
-                    await ensureSupabaseLoaded();
-                    return await initSupabase();
-                })();
-                
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout de conexión')), 10000)
-                );
-                
-                const connected = await Promise.race([connectionPromise, timeoutPromise]);
-                
-                if (connected) {
-                    console.log('✅ Conexión establecida con Supabase');
-                } else {
-                    console.log('❌ Error de conexión con Supabase');
-                    updateConnectionStatus(false, 'Error de conexión - Usa "Probar Conexión"');
-                }
-            } catch (error) {
-                console.error('❌ Error cargando la aplicación:', error);
-                updateConnectionStatus(false, 'Error: ' + error.message + ' - Recarga la página');
-                
-                // Mostrar botón de emergencia
-                const loginSection = document.getElementById('loginSection');
-                if (loginSection) {
-                    loginSection.innerHTML += `
-                        <div style="margin-top: 20px; text-align: center;">
-                            <p style="color: #e74c3c; font-weight: bold;">⚠️ Problema de conexión detectado</p>
-                            <button class="btn btn-danger" onclick="location.reload()" style="width: 100%;">
-                                🔄 Recargar Página
-                            </button>
-                            <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                                Si el problema persiste, abre la aplicación de diagnóstico
-                            </p>
-                        </div>
-                    `;
-                }
-            }
+            // Esperar un momento para que Supabase termine de cargar
+            setTimeout(() => {
+                initSupabase();
+            }, 1000);
         });
     </script>
 </body>
