@@ -520,6 +520,11 @@
                         <input type="date" id="historyDate" onchange="loadHistory()">
                         <button class="btn" onclick="loadHistory()">Filtrar por Fecha</button>
                         <button class="btn btn-secondary" onclick="loadHistory(true)">Ver Todo el Historial</button>
+                        <button class="btn" onclick="debugHistory()" style="background: #e67e22;">🔍 Debug Historial</button>
+                    </div>
+                    <div id="historyDebug" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                        <h4>🔧 Información de Debug:</h4>
+                        <div id="historyDebugContent"></div>
                     </div>
                     <table class="table" id="historyTable">
                         <thead>
@@ -888,6 +893,11 @@
             
             // Mostrar la sección seleccionada
             document.getElementById(sectionId).classList.add('active');
+            
+            // Cargar datos específicos según la sección
+            if (sectionId === 'historySectionDiv') {
+                loadHistory(true); // Cargar todo el historial por defecto
+            }
         }
 
         async function loadInitialData() {
@@ -1100,27 +1110,34 @@
             const resultDiv = document.getElementById('verificationResult');
             
             if (searchTerm.length < 3) {
-                resultDiv.innerHTML = '';
+                resultDiv.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Escribe al menos 3 caracteres para buscar...</p></div>';
                 return;
             }
 
             try {
                 const today = new Date().toISOString().split('T')[0];
                 
+                console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha:', today);
+                
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select(`
                         *,
-                        estudiante:estudiantes(nombre, apellidos),
-                        grado:estudiantes(grado:grados(nombre)),
-                        motivo:motivos(nombre),
-                        autorizador:usuarios(nombre)
+                        estudiante:estudiantes!inner(nombre, apellidos, grado:grados!inner(nombre)),
+                        motivo:motivos!inner(nombre),
+                        autorizador:usuarios!inner(nombre)
                     `)
                     .eq('fecha_salida', today)
                     .eq('autorizada', true)
-                    .ilike('estudiantes.nombre', `%${searchTerm}%`);
+                    .or(`estudiante.nombre.ilike.%${searchTerm}%,estudiante.apellidos.ilike.%${searchTerm}%`, { foreignTable: 'estudiantes' });
 
-                if (error) throw error;
+                console.log('📊 Autorizaciones encontradas:', authorizations?.length || 0);
+
+                if (error) {
+                    console.error('Error en búsqueda:', error);
+                    showError('Error al buscar autorizaciones: ' + error.message);
+                    return;
+                }
 
                 if (authorizations && authorizations.length > 0) {
                     let html = '';
@@ -1129,26 +1146,51 @@
                             <div class="verification-card authorized">
                                 <h3>✅ AUTORIZADO PARA SALIR</h3>
                                 <p><strong>Estudiante:</strong> ${auth.estudiante.nombre} ${auth.estudiante.apellidos}</p>
-                                <p><strong>Grado:</strong> ${auth.grado.grado.nombre}</p>
+                                <p><strong>Grado:</strong> ${auth.estudiante.grado.nombre}</p>
                                 <p><strong>Motivo:</strong> ${auth.motivo.nombre}</p>
                                 <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
                                 <p><strong>Autorizado por:</strong> ${auth.autorizador.nombre}</p>
                                 ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                                <button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>
+                                ${!auth.salida_efectiva ? 
+                                    `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>` : 
+                                    `<p style="color: #2ecc71;"><strong>✅ Salida ya confirmada</strong></p>`
+                                }
                             </div>
                         `;
                     });
                     resultDiv.innerHTML = html;
                 } else {
-                    resultDiv.innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>❌ NO AUTORIZADO</h3>
-                            <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
-                        </div>
-                    `;
+                    // Si no encuentra por nombre, buscar directamente en la tabla de estudiantes
+                    const { data: students, error: studentsError } = await supabase
+                        .from('estudiantes')
+                        .select(`nombre, apellidos, grado:grados(nombre)`)
+                        .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
+                        .eq('activo', true)
+                        .limit(5);
+
+                    if (students && students.length > 0) {
+                        let studentsList = students.map(s => `${s.nombre} ${s.apellidos} (${s.grado.nombre})`).join(', ');
+                        resultDiv.innerHTML = `
+                            <div class="verification-card not-authorized">
+                                <h3>❌ NO AUTORIZADO</h3>
+                                <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
+                                <p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>
+                                <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="verification-card not-authorized">
+                                <h3>❌ NO ENCONTRADO</h3>
+                                <p>No se encontró ningún estudiante con el nombre "${searchTerm}".</p>
+                                <p><em>Verifica la escritura del nombre.</em></p>
+                            </div>
+                        `;
+                    }
                 }
                 
             } catch (error) {
+                console.error('Error general en búsqueda:', error);
                 showError('Error al buscar autorizaciones: ' + error.message);
             }
         }
@@ -1442,10 +1484,9 @@
                     .from('autorizaciones_salida')
                     .select(`
                         *,
-                        estudiante:estudiantes(nombre, apellidos),
-                        grado:estudiantes(grado:grados(nombre)),
-                        motivo:motivos(nombre),
-                        autorizador:usuarios(nombre)
+                        estudiante:estudiantes!inner(nombre, apellidos, grado:grados!inner(nombre)),
+                        motivo:motivos!inner(nombre),
+                        autorizador:usuarios!inner(nombre)
                     `)
                     .order('fecha_creacion', { ascending: false });
 
@@ -1453,36 +1494,136 @@
                     const date = document.getElementById('historyDate').value;
                     if (date) {
                         query = query.eq('fecha_salida', date);
+                    } else {
+                        // Si no hay fecha, mostrar solo los últimos 30 días
+                        const thirtyDaysAgo = new Date();
+                        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                        query = query.gte('fecha_salida', thirtyDaysAgo.toISOString().split('T')[0]);
                     }
                 }
 
+                console.log('🔍 Cargando historial...');
                 const { data: history, error } = await query;
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error en consulta de historial:', error);
+                    showError('Error al cargar el historial: ' + error.message);
+                    return;
+                }
+
+                console.log('📊 Registros encontrados:', history?.length || 0);
 
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
+                
+                if (!history || history.length === 0) {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td colspan="7" style="text-align: center; color: #666; padding: 20px;">
+                            No se encontraron registros para el período seleccionado
+                        </td>
+                    `;
+                    return;
+                }
                 
                 history.forEach(record => {
                     const row = tbody.insertRow();
                     row.innerHTML = `
                         <td>${record.estudiante.nombre} ${record.estudiante.apellidos}</td>
-                        <td>${record.grado.grado.nombre}</td>
+                        <td>${record.estudiante.grado.nombre}</td>
                         <td>${record.motivo.nombre}</td>
                         <td>${formatDate(record.fecha_salida)}</td>
                         <td>${formatTime(record.hora_salida)}</td>
                         <td>${record.autorizador.nombre}</td>
-                        <td>${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}</td>
+                        <td>
+                            <span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">
+                                ${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}
+                            </span>
+                            ${record.observaciones ? `<br><small style="color: #666;">Obs: ${record.observaciones}</small>` : ''}
+                        </td>
                     `;
                 });
+
+                showSuccess(`Historial cargado: ${history.length} registros`);
                 
             } catch (error) {
+                console.error('Error general en loadHistory:', error);
                 showError('Error al cargar el historial: ' + error.message);
             }
         }
 
-        // Funciones de edición y eliminación (solo para admin)
-        async function editStudent(id) {
+        // Función de debug para historial
+        async function debugHistory() {
+            const debugDiv = document.getElementById('historyDebug');
+            const debugContent = document.getElementById('historyDebugContent');
+            
+            debugDiv.style.display = 'block';
+            debugContent.innerHTML = '🔄 Analizando datos...';
+            
+            try {
+                // 1. Contar registros en autorizaciones_salida
+                const { data: totalAuth, error: errorAuth } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*');
+                
+                // 2. Contar estudiantes
+                const { data: totalStudents, error: errorStudents } = await supabase
+                    .from('estudiantes')
+                    .select('*');
+                
+                // 3. Contar usuarios
+                const { data: totalUsers, error: errorUsers } = await supabase
+                    .from('usuarios')
+                    .select('*');
+                
+                // 4. Probar consulta simple sin JOINs
+                const { data: simpleAuth, error: errorSimple } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .limit(5);
+                
+                // 5. Probar consulta con JOINs
+                const { data: joinAuth, error: errorJoin } = await supabase
+                    .from('autorizaciones_salida')
+                    .select(`
+                        *,
+                        estudiante:estudiantes!inner(nombre, apellidos),
+                        motivo:motivos!inner(nombre),
+                        autorizador:usuarios!inner(nombre)
+                    `)
+                    .limit(3);
+                
+                let html = '<ul>';
+                html += `<li><strong>Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
+                html += `<li><strong>Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
+                html += `<li><strong>Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
+                html += `<li><strong>Consulta simple:</strong> ${simpleAuth?.length || 0} registros ${errorSimple ? '❌ Error: ' + errorSimple.message : '✅'}</li>`;
+                html += `<li><strong>Consulta con JOINs:</strong> ${joinAuth?.length || 0} registros ${errorJoin ? '❌ Error: ' + errorJoin.message : '✅'}</li>`;
+                
+                if (simpleAuth && simpleAuth.length > 0) {
+                    html += '<li><strong>Muestra de datos sin JOINs:</strong><br>';
+                    simpleAuth.forEach((auth, index) => {
+                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante: ${auth.estudiante_id}, Fecha: ${auth.fecha_salida}<br>`;
+                    });
+                    html += '</li>';
+                }
+                
+                if (joinAuth && joinAuth.length > 0) {
+                    html += '<li><strong>Muestra de datos con JOINs:</strong><br>';
+                    joinAuth.forEach((auth, index) => {
+                        html += `&nbsp;&nbsp;${index + 1}. ${auth.estudiante?.nombre || 'N/A'} ${auth.estudiante?.apellidos || 'N/A'} - ${auth.motivo?.nombre || 'N/A'}<br>`;
+                    });
+                    html += '</li>';
+                }
+                
+                html += '</ul>';
+                
+                debugContent.innerHTML = html;
+                
+            } catch (error) {
+                debugContent.innerHTML = `❌ Error en debug: ${error.message}`;
+            }
+        }
             try {
                 const { data: student, error } = await supabase
                     .from('estudiantes')
