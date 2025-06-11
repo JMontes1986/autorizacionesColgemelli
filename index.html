@@ -1305,6 +1305,12 @@
                 select.innerHTML = '<option value="">Seleccionar grado...</option>';
                 
                 grades.forEach(grade => {
+        const option2 = document.createElement('option');
+        if (grade.nombre && grade.nivel) {
+            option2.value = grade.id;
+            option2.textContent = `${grade.nombre} - ${grade.nivel}`;
+            document.getElementById('gradeSelect').appendChild(option2);
+        }
                     const option = document.createElement('option');
                     option.value = grade.id;
                     option.textContent = `${grade.nombre} - ${grade.nivel}`;
@@ -2037,6 +2043,12 @@
             
             tbody.innerHTML = '';
             grades.forEach(grade => {
+        const option2 = document.createElement('option');
+        if (grade.nombre && grade.nivel) {
+            option2.value = grade.id;
+            option2.textContent = `${grade.nombre} - ${grade.nivel}`;
+            document.getElementById('gradeSelect').appendChild(option2);
+        }
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${grade.nombre}</td>
