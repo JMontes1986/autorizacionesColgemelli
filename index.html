@@ -290,6 +290,9 @@
         .verification-card {
             text-align: center;
             padding: 30px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
 
         .verification-card.authorized {
@@ -400,11 +403,30 @@
                     </form>
                 </div>
 
-                <!-- Sección para Verificar Salidas (Vigilante) -->
+                <!-- Sección para Verificar Salidas (Vigilante) - NUEVA Y MEJORADA -->
                 <div id="verifySectionDiv" class="section">
-                    <h2>🔍 Verificar Autorización de Salida</h2>
-                    <input type="text" id="studentSearch" class="search-box" placeholder="Buscar estudiante por nombre...">
-                    <div id="verificationResult"></div>
+                    <h2>🔍 Control de Salidas - Vigilancia</h2>
+                    <div class="nav-buttons">
+                        <button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
+                        <button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
+                    </div>
+                    
+                    <!-- Búsqueda manual (inicialmente oculta) -->
+                    <div id="searchSection" style="display: none; margin-top: 20px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 Búsqueda Manual de Estudiante</h3>
+                        <input type="text" id="studentSearch" class="search-box" placeholder="Buscar estudiante específico por nombre...">
+                        <div id="searchResult"></div>
+                    </div>
+                    
+                    <!-- Lista de estudiantes con salidas pendientes -->
+                    <div id="pendingExitsSection">
+                        <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
+                        <div id="pendingExitsList">
+                            <div class="card" style="text-align: center; padding: 30px;">
+                                <p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sección de Administración -->
@@ -823,7 +845,7 @@
                 `;
             } else if (role === 'vigilante') {
                 navButtons.innerHTML = `
-                    <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
+                    <button class="btn" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else {
@@ -853,6 +875,9 @@
             // Cargar datos específicos según la sección
             if (sectionId === 'historySectionDiv') {
                 loadHistory(true); // Cargar todo el historial por defecto
+            } else if (sectionId === 'verifySectionDiv' && currentUser && currentUser.rol.nombre === 'vigilante') {
+                // Cargar automáticamente las salidas pendientes para vigilantes
+                loadPendingExits();
             }
         }
 
@@ -873,8 +898,11 @@
             // Autorización de salidas
             document.getElementById('authorizeForm').addEventListener('submit', authorizeExit);
             
-            // Búsqueda de estudiantes para verificación
-            document.getElementById('studentSearch').addEventListener('input', searchStudent);
+            // Búsqueda de estudiantes para verificación (solo si existe el elemento)
+            const studentSearchInput = document.getElementById('studentSearch');
+            if (studentSearchInput) {
+                studentSearchInput.addEventListener('input', searchStudent);
+            }
             
             // Formularios de administración
             document.getElementById('studentForm').addEventListener('submit', saveStudent);
@@ -886,6 +914,146 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('exitDate').value = today;
             document.getElementById('historyDate').value = today;
+        }
+
+        // NUEVAS FUNCIONES PARA VIGILANTES
+        
+        // Función para mostrar/ocultar búsqueda manual
+        function toggleSearch() {
+            const searchSection = document.getElementById('searchSection');
+            const pendingSection = document.getElementById('pendingExitsSection');
+            
+            if (searchSection.style.display === 'none') {
+                searchSection.style.display = 'block';
+                pendingSection.style.display = 'none';
+            } else {
+                searchSection.style.display = 'none';
+                pendingSection.style.display = 'block';
+                // Limpiar búsqueda
+                document.getElementById('studentSearch').value = '';
+                document.getElementById('searchResult').innerHTML = '';
+            }
+        }
+
+        // Función para cargar todos los estudiantes con salidas pendientes
+        async function loadPendingExits() {
+            const pendingList = document.getElementById('pendingExitsList');
+            
+            try {
+                pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando salidas pendientes...</p></div>';
+                
+                const today = new Date().toISOString().split('T')[0];
+                console.log('📅 Cargando salidas pendientes para:', today);
+                
+                // Obtener autorizaciones pendientes para hoy
+                const { data: authorizations, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .eq('fecha_salida', today)
+                    .eq('autorizada', true)
+                    .is('salida_efectiva', null)
+                    .order('hora_salida', { ascending: true });
+
+                if (error) {
+                    console.error('❌ Error al cargar salidas pendientes:', error);
+                    throw error;
+                }
+
+                if (!authorizations || authorizations.length === 0) {
+                    pendingList.innerHTML = `
+                        <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
+                            <h3>✅ ¡Todo en orden!</h3>
+                            <p><strong>No hay salidas pendientes para hoy</strong></p>
+                            <p>Todos los estudiantes autorizados ya han sido confirmados</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('📊 Salidas pendientes encontradas:', authorizations.length);
+
+                // Obtener información de estudiantes, motivos y usuarios
+                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
+                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
+                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+
+                const [studentsResult, reasonsResult, usersResult] = await Promise.all([
+                    supabase
+                        .from('estudiantes')
+                        .select('id, nombre, apellidos, grado:grados(nombre)')
+                        .in('id', studentIds),
+                    supabase
+                        .from('motivos')
+                        .select('id, nombre')
+                        .in('id', reasonIds),
+                    supabase
+                        .from('usuarios')
+                        .select('id, nombre')
+                        .in('id', userIds)
+                ]);
+
+                // Crear mapas para búsqueda rápida
+                const studentMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                studentsResult.data?.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasonsResult.data?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                usersResult.data?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                // Generar HTML para cada autorización pendiente
+                let html = '';
+                authorizations.forEach(auth => {
+                    const student = studentMap[auth.estudiante_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card authorized" style="margin-bottom: 15px;">
+                            <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin: 15px 0;">
+                                <div>
+                                    <p><strong>👨‍🎓 Estudiante:</strong><br>${student ? `${student.nombre} ${student.apellidos}` : 'No encontrado'}</p>
+                                    <p><strong>🎓 Grado:</strong><br>${student?.grado?.nombre || 'No encontrado'}</p>
+                                </div>
+                                <div>
+                                    <p><strong>📝 Motivo:</strong><br>${reason?.nombre || 'No encontrado'}</p>
+                                    <p><strong>🕐 Hora autorizada:</strong><br>${formatTime(auth.hora_salida)}</p>
+                                </div>
+                            </div>
+                            <p style="margin-bottom: 15px;"><strong>✅ Autorizado por:</strong> ${user?.nombre || 'No encontrado'}</p>
+                            ${auth.observaciones ? `<p style="margin-bottom: 15px; font-style: italic; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;"><strong>📝 Observaciones:</strong> ${auth.observaciones}</p>` : ''}
+                            <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 16px; padding: 15px 30px;">
+                                ✅ CONFIRMAR SALIDA
+                            </button>
+                        </div>
+                    `;
+                });
+
+                pendingList.innerHTML = html;
+                console.log('✅ Lista de salidas pendientes cargada');
+
+            } catch (error) {
+                console.error('❌ Error general:', error);
+                pendingList.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ Error al cargar</h3>
+                        <p>No se pudieron cargar las salidas pendientes</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button class="btn btn-secondary" onclick="loadPendingExits()" style="margin-top: 10px;">
+                            🔄 Intentar de nuevo
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         // Funciones de carga de datos
@@ -1060,10 +1228,10 @@
             }
         }
 
-        // Función para buscar y verificar estudiante
+        // Función para buscar y verificar estudiante (búsqueda manual)
         async function searchStudent() {
             const searchTerm = document.getElementById('studentSearch').value.trim();
-            const resultDiv = document.getElementById('verificationResult');
+            const resultDiv = document.getElementById('searchResult');
             
             if (searchTerm.length < 3) {
                 resultDiv.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Escribe al menos 3 caracteres para buscar...</p></div>';
@@ -1075,19 +1243,12 @@
                 
                 console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha:', today);
                 
+                // Buscar autorizaciones que coincidan con el nombre
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes!inner(nombre, apellidos, grado:grados!inner(nombre)),
-                        motivo:motivos!inner(nombre),
-                        autorizador:usuarios!inner(nombre)
-                    `)
+                    .select('*')
                     .eq('fecha_salida', today)
-                    .eq('autorizada', true)
-                    .or(`estudiante.nombre.ilike.%${searchTerm}%,estudiante.apellidos.ilike.%${searchTerm}%`, { foreignTable: 'estudiantes' });
-
-                console.log('📊 Autorizaciones encontradas:', authorizations?.length || 0);
+                    .eq('autorizada', true);
 
                 if (error) {
                     console.error('Error en búsqueda:', error);
@@ -1095,59 +1256,114 @@
                     return;
                 }
 
-                if (authorizations && authorizations.length > 0) {
-                    let html = '';
-                    authorizations.forEach(auth => {
-                        html += `
-                            <div class="verification-card authorized">
-                                <h3>✅ AUTORIZADO PARA SALIR</h3>
-                                <p><strong>Estudiante:</strong> ${auth.estudiante.nombre} ${auth.estudiante.apellidos}</p>
-                                <p><strong>Grado:</strong> ${auth.estudiante.grado.nombre}</p>
-                                <p><strong>Motivo:</strong> ${auth.motivo.nombre}</p>
-                                <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
-                                <p><strong>Autorizado por:</strong> ${auth.autorizador.nombre}</p>
-                                ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                                ${!auth.salida_efectiva ? 
-                                    `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>` : 
-                                    `<p style="color: #2ecc71;"><strong>✅ Salida ya confirmada</strong></p>`
-                                }
-                            </div>
-                        `;
-                    });
-                    resultDiv.innerHTML = html;
-                } else {
-                    // Si no encuentra por nombre, buscar directamente en la tabla de estudiantes
-                    const { data: students, error: studentsError } = await supabase
-                        .from('estudiantes')
-                        .select(`nombre, apellidos, grado:grados(nombre)`)
-                        .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
-                        .eq('activo', true)
-                        .limit(5);
-
-                    if (students && students.length > 0) {
-                        let studentsList = students.map(s => `${s.nombre} ${s.apellidos} (${s.grado.nombre})`).join(', ');
-                        resultDiv.innerHTML = `
-                            <div class="verification-card not-authorized">
-                                <h3>❌ NO AUTORIZADO</h3>
-                                <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
-                                <p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>
-                                <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
-                            </div>
-                        `;
-                    } else {
-                        resultDiv.innerHTML = `
-                            <div class="verification-card not-authorized">
-                                <h3>❌ NO ENCONTRADO</h3>
-                                <p>No se encontró ningún estudiante con el nombre "${searchTerm}".</p>
-                                <p><em>Verifica la escritura del nombre.</em></p>
-                            </div>
-                        `;
-                    }
+                if (!authorizations || authorizations.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ NO HAY AUTORIZACIONES</h3>
+                            <p>No se encontraron autorizaciones para la fecha de hoy.</p>
+                        </div>
+                    `;
+                    return;
                 }
+
+                // Obtener estudiantes que coincidan con el término de búsqueda
+                const { data: students, error: studentsError } = await supabase
+                    .from('estudiantes')
+                    .select('id, nombre, apellidos, grado:grados(nombre)')
+                    .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
+                    .eq('activo', true);
+
+                if (studentsError) {
+                    console.error('Error buscando estudiantes:', studentsError);
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ ERROR EN BÚSQUEDA</h3>
+                            <p>Error al buscar estudiantes: ${studentsError.message}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Filtrar autorizaciones por estudiantes encontrados
+                const studentIds = students?.map(s => s.id) || [];
+                const matchingAuth = authorizations.filter(auth => 
+                    studentIds.includes(auth.estudiante_id)
+                );
+
+                if (matchingAuth.length === 0) {
+                    let studentsList = students?.map(s => `${s.nombre} ${s.apellidos} (${s.grado.nombre})`).join(', ') || '';
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ NO AUTORIZADO</h3>
+                            <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
+                            ${studentsList ? `<p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>` : ''}
+                            <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Obtener información adicional para mostrar los resultados
+                const reasonIds = [...new Set(matchingAuth.map(auth => auth.motivo_id))];
+                const userIds = [...new Set(matchingAuth.map(auth => auth.usuario_autorizador_id))];
+
+                const [reasonsResult, usersResult] = await Promise.all([
+                    supabase.from('motivos').select('id, nombre').in('id', reasonIds),
+                    supabase.from('usuarios').select('id, nombre').in('id', userIds)
+                ]);
+
+                // Crear mapas
+                const studentMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                students?.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasonsResult.data?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                usersResult.data?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                // Mostrar resultados
+                let html = '';
+                matchingAuth.forEach(auth => {
+                    const student = studentMap[auth.estudiante_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card ${auth.salida_efectiva ? 'not-authorized' : 'authorized'}">
+                            <h3>${auth.salida_efectiva ? '✅ YA CONFIRMADO' : '✅ AUTORIZADO PARA SALIR'}</h3>
+                            <p><strong>Estudiante:</strong> ${student?.nombre} ${student?.apellidos}</p>
+                            <p><strong>Grado:</strong> ${student?.grado?.nombre}</p>
+                            <p><strong>Motivo:</strong> ${reason?.nombre}</p>
+                            <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
+                            <p><strong>Autorizado por:</strong> ${user?.nombre}</p>
+                            ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
+                            ${!auth.salida_efectiva ? 
+                                `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>` : 
+                                `<p style="color: #2ecc71; margin-top: 10px;"><strong>✅ Salida ya confirmada</strong></p>`
+                            }
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = html;
                 
             } catch (error) {
                 console.error('Error general en búsqueda:', error);
                 showError('Error al buscar autorizaciones: ' + error.message);
+                resultDiv.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ ERROR</h3>
+                        <p>Error en la búsqueda: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -1164,8 +1380,15 @@
                 if (error) throw error;
 
                 showSuccess('Salida confirmada exitosamente');
+                
+                // Recargar la lista de salidas pendientes
+                if (currentUser.rol.nombre === 'vigilante') {
+                    await loadPendingExits();
+                }
+                
+                // Limpiar búsqueda si estaba activa
                 document.getElementById('studentSearch').value = '';
-                document.getElementById('verificationResult').innerHTML = '';
+                document.getElementById('searchResult').innerHTML = '';
                 
             } catch (error) {
                 showError('Error al confirmar la salida: ' + error.message);
