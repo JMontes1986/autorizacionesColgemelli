@@ -1433,64 +1433,124 @@
             });
         }
 
-        // Funciones de historial
+        // Funciones de historial - MEJORADAS
         async function loadHistory(all = false) {
             try {
+                console.log('🔍 Cargando historial...');
+                
+                // Primero, intentar consulta simple sin JOINs para debug
                 let query = supabase
                     .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes!inner(nombre, apellidos, grado:grados!inner(nombre)),
-                        motivo:motivos!inner(nombre),
-                        autorizador:usuarios!inner(nombre)
-                    `)
+                    .select('*')
                     .order('fecha_creacion', { ascending: false });
 
                 if (!all) {
                     const date = document.getElementById('historyDate').value;
                     if (date) {
+                        console.log('🗓️ Filtrando por fecha:', date);
                         query = query.eq('fecha_salida', date);
                     } else {
                         // Si no hay fecha, mostrar solo los últimos 30 días
                         const thirtyDaysAgo = new Date();
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                        query = query.gte('fecha_salida', thirtyDaysAgo.toISOString().split('T')[0]);
+                        const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
+                        console.log('🗓️ Filtrando últimos 30 días desde:', dateLimit);
+                        query = query.gte('fecha_salida', dateLimit);
                     }
                 }
 
-                console.log('🔍 Cargando historial...');
-                const { data: history, error } = await query;
+                const { data: authorizations, error } = await query;
 
                 if (error) {
-                    console.error('Error en consulta de historial:', error);
+                    console.error('❌ Error en consulta de historial:', error);
                     showError('Error al cargar el historial: ' + error.message);
                     return;
                 }
 
-                console.log('📊 Registros encontrados:', history?.length || 0);
+                if (!authorizations || authorizations.length === 0) {
+                    console.log('📊 No se encontraron autorizaciones');
+                    const tbody = document.querySelector('#historyTable tbody');
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #666; padding: 20px;">
+                                No se encontraron registros para el período seleccionado
+                            </td>
+                        </tr>
+                    `;
+                    showSuccess('Historial cargado: 0 registros');
+                    return;
+                }
 
+                console.log('📊 Autorizaciones encontradas:', authorizations.length);
+
+                // Ahora obtener los datos relacionados (estudiantes, motivos, usuarios)
+                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
+                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
+                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+
+                console.log('👥 IDs únicos - Estudiantes:', studentIds.length, 'Motivos:', reasonIds.length, 'Usuarios:', userIds.length);
+
+                // Obtener estudiantes con sus grados
+                const { data: students, error: studentsError } = await supabase
+                    .from('estudiantes')
+                    .select(`
+                        id, nombre, apellidos,
+                        grado:grados(nombre)
+                    `)
+                    .in('id', studentIds);
+
+                // Obtener motivos
+                const { data: reasons, error: reasonsError } = await supabase
+                    .from('motivos')
+                    .select('id, nombre')
+                    .in('id', reasonIds);
+
+                // Obtener usuarios
+                const { data: users, error: usersError } = await supabase
+                    .from('usuarios')
+                    .select('id, nombre')
+                    .in('id', userIds);
+
+                if (studentsError) console.error('Error estudiantes:', studentsError);
+                if (reasonsError) console.error('Error motivos:', reasonsError);
+                if (usersError) console.error('Error usuarios:', usersError);
+
+                // Crear mapas para búsqueda rápida
+                const studentMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                students?.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasons?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                users?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                console.log('📋 Mapas creados - Estudiantes:', Object.keys(studentMap).length, 'Motivos:', Object.keys(reasonMap).length, 'Usuarios:', Object.keys(userMap).length);
+
+                // Llenar la tabla
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
                 
-                if (!history || history.length === 0) {
+                authorizations.forEach(record => {
+                    const student = studentMap[record.estudiante_id];
+                    const reason = reasonMap[record.motivo_id];
+                    const user = userMap[record.usuario_autorizador_id];
+
                     const row = tbody.insertRow();
                     row.innerHTML = `
-                        <td colspan="7" style="text-align: center; color: #666; padding: 20px;">
-                            No se encontraron registros para el período seleccionado
-                        </td>
-                    `;
-                    return;
-                }
-                
-                history.forEach(record => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${record.estudiante.nombre} ${record.estudiante.apellidos}</td>
-                        <td>${record.estudiante.grado.nombre}</td>
-                        <td>${record.motivo.nombre}</td>
+                        <td>${student ? `${student.nombre} ${student.apellidos}` : 'Estudiante no encontrado'}</td>
+                        <td>${student?.grado?.nombre || 'Grado no encontrado'}</td>
+                        <td>${reason?.nombre || 'Motivo no encontrado'}</td>
                         <td>${formatDate(record.fecha_salida)}</td>
                         <td>${formatTime(record.hora_salida)}</td>
-                        <td>${record.autorizador.nombre}</td>
+                        <td>${user?.nombre || 'Usuario no encontrado'}</td>
                         <td>
                             <span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">
                                 ${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}
@@ -1500,23 +1560,26 @@
                     `;
                 });
 
-                showSuccess(`Historial cargado: ${history.length} registros`);
+                showSuccess(`Historial cargado: ${authorizations.length} registros`);
+                console.log('✅ Historial cargado exitosamente');
                 
             } catch (error) {
-                console.error('Error general en loadHistory:', error);
+                console.error('❌ Error general en loadHistory:', error);
                 showError('Error al cargar el historial: ' + error.message);
             }
         }
 
-        // Función de debug para historial
+        // Función de debug para historial - MEJORADA
         async function debugHistory() {
             const debugDiv = document.getElementById('historyDebug');
             const debugContent = document.getElementById('historyDebugContent');
             
             debugDiv.style.display = 'block';
-            debugContent.innerHTML = '🔄 Analizando datos...';
+            debugContent.innerHTML = '🔄 Analizando datos del historial...';
             
             try {
+                console.log('🔧 Iniciando debug del historial...');
+                
                 // 1. Contar registros en autorizaciones_salida
                 const { data: totalAuth, error: errorAuth } = await supabase
                     .from('autorizaciones_salida')
@@ -1531,52 +1594,63 @@
                 const { data: totalUsers, error: errorUsers } = await supabase
                     .from('usuarios')
                     .select('*');
+
+                // 4. Contar motivos
+                const { data: totalReasons, error: errorReasons } = await supabase
+                    .from('motivos')
+                    .select('*');
+
+                // 5. Contar grados
+                const { data: totalGrades, error: errorGrades } = await supabase
+                    .from('grados')
+                    .select('*');
                 
-                // 4. Probar consulta simple sin JOINs
-                const { data: simpleAuth, error: errorSimple } = await supabase
+                // 6. Verificar autorizaciones recientes
+                const today = new Date().toISOString().split('T')[0];
+                const { data: todayAuth, error: errorToday } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
+                    .eq('fecha_salida', today);
+
+                // 7. Verificar últimas 5 autorizaciones
+                const { data: lastAuth, error: errorLast } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .order('fecha_creacion', { ascending: false })
                     .limit(5);
                 
-                // 5. Probar consulta con JOINs
-                const { data: joinAuth, error: errorJoin } = await supabase
-                    .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes!inner(nombre, apellidos),
-                        motivo:motivos!inner(nombre),
-                        autorizador:usuarios!inner(nombre)
-                    `)
-                    .limit(3);
+                let html = '<ul style="text-align: left;">';
+                html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
+                html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
+                html += `<li><strong>👥 Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
+                html += `<li><strong>📝 Total motivos:</strong> ${totalReasons?.length || 0} ${errorReasons ? '❌ Error: ' + errorReasons.message : '✅'}</li>`;
+                html += `<li><strong>🎓 Total grados:</strong> ${totalGrades?.length || 0} ${errorGrades ? '❌ Error: ' + errorGrades.message : '✅'}</li>`;
+                html += `<li><strong>📅 Autorizaciones hoy (${today}):</strong> ${todayAuth?.length || 0} ${errorToday ? '❌ Error: ' + errorToday.message : '✅'}</li>`;
+                html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuth?.length || 0} ${errorLast ? '❌ Error: ' + errorLast.message : '✅'}</li>`;
                 
-                let html = '<ul>';
-                html += `<li><strong>Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
-                html += `<li><strong>Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
-                html += `<li><strong>Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
-                html += `<li><strong>Consulta simple:</strong> ${simpleAuth?.length || 0} registros ${errorSimple ? '❌ Error: ' + errorSimple.message : '✅'}</li>`;
-                html += `<li><strong>Consulta con JOINs:</strong> ${joinAuth?.length || 0} registros ${errorJoin ? '❌ Error: ' + errorJoin.message : '✅'}</li>`;
-                
-                if (simpleAuth && simpleAuth.length > 0) {
-                    html += '<li><strong>Muestra de datos sin JOINs:</strong><br>';
-                    simpleAuth.forEach((auth, index) => {
-                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante: ${auth.estudiante_id}, Fecha: ${auth.fecha_salida}<br>`;
+                if (lastAuth && lastAuth.length > 0) {
+                    html += '<li><strong>📋 Detalles de últimas autorizaciones:</strong><br>';
+                    lastAuth.forEach((auth, index) => {
+                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante ID: ${auth.estudiante_id}, Fecha: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}<br>`;
                     });
                     html += '</li>';
                 }
-                
-                if (joinAuth && joinAuth.length > 0) {
-                    html += '<li><strong>Muestra de datos con JOINs:</strong><br>';
-                    joinAuth.forEach((auth, index) => {
-                        html += `&nbsp;&nbsp;${index + 1}. ${auth.estudiante?.nombre || 'N/A'} ${auth.estudiante?.apellidos || 'N/A'} - ${auth.motivo?.nombre || 'N/A'}<br>`;
-                    });
+
+                // Verificar estructura de datos
+                if (totalAuth && totalAuth.length > 0) {
+                    const sampleAuth = totalAuth[0];
+                    html += '<li><strong>🔍 Estructura de autorización (muestra):</strong><br>';
+                    html += `&nbsp;&nbsp;Columnas disponibles: ${Object.keys(sampleAuth).join(', ')}<br>`;
                     html += '</li>';
                 }
                 
                 html += '</ul>';
                 
                 debugContent.innerHTML = html;
+                console.log('🔧 Debug completado');
                 
             } catch (error) {
+                console.error('❌ Error en debug:', error);
                 debugContent.innerHTML = `❌ Error en debug: ${error.message}`;
             }
         }
