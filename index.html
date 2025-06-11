@@ -105,6 +105,13 @@
             font-weight: 600;
         }
 
+        #passwordNote {
+            font-weight: normal;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
@@ -293,11 +300,18 @@
             margin-bottom: 15px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
         .verification-card.authorized {
             border-left-color: #2ecc71;
             background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .verification-card.verified {
+            border-left-color: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
         }
 
@@ -545,11 +559,11 @@
             <h2>Agregar/Editar Estudiante</h2>
             <form id="studentForm">
                 <div class="form-group">
-                    <label>Nombre:</label>
+                    <label>Nombre: *</label>
                     <input type="text" id="studentName" required>
                 </div>
                 <div class="form-group">
-                    <label>Apellidos:</label>
+                    <label>Apellidos: *</label>
                     <input type="text" id="studentLastName" required>
                 </div>
                 <div class="form-group">
@@ -557,8 +571,10 @@
                     <input type="text" id="studentDocument">
                 </div>
                 <div class="form-group">
-                    <label>Grado:</label>
-                    <select id="studentGrade" required></select>
+                    <label>Grado: *</label>
+                    <select id="studentGrade" required>
+                        <option value="">Seleccionar grado...</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-success">Guardar</button>
                 <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Cancelar</button>
@@ -572,20 +588,22 @@
             <h2>Agregar/Editar Usuario</h2>
             <form id="userForm">
                 <div class="form-group">
-                    <label>Nombre:</label>
+                    <label>Nombre: *</label>
                     <input type="text" id="userName" required>
                 </div>
                 <div class="form-group">
-                    <label>Email:</label>
+                    <label>Email: *</label>
                     <input type="email" id="userEmail" required>
                 </div>
                 <div class="form-group">
-                    <label>Contraseña:</label>
-                    <input type="password" id="userPassword" required>
+                    <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
+                    <input type="password" id="userPassword">
                 </div>
                 <div class="form-group">
-                    <label>Rol:</label>
-                    <select id="userRole" required></select>
+                    <label>Rol: *</label>
+                    <select id="userRole" required>
+                        <option value="">Seleccionar rol...</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-success">Guardar</button>
                 <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
@@ -599,7 +617,7 @@
             <h2>Agregar/Editar Motivo</h2>
             <form id="reasonForm">
                 <div class="form-group">
-                    <label>Nombre:</label>
+                    <label>Nombre: *</label>
                     <input type="text" id="reasonName" required>
                 </div>
                 <div class="form-group">
@@ -618,12 +636,13 @@
             <h2>Agregar/Editar Grado</h2>
             <form id="gradeForm">
                 <div class="form-group">
-                    <label>Nombre:</label>
+                    <label>Nombre: *</label>
                     <input type="text" id="gradeName" required>
                 </div>
                 <div class="form-group">
-                    <label>Nivel:</label>
+                    <label>Nivel: *</label>
                     <select id="gradeLevel" required>
+                        <option value="">Seleccionar nivel...</option>
                         <option value="Primaria">Primaria</option>
                         <option value="Bachillerato">Bachillerato</option>
                     </select>
@@ -1389,19 +1408,32 @@
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
 
+                    // Determinar el estado y color de la tarjeta
+                    let cardClass, titleText, buttonHtml;
+                    
+                    if (auth.salida_efectiva) {
+                        cardClass = 'verified';  // Azul para ya confirmados
+                        titleText = '✅ SALIDA YA CONFIRMADA';
+                        buttonHtml = `<p style="color: white; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
+                            <strong>✅ Confirmada: ${formatDateTime(auth.salida_efectiva)}</strong><br>
+                            <small>Por: ${currentUser.nombre}</small>
+                        </p>`;
+                    } else {
+                        cardClass = 'authorized';  // Verde para pendientes
+                        titleText = '✅ AUTORIZADO PARA SALIR';
+                        buttonHtml = `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>`;
+                    }
+
                     html += `
-                        <div class="verification-card ${auth.salida_efectiva ? 'not-authorized' : 'authorized'}">
-                            <h3>${auth.salida_efectiva ? '✅ YA CONFIRMADO' : '✅ AUTORIZADO PARA SALIR'}</h3>
+                        <div class="verification-card ${cardClass}">
+                            <h3>${titleText}</h3>
                             <p><strong>Estudiante:</strong> ${student?.nombre} ${student?.apellidos}</p>
                             <p><strong>Grado:</strong> ${student?.grado?.nombre}</p>
                             <p><strong>Motivo:</strong> ${reason?.nombre}</p>
                             <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
                             <p><strong>Autorizado por:</strong> ${user?.nombre}</p>
                             ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                            ${auth.salida_efectiva ? 
-                                `<p style="color: #2ecc71; margin-top: 10px;"><strong>✅ Salida confirmada: ${formatDateTime(auth.salida_efectiva)}</strong></p>` :
-                                `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>`
-                            }
+                            ${buttonHtml}
                         </div>
                     `;
                 });
@@ -1440,14 +1472,55 @@
                 const colombiaTime = getColombiaTime();
                 showSuccess(`Salida confirmada exitosamente a las ${colombiaTime}`);
                 
-                // Recargar la lista de salidas pendientes
-                if (currentUser.rol.nombre === 'vigilante') {
-                    await loadPendingExits();
+                // Actualizar visualmente la tarjeta que se acaba de confirmar
+                const confirmButton = document.querySelector(`button[onclick="confirmExit(${authId})"]`);
+                if (confirmButton) {
+                    const card = confirmButton.closest('.verification-card');
+                    if (card) {
+                        // Cambiar la clase de 'authorized' a 'verified' (azul)
+                        card.classList.remove('authorized');
+                        card.classList.add('verified');
+                        
+                        // Actualizar el título
+                        const titleElement = card.querySelector('h3');
+                        if (titleElement) {
+                            titleElement.textContent = '✅ SALIDA CONFIRMADA';
+                        }
+                        
+                        // Reemplazar el botón con mensaje de confirmación
+                        confirmButton.outerHTML = `
+                            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                <p style="color: white; font-weight: bold; margin: 0;">
+                                    ✅ SALIDA CONFIRMADA<br>
+                                    <small>Hora: ${colombiaTime} - Vigilante: ${currentUser.nombre}</small>
+                                </p>
+                            </div>
+                        `;
+                        
+                        // Animar el cambio de color
+                        card.style.transform = 'scale(1.02)';
+                        setTimeout(() => {
+                            card.style.transform = 'scale(1)';
+                        }, 300);
+                    }
                 }
                 
                 // Limpiar búsqueda si estaba activa
-                document.getElementById('studentSearch').value = '';
-                document.getElementById('searchResult').innerHTML = '';
+                const searchInput = document.getElementById('studentSearch');
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                const searchResult = document.getElementById('searchResult');
+                if (searchResult) {
+                    searchResult.innerHTML = '';
+                }
+                
+                // Si estamos en la vista de pendientes, actualizar después de 2 segundos para mostrar el efecto visual
+                if (currentUser.rol.nombre === 'vigilante') {
+                    setTimeout(async () => {
+                        await loadPendingExits();
+                    }, 2000);
+                }
                 
             } catch (error) {
                 showError('Error al confirmar la salida: ' + error.message);
@@ -1462,7 +1535,7 @@
             document.getElementById(`admin${section.charAt(0).toUpperCase() + section.slice(1)}`).style.display = 'block';
         }
 
-        // Funciones de modales
+        // Funciones de modales - MEJORADAS
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'block';
             currentEditingId = null;
@@ -1472,6 +1545,9 @@
                 document.getElementById('studentForm').reset();
             } else if (modalId === 'userModal') {
                 document.getElementById('userForm').reset();
+                // Mostrar nota para nuevos usuarios
+                document.getElementById('passwordNote').textContent = '(obligatorio para nuevos usuarios)';
+                document.getElementById('userPassword').required = true;
             } else if (modalId === 'reasonModal') {
                 document.getElementById('reasonForm').reset();
             } else if (modalId === 'gradeModal') {
@@ -1484,44 +1560,55 @@
             currentEditingId = null;
         }
 
-        // Funciones CRUD
+        // Funciones CRUD - CORREGIDAS
         async function saveStudent(e) {
             e.preventDefault();
             
             const name = document.getElementById('studentName').value;
             const lastName = document.getElementById('studentLastName').value;
-            const document = document.getElementById('studentDocument').value;
+            const documentValue = document.getElementById('studentDocument').value;
             const gradeId = document.getElementById('studentGrade').value;
 
+            if (!name || !lastName || !gradeId) {
+                showError('Por favor, completa todos los campos obligatorios');
+                return;
+            }
+
             try {
+                let result;
                 if (currentEditingId) {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('estudiantes')
                         .update({
                             nombre: name,
                             apellidos: lastName,
-                            documento: document,
+                            documento: documentValue,
                             grado_id: gradeId
                         })
                         .eq('id', currentEditingId);
                 } else {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('estudiantes')
                         .insert([{
                             nombre: name,
                             apellidos: lastName,
-                            documento: document,
-                            grado_id: gradeId
+                            documento: documentValue,
+                            grado_id: gradeId,
+                            activo: true
                         }]);
                 }
 
-                if (error) throw error;
+                if (result.error) {
+                    console.error('Error al guardar estudiante:', result.error);
+                    throw result.error;
+                }
 
                 showSuccess('Estudiante guardado exitosamente');
                 closeModal('studentModal');
                 await loadStudents();
                 
             } catch (error) {
+                console.error('Error completo al guardar estudiante:', error);
                 showError('Error al guardar el estudiante: ' + error.message);
             }
         }
@@ -1534,34 +1621,57 @@
             const password = document.getElementById('userPassword').value;
             const roleId = document.getElementById('userRole').value;
 
+            if (!name || !email || !roleId) {
+                showError('Por favor, completa todos los campos obligatorios');
+                return;
+            }
+
+            if (!currentEditingId && !password) {
+                showError('La contraseña es obligatoria para nuevos usuarios');
+                return;
+            }
+
             try {
+                let result;
                 if (currentEditingId) {
-                    const { data, error } = await supabase
+                    // Al editar, solo actualizar contraseña si se proporcionó una nueva
+                    const updateData = {
+                        nombre: name,
+                        email: email,
+                        rol_id: roleId
+                    };
+                    
+                    if (password && password.trim() !== '') {
+                        updateData.password_hash = password;
+                    }
+
+                    result = await supabase
                         .from('usuarios')
-                        .update({
-                            nombre: name,
-                            email: email,
-                            rol_id: roleId
-                        })
+                        .update(updateData)
                         .eq('id', currentEditingId);
                 } else {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('usuarios')
                         .insert([{
                             nombre: name,
                             email: email,
-                            password_hash: password, // En producción, hash la contraseña
-                            rol_id: roleId
+                            password_hash: password,
+                            rol_id: roleId,
+                            activo: true
                         }]);
                 }
 
-                if (error) throw error;
+                if (result.error) {
+                    console.error('Error al guardar usuario:', result.error);
+                    throw result.error;
+                }
 
                 showSuccess('Usuario guardado exitosamente');
                 closeModal('userModal');
                 await loadUsers();
                 
             } catch (error) {
+                console.error('Error completo al guardar usuario:', error);
                 showError('Error al guardar el usuario: ' + error.message);
             }
         }
@@ -1572,9 +1682,15 @@
             const name = document.getElementById('reasonName').value;
             const description = document.getElementById('reasonDescription').value;
 
+            if (!name) {
+                showError('El nombre del motivo es obligatorio');
+                return;
+            }
+
             try {
+                let result;
                 if (currentEditingId) {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('motivos')
                         .update({
                             nombre: name,
@@ -1582,21 +1698,26 @@
                         })
                         .eq('id', currentEditingId);
                 } else {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('motivos')
                         .insert([{
                             nombre: name,
-                            descripcion: description
+                            descripcion: description,
+                            activo: true
                         }]);
                 }
 
-                if (error) throw error;
+                if (result.error) {
+                    console.error('Error al guardar motivo:', result.error);
+                    throw result.error;
+                }
 
                 showSuccess('Motivo guardado exitosamente');
                 closeModal('reasonModal');
                 await loadReasons();
                 
             } catch (error) {
+                console.error('Error completo al guardar motivo:', error);
                 showError('Error al guardar el motivo: ' + error.message);
             }
         }
@@ -1607,9 +1728,15 @@
             const name = document.getElementById('gradeName').value;
             const level = document.getElementById('gradeLevel').value;
 
+            if (!name || !level) {
+                showError('Por favor, completa todos los campos obligatorios');
+                return;
+            }
+
             try {
+                let result;
                 if (currentEditingId) {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('grados')
                         .update({
                             nombre: name,
@@ -1617,21 +1744,26 @@
                         })
                         .eq('id', currentEditingId);
                 } else {
-                    const { data, error } = await supabase
+                    result = await supabase
                         .from('grados')
                         .insert([{
                             nombre: name,
-                            nivel: level
+                            nivel: level,
+                            activo: true
                         }]);
                 }
 
-                if (error) throw error;
+                if (result.error) {
+                    console.error('Error al guardar grado:', result.error);
+                    throw result.error;
+                }
 
                 showSuccess('Grado guardado exitosamente');
                 closeModal('gradeModal');
                 await loadGrades();
                 
             } catch (error) {
+                console.error('Error completo al guardar grado:', error);
                 showError('Error al guardar el grado: ' + error.message);
             }
         }
@@ -2003,6 +2135,10 @@
                 document.getElementById('userEmail').value = user.email;
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userRole').value = user.rol_id;
+                
+                // Actualizar nota y requerimiento de contraseña para edición
+                document.getElementById('passwordNote').textContent = '(dejar vacío para mantener actual)';
+                document.getElementById('userPassword').required = false;
                 
                 openModal('userModal');
                 
