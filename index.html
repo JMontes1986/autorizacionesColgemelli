@@ -1042,9 +1042,10 @@
         }
 
         async function loadInitialData() {
+            console.log('🔄 Cargando datos iniciales...');
+            await loadGrades(); // Cargar grados PRIMERO
             await loadStudents();
             await loadReasons();
-            await loadGrades();
             await loadRoles();
             
             if (currentUser.rol.nombre === 'administrador') {
@@ -1052,6 +1053,7 @@
             }
             
             setupEventListeners();
+            console.log('✅ Datos iniciales cargados');
         }
 
         function setupEventListeners() {
@@ -1246,9 +1248,10 @@
             }
         }
 
-        // Funciones de carga de datos
+        // Funciones de carga de datos - CORREGIDAS
         async function loadStudents() {
             try {
+                console.log('🔄 Cargando estudiantes...');
                 const { data: students, error } = await supabase
                     .from('estudiantes')
                     .select(`
@@ -1258,108 +1261,207 @@
                     .eq('activo', true)
                     .order('nombre');
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error al cargar estudiantes:', error);
+                    throw error;
+                }
 
-                const select = document.getElementById('studentSelect');
-                const gradeSelect = document.getElementById('studentGrade');
-                
-                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                students.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = student.id;
-                    option.textContent = `${student.nombre} ${student.apellidos} - ${student.grado.nombre}`;
-                    select.appendChild(option);
-                });
+                console.log('📊 Estudiantes cargados:', students?.length || 0);
 
                 // Actualizar tabla de administración si está visible
-                updateStudentsTable(students);
+                updateStudentsTable(students || []);
                 
             } catch (error) {
                 console.error('Error loading students:', error);
+                showError('Error al cargar estudiantes: ' + error.message);
+            }
+        }
+
+        // FUNCIÓN CLAVE: loadStudentsByGrade - NUEVA Y CORREGIDA
+        async function loadStudentsByGrade() {
+            const gradeId = document.getElementById('gradeSelect').value;
+            const studentSelect = document.getElementById('studentSelect');
+            
+            // Limpiar selector de estudiantes
+            studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+            
+            if (!gradeId) {
+                studentSelect.disabled = true;
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                return;
+            }
+
+            try {
+                console.log('🔄 Cargando estudiantes para grado ID:', gradeId);
+                
+                studentSelect.disabled = true;
+                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+                
+                // Obtener estudiantes del grado seleccionado
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select('id, nombre, apellidos')
+                    .eq('grado_id', gradeId)
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) {
+                    console.error('❌ Error al cargar estudiantes por grado:', error);
+                    throw error;
+                }
+
+                console.log('📊 Estudiantes encontrados para el grado:', students?.length || 0);
+
+                // Llenar selector con estudiantes
+                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                if (students && students.length > 0) {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = `${student.nombre} ${student.apellidos}`;
+                        studentSelect.appendChild(option);
+                    });
+                    studentSelect.disabled = false;
+                    console.log('✅ Estudiantes cargados en selector');
+                } else {
+                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                    studentSelect.disabled = true;
+                    console.log('⚠️ No se encontraron estudiantes para este grado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en loadStudentsByGrade:', error);
+                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
+                studentSelect.disabled = true;
+                showError('Error al cargar estudiantes del grado: ' + error.message);
             }
         }
 
         async function loadReasons() {
             try {
+                console.log('🔄 Cargando motivos...');
                 const { data: reasons, error } = await supabase
                     .from('motivos')
                     .select('*')
                     .eq('activo', true)
                     .order('nombre');
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error al cargar motivos:', error);
+                    throw error;
+                }
+
+                console.log('📊 Motivos cargados:', reasons?.length || 0);
 
                 const select = document.getElementById('reasonSelect');
                 select.innerHTML = '<option value="">Seleccionar motivo...</option>';
                 
-                reasons.forEach(reason => {
-                    const option = document.createElement('option');
-                    option.value = reason.id;
-                    option.textContent = reason.nombre;
-                    select.appendChild(option);
-                });
+                if (reasons && reasons.length > 0) {
+                    reasons.forEach(reason => {
+                        const option = document.createElement('option');
+                        option.value = reason.id;
+                        option.textContent = reason.nombre;
+                        select.appendChild(option);
+                    });
+                }
 
-                updateReasonsTable(reasons);
+                updateReasonsTable(reasons || []);
                 
             } catch (error) {
                 console.error('Error loading reasons:', error);
+                showError('Error al cargar motivos: ' + error.message);
             }
         }
 
+        // FUNCIÓN CLAVE: loadGrades - CORREGIDA para llenar ambos selectores
         async function loadGrades() {
             try {
+                console.log('🔄 Cargando grados...');
                 const { data: grades, error } = await supabase
                     .from('grados')
                     .select('*')
                     .eq('activo', true)
                     .order('nombre');
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error al cargar grados:', error);
+                    throw error;
+                }
 
-                const select = document.getElementById('studentGrade');
-                select.innerHTML = '<option value="">Seleccionar grado...</option>';
+                console.log('📊 Grados cargados:', grades?.length || 0);
+
+                // Llenar selector principal de autorización
+                const gradeSelect = document.getElementById('gradeSelect');
+                gradeSelect.innerHTML = '<option value="">Seleccionar grado primero...</option>';
                 
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                    select.appendChild(option);
-                });
+                // Llenar selector del modal de administración
+                const studentGradeSelect = document.getElementById('studentGrade');
+                studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                
+                if (grades && grades.length > 0) {
+                    grades.forEach(grade => {
+                        // Para selector principal
+                        const option1 = document.createElement('option');
+                        option1.value = grade.id;
+                        option1.textContent = `${grade.nombre} - ${grade.nivel}`;
+                        gradeSelect.appendChild(option1);
+                        
+                        // Para selector del modal
+                        const option2 = document.createElement('option');
+                        option2.value = grade.id;
+                        option2.textContent = `${grade.nombre} - ${grade.nivel}`;
+                        studentGradeSelect.appendChild(option2);
+                    });
+                    console.log('✅ Grados cargados en ambos selectores');
+                } else {
+                    console.log('⚠️ No se encontraron grados activos');
+                }
 
-                updateGradesTable(grades);
+                updateGradesTable(grades || []);
                 
             } catch (error) {
                 console.error('Error loading grades:', error);
+                showError('Error al cargar grados: ' + error.message);
             }
         }
 
         async function loadRoles() {
             try {
+                console.log('🔄 Cargando roles...');
                 const { data: roles, error } = await supabase
                     .from('roles')
                     .select('*')
                     .order('nombre');
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error al cargar roles:', error);
+                    throw error;
+                }
+
+                console.log('📊 Roles cargados:', roles?.length || 0);
 
                 const select = document.getElementById('userRole');
                 select.innerHTML = '<option value="">Seleccionar rol...</option>';
                 
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.descripcion;
-                    select.appendChild(option);
-                });
+                if (roles && roles.length > 0) {
+                    roles.forEach(role => {
+                        const option = document.createElement('option');
+                        option.value = role.id;
+                        option.textContent = role.descripcion;
+                        select.appendChild(option);
+                    });
+                }
                 
             } catch (error) {
                 console.error('Error loading roles:', error);
+                showError('Error al cargar roles: ' + error.message);
             }
         }
 
         async function loadUsers() {
             try {
+                console.log('🔄 Cargando usuarios...');
                 const { data: users, error } = await supabase
                     .from('usuarios')
                     .select(`
@@ -1368,12 +1470,18 @@
                     `)
                     .order('nombre');
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error al cargar usuarios:', error);
+                    throw error;
+                }
 
-                updateUsersTable(users);
+                console.log('📊 Usuarios cargados:', users?.length || 0);
+
+                updateUsersTable(users || []);
                 
             } catch (error) {
                 console.error('Error loading users:', error);
+                showError('Error al cargar usuarios: ' + error.message);
             }
         }
 
@@ -2187,309 +2295,4 @@
                         <td>${formatTime(record.hora_salida)}</td>
                         <td>${user?.nombre || 'Usuario no encontrado'}</td>
                         <td>
-                            <span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">
-                                ${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}
-                            </span>
-                            ${record.salida_efectiva ? `<br><small style="color: #666;">Hora: ${formatDateTime(record.salida_efectiva)}</small>` : ''}
-                            ${record.observaciones ? `<br><small style="color: #666;">Obs: ${record.observaciones}</small>` : ''}
-                        </td>
-                    `;
-                });
-
-                const currentTime = getColombiaTime();
-                showSuccess(`Historial cargado: ${authorizations.length} registros (${currentTime} - Colombia)`);
-                console.log('✅ Historial cargado exitosamente');
-                
-            } catch (error) {
-                console.error('❌ Error general en loadHistory:', error);
-                showError('Error al cargar el historial: ' + error.message);
-            }
-        }
-
-        // Función de debug para historial - MEJORADA para Colombia
-        async function debugHistory() {
-            const debugDiv = document.getElementById('historyDebug');
-            const debugContent = document.getElementById('historyDebugContent');
-            
-            debugDiv.style.display = 'block';
-            debugContent.innerHTML = '🔄 Analizando datos del historial...';
-            
-            try {
-                console.log('🔧 Iniciando debug del historial...');
-                
-                const todayColombia = getColombiaDate();
-                const currentTime = getColombiaTime();
-                
-                // 1. Contar registros en autorizaciones_salida
-                const { data: totalAuth, error: errorAuth } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*');
-                
-                // 2. Contar estudiantes
-                const { data: totalStudents, error: errorStudents } = await supabase
-                    .from('estudiantes')
-                    .select('*');
-                
-                // 3. Contar usuarios
-                const { data: totalUsers, error: errorUsers } = await supabase
-                    .from('usuarios')
-                    .select('*');
-
-                // 4. Contar motivos
-                const { data: totalReasons, error: errorReasons } = await supabase
-                    .from('motivos')
-                    .select('*');
-
-                // 5. Contar grados
-                const { data: totalGrades, error: errorGrades } = await supabase
-                    .from('grados')
-                    .select('*');
-                
-                // 6. Verificar autorizaciones recientes
-                const { data: todayAuth, error: errorToday } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .eq('fecha_salida', todayColombia);
-
-                // 7. Verificar últimas 5 autorizaciones
-                const { data: lastAuth, error: errorLast } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .order('fecha_creacion', { ascending: false })
-                    .limit(5);
-                
-                let html = '<ul style="text-align: left;">';
-                html += `<li><strong>🕐 Hora actual Colombia:</strong> ${formatDate(todayColombia)} ${currentTime} (UTC-5)</li>`;
-                html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
-                html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
-                html += `<li><strong>👥 Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
-                html += `<li><strong>📝 Total motivos:</strong> ${totalReasons?.length || 0} ${errorReasons ? '❌ Error: ' + errorReasons.message : '✅'}</li>`;
-                html += `<li><strong>🎓 Total grados:</strong> ${totalGrades?.length || 0} ${errorGrades ? '❌ Error: ' + errorGrades.message : '✅'}</li>`;
-                html += `<li><strong>📅 Autorizaciones hoy (${formatDate(todayColombia)}):</strong> ${todayAuth?.length || 0} ${errorToday ? '❌ Error: ' + errorToday.message : '✅'}</li>`;
-                html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuth?.length || 0} ${errorLast ? '❌ Error: ' + errorLast.message : '✅'}</li>`;
-                
-                if (lastAuth && lastAuth.length > 0) {
-                    html += '<li><strong>📋 Detalles de últimas autorizaciones:</strong><br>';
-                    lastAuth.forEach((auth, index) => {
-                        const fechaCreacion = auth.fecha_creacion ? formatDateTime(auth.fecha_creacion) : 'N/A';
-                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante ID: ${auth.estudiante_id}, Fecha salida: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}, Creada: ${fechaCreacion}<br>`;
-                    });
-                    html += '</li>';
-                }
-
-                // Verificar estructura de datos
-                if (totalAuth && totalAuth.length > 0) {
-                    const sampleAuth = totalAuth[0];
-                    html += '<li><strong>🔍 Estructura de autorización (muestra):</strong><br>';
-                    html += `&nbsp;&nbsp;Columnas disponibles: ${Object.keys(sampleAuth).join(', ')}<br>`;
-                    html += '</li>';
-                }
-                
-                html += '</ul>';
-                
-                debugContent.innerHTML = html;
-                console.log('🔧 Debug completado');
-                
-            } catch (error) {
-                console.error('❌ Error en debug:', error);
-                debugContent.innerHTML = `❌ Error en debug: ${error.message}`;
-            }
-        }
-
-        async function editStudent(id) {
-            try {
-                const { data: student, error } = await supabase
-                    .from('estudiantes')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('studentName').value = student.nombre;
-                document.getElementById('studentLastName').value = student.apellidos;
-                document.getElementById('studentDocument').value = student.documento || '';
-                document.getElementById('studentGrade').value = student.grado_id;
-                
-                openModal('studentModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del estudiante: ' + error.message);
-            }
-        }
-
-        async function deleteStudent(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('estudiantes')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Estudiante eliminado exitosamente');
-                    await loadStudents();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el estudiante: ' + error.message);
-                }
-            }
-        }
-
-        // Funciones similares para otros elementos...
-        async function editUser(id) {
-            try {
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('userName').value = user.nombre;
-                document.getElementById('userEmail').value = user.email;
-                document.getElementById('userPassword').value = '';
-                document.getElementById('userRole').value = user.rol_id;
-                
-                // Actualizar nota y requerimiento de contraseña para edición
-                document.getElementById('passwordNote').textContent = '(dejar vacío para mantener actual)';
-                document.getElementById('userPassword').required = false;
-                
-                openModal('userModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del usuario: ' + error.message);
-            }
-        }
-
-        async function deleteUser(id) {
-            if (id === currentUser.id) {
-                showError('No puedes eliminar tu propio usuario');
-                return;
-            }
-            
-            if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('usuarios')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Usuario eliminado exitosamente');
-                    await loadUsers();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el usuario: ' + error.message);
-                }
-            }
-        }
-
-        async function editReason(id) {
-            try {
-                const { data: reason, error } = await supabase
-                    .from('motivos')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('reasonName').value = reason.nombre;
-                document.getElementById('reasonDescription').value = reason.descripcion || '';
-                
-                openModal('reasonModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del motivo: ' + error.message);
-            }
-        }
-
-        async function deleteReason(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este motivo?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('motivos')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Motivo eliminado exitosamente');
-                    await loadReasons();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el motivo: ' + error.message);
-                }
-            }
-        }
-
-        async function editGrade(id) {
-            try {
-                const { data: grade, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-
-                currentEditingId = id;
-                document.getElementById('gradeName').value = grade.nombre;
-                document.getElementById('gradeLevel').value = grade.nivel;
-                
-                openModal('gradeModal');
-                
-            } catch (error) {
-                showError('Error al cargar los datos del grado: ' + error.message);
-            }
-        }
-
-        async function deleteGrade(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este grado?')) {
-                try {
-                    const { data, error } = await supabase
-                        .from('grados')
-                        .update({ activo: false })
-                        .eq('id', id);
-
-                    if (error) throw error;
-
-                    showSuccess('Grado eliminado exitosamente');
-                    await loadGrades();
-                    
-                } catch (error) {
-                    showError('Error al eliminar el grado: ' + error.message);
-                }
-            }
-        }
-
-        // Cerrar modales al hacer clic fuera
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        }
-
-        // Inicializar la aplicación
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Sistema iniciado');
-            updateConnectionStatus(false, 'Conectando...');
-            
-            // Esperar un momento para que Supabase termine de cargar
-            setTimeout(() => {
-                initSupabase();
-            }, 1000);
-        });
-    </script>
-</body>
-</html>
+                            <span style="color: ${record.salida_efectiva ? '#
