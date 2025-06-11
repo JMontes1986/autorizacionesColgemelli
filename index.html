@@ -1292,8 +1292,35 @@
         }
 
         async function loadGrades() {
-            try {
-                const { data: grades, error } = await supabase
+    const { data: grades, error } = await supabase.from('grados').select('*');
+    if (error) {
+        console.error('Error al cargar grados:', error);
+        return;
+    }
+
+    const gradeSelect = document.getElementById('gradeSelect');
+    const studentGrade = document.getElementById('studentGrade');
+    if (gradeSelect) gradeSelect.innerHTML = '<option value="">Seleccionar grado</option>';
+    if (studentGrade) studentGrade.innerHTML = '<option value="">Seleccionar grado</option>';
+
+    const seen = new Set();
+    grades.forEach(grade => {
+        if (!grade.nombre || !grade.nivel) return;
+        const key = grade.nombre + '-' + grade.nivel;
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        const option1 = document.createElement('option');
+        option1.value = grade.id;
+        option1.textContent = `${grade.nombre} - ${grade.nivel}`;
+        if (gradeSelect) gradeSelect.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = grade.id;
+        option2.textContent = `${grade.nombre} - ${grade.nivel}`;
+        if (studentGrade) studentGrade.appendChild(option2);
+    });
+} = await supabase
                     .from('grados')
                     .select('*')
                     .eq('activo', true)
@@ -1304,16 +1331,7 @@
                 const select = document.getElementById('studentGrade');
                 select.innerHTML = '<option value="">Seleccionar grado...</option>';
                 
-                const uniqueGrades = new Map();
-grades.forEach(grade => {
-    if (grade.nombre && grade.nivel) {
-        const key = grade.nombre + '-' + grade.nivel;
-        if (!uniqueGrades.has(key)) {
-            uniqueGrades.set(key, grade);
-        }
-    }
-});
-uniqueGrades.forEach(grade => {
+                grades.forEach(grade => {
                     const option = document.createElement('option');
                     option.value = grade.id;
                     option.textContent = `${grade.nombre} - ${grade.nivel}`;
@@ -2045,16 +2063,7 @@ uniqueGrades.forEach(grade => {
             if (!tbody) return;
             
             tbody.innerHTML = '';
-            const uniqueGrades = new Map();
-grades.forEach(grade => {
-    if (grade.nombre && grade.nivel) {
-        const key = grade.nombre + '-' + grade.nivel;
-        if (!uniqueGrades.has(key)) {
-            uniqueGrades.set(key, grade);
-        }
-    }
-});
-uniqueGrades.forEach(grade => {
+            grades.forEach(grade => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${grade.nombre}</td>
@@ -2492,31 +2501,6 @@ uniqueGrades.forEach(grade => {
                 initSupabase();
             }, 1000);
         });
-    
-
-async function loadStudentsByGrade(gradeId) {
-    const studentSelect = document.getElementById('studentSelect');
-    studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
-
-    const { data: students, error } = await supabase
-        .from('vista_estudiantes_con_grado')
-        .select('*')
-        .eq('grado_id', gradeId);
-
-    if (error) {
-        console.error('Error al cargar estudiantes:', error);
-        studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-        return;
-    }
-
-    studentSelect.innerHTML = '<option value="">Seleccionar estudiante</option>';
-    students.forEach(student => {
-        const option = document.createElement('option');
-        option.value = student.estudiante_id;
-        option.textContent = student.estudiante_nombre + ' - ' + student.documento;
-        studentSelect.appendChild(option);
-    });
-}
-</script>
+    </script>
 </body>
 </html>
