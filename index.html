@@ -17,21 +17,58 @@
                 }
                 
                 console.log('⚠️ Cargando Supabase desde CDN alternativa...');
-                const script = document.createElement('script');
-                script.src = 'https://unpkg.com/@supabase/supabase-js@2';
-                script.onload = () => {
-                    if (typeof window.supabase !== 'undefined') {
-                        console.log('✅ Supabase cargado exitosamente');
-                        resolve();
-                    } else {
-                        reject(new Error('Supabase no se cargó correctamente'));
-                    }
-                };
-                script.onerror = () => reject(new Error('Error cargando Supabase'));
-                document.head.appendChild(script);
                 
-                // Timeout de 10 segundos
-                setTimeout(() => reject(new Error('Timeout cargando Supabase')), 10000);
+                // Intentar cargar desde múltiples CDNs
+                const cdns = [
+                    'https://unpkg.com/@supabase/supabase-js@2',
+                    'https://cdn.skypack.dev/@supabase/supabase-js@2',
+                    'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js'
+                ];
+                
+                let currentCdn = 0;
+                
+                function tryNextCdn() {
+                    if (currentCdn >= cdns.length) {
+                        reject(new Error('No se pudo cargar Supabase desde ningún CDN'));
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = cdns[currentCdn];
+                    script.timeout = 5000;
+                    
+                    script.onload = () => {
+                        if (typeof window.supabase !== 'undefined') {
+                            console.log(`✅ Supabase cargado desde CDN ${currentCdn + 1}`);
+                            resolve();
+                        } else {
+                            currentCdn++;
+                            tryNextCdn();
+                        }
+                    };
+                    
+                    script.onerror = () => {
+                        console.log(`❌ Error cargando desde CDN ${currentCdn + 1}, intentando siguiente...`);
+                        currentCdn++;
+                        tryNextCdn();
+                    };
+                    
+                    document.head.appendChild(script);
+                    
+                    // Timeout individual por CDN
+                    setTimeout(() => {
+                        if (typeof window.supabase === 'undefined') {
+                            script.onerror();
+                        }
+                    }, 5000);
+                }
+                
+                tryNextCdn();
+                
+                // Timeout global
+                setTimeout(() => {
+                    reject(new Error('Timeout global cargando Supabase'));
+                }, 15000);
             });
         }
     </script>
@@ -653,30 +690,44 @@
         // Inicializar Supabase
         async function initSupabase() {
             try {
-                // Asegurar que Supabase esté cargado
-                await ensureSupabaseLoaded();
+                // Asegurar que Supabase esté cargado con timeout
+                const loadPromise = ensureSupabaseLoaded();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout cargando Supabase')), 8000)
+                );
+                
+                await Promise.race([loadPromise, timeoutPromise]);
                 
                 if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
                     throw new Error('La librería de Supabase no está disponible');
                 }
                 
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Cliente Supabase creado');
                 
-                // Verificar conexión con una consulta simple
-                const { data, error } = await supabase
+                // Verificar conexión con consulta simple y timeout
+                const queryPromise = supabase
                     .from('roles')
                     .select('count')
                     .limit(1);
+                
+                const queryTimeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout en consulta de prueba')), 5000)
+                );
+                
+                const { data, error } = await Promise.race([queryPromise, queryTimeoutPromise]);
                 
                 if (error) {
                     throw error;
                 }
                 
                 updateConnectionStatus(true, 'Conectado a la base de datos');
+                console.log('✅ Conexión verificada exitosamente');
                 return true;
+                
             } catch (error) {
                 console.error('Error connecting to Supabase:', error);
-                updateConnectionStatus(false, 'Error de conexión: ' + error.message);
+                updateConnectionStatus(false, 'Error: ' + error.message);
                 return false;
             }
         }
@@ -1807,21 +1858,47 @@
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('Sistema de Salidas - Colegio Gemelli iniciado');
             
-            // Verificar conexión inmediatamente
+            // Verificar conexión con timeout
             updateConnectionStatus(false, 'Verificando conexión...');
             
             try {
-                await ensureSupabaseLoaded();
-                const connected = await initSupabase();
+                // Timeout de 10 segundos para evitar quedarse colgado
+                const connectionPromise = (async () => {
+                    await ensureSupabaseLoaded();
+                    return await initSupabase();
+                })();
+                
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout de conexión')), 10000)
+                );
+                
+                const connected = await Promise.race([connectionPromise, timeoutPromise]);
                 
                 if (connected) {
                     console.log('✅ Conexión establecida con Supabase');
                 } else {
                     console.log('❌ Error de conexión con Supabase');
+                    updateConnectionStatus(false, 'Error de conexión - Usa "Probar Conexión"');
                 }
             } catch (error) {
                 console.error('❌ Error cargando la aplicación:', error);
-                updateConnectionStatus(false, 'Error cargando librería: ' + error.message);
+                updateConnectionStatus(false, 'Error: ' + error.message + ' - Recarga la página');
+                
+                // Mostrar botón de emergencia
+                const loginSection = document.getElementById('loginSection');
+                if (loginSection) {
+                    loginSection.innerHTML += `
+                        <div style="margin-top: 20px; text-align: center;">
+                            <p style="color: #e74c3c; font-weight: bold;">⚠️ Problema de conexión detectado</p>
+                            <button class="btn btn-danger" onclick="location.reload()" style="width: 100%;">
+                                🔄 Recargar Página
+                            </button>
+                            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                                Si el problema persiste, abre la aplicación de diagnóstico
+                            </p>
+                        </div>
+                    `;
+                }
             }
         });
     </script>
