@@ -105,11 +105,40 @@
             font-weight: 600;
         }
 
+        .form-group label[for="gradeSelect"],
+        .form-group label[for="studentSelect"],
+        .form-group label[for="reasonSelect"],
+        .form-group label[for="exitDate"],
+        .form-group label[for="exitTime"] {
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .form-group select:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
         #passwordNote {
             font-weight: normal;
             font-size: 12px;
             color: #666;
             font-style: italic;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
         }
 
         .form-group input, .form-group select, .form-group textarea {
@@ -296,11 +325,83 @@
 
         .verification-card {
             text-align: center;
-            padding: 30px;
-            margin-bottom: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+        }
+
+        .verification-card h3 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .verification-card-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: left;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .verification-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .verification-card-info p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .verification-card-info strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .verification-card-info .info-value {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .verification-card-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .verification-card-footer p {
+            margin: 8px 0;
+            font-size: 15px;
+        }
+
+        .verification-card-obs {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .verification-card-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .verification-card {
+                padding: 20px;
+            }
         }
 
         .verification-card.authorized {
@@ -389,31 +490,37 @@
                     <form id="authorizeForm">
                         <div class="grid">
                             <div class="form-group">
-                                <label for="studentSelect">Estudiante:</label>
-                                <select id="studentSelect" required>
-                                    <option value="">Seleccionar estudiante...</option>
+                                <label for="gradeSelect">1. Seleccionar Grado: *</label>
+                                <select id="gradeSelect" required onchange="loadStudentsByGrade()">
+                                    <option value="">Seleccionar grado primero...</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="reasonSelect">Motivo:</label>
+                                <label for="studentSelect">2. Seleccionar Estudiante: *</label>
+                                <select id="studentSelect" required disabled>
+                                    <option value="">Primero selecciona un grado...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reasonSelect">3. Motivo: *</label>
                                 <select id="reasonSelect" required>
                                     <option value="">Seleccionar motivo...</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="exitDate">Fecha de Salida:</label>
+                                <label for="exitDate">4. Fecha de Salida: *</label>
                                 <input type="date" id="exitDate" required>
                             </div>
                             <div class="form-group">
-                                <label for="exitTime">Hora de Salida:</label>
+                                <label for="exitTime">5. Hora de Salida: *</label>
                                 <input type="time" id="exitTime" required>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="observations">Observaciones:</label>
-                            <textarea id="observations" rows="3" placeholder="Observaciones adicionales (opcional)"></textarea>
+                            <label for="observations">Observaciones adicionales:</label>
+                            <textarea id="observations" rows="3" placeholder="Observaciones opcionales sobre la salida..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-success">Autorizar Salida</button>
+                        <button type="submit" class="btn btn-success" style="font-size: 18px; padding: 15px 30px;">✅ Autorizar Salida</button>
                     </form>
                 </div>
 
@@ -1068,9 +1175,9 @@
 
                 // Generar HTML para cada autorización pendiente
                 const currentTime = getColombiaTime();
-                let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 10px;">
-                    <p style="color: #2c3e50; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d;">Salidas pendientes de confirmación: ${authorizations.length}</p>
+                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
+                    <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas pendientes de confirmación: <strong>${authorizations.length}</strong></p>
                 </div>`;
                 
                 authorizations.forEach(auth => {
@@ -1079,23 +1186,44 @@
                     const user = userMap[auth.usuario_autorizador_id];
 
                     html += `
-                        <div class="verification-card authorized" style="margin-bottom: 15px;">
+                        <div class="verification-card authorized">
                             <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin: 15px 0;">
-                                <div>
-                                    <p><strong>👨‍🎓 Estudiante:</strong><br>${student ? `${student.nombre} ${student.apellidos}` : 'No encontrado'}</p>
-                                    <p><strong>🎓 Grado:</strong><br>${student?.grado?.nombre || 'No encontrado'}</p>
+                            
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>👨‍🎓 Estudiante:</strong>
+                                        <span class="info-value">${student ? `${student.nombre} ${student.apellidos}` : 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🎓 Grado:</strong>
+                                        <span class="info-value">${student?.grado?.nombre || 'No encontrado'}</span>
+                                    </p>
                                 </div>
-                                <div>
-                                    <p><strong>📝 Motivo:</strong><br>${reason?.nombre || 'No encontrado'}</p>
-                                    <p><strong>🕐 Hora autorizada:</strong><br>${formatTime(auth.hora_salida)}</p>
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>📝 Motivo de Salida:</strong>
+                                        <span class="info-value">${reason?.nombre || 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🕐 Hora Autorizada:</strong>
+                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
+                                    </p>
                                 </div>
                             </div>
-                            <p style="margin-bottom: 15px;"><strong>✅ Autorizado por:</strong> ${user?.nombre || 'No encontrado'}</p>
-                            ${auth.observaciones ? `<p style="margin-bottom: 15px; font-style: italic; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;"><strong>📝 Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                            <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 16px; padding: 15px 30px;">
-                                ✅ CONFIRMAR SALIDA
-                            </button>
+                            
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre || 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${auth.observaciones}
+                                    </div>
+                                ` : ''}
+                                <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                    ✅ CONFIRMAR SALIDA
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
@@ -1249,17 +1377,28 @@
             }
         }
 
-        // Función para autorizar salida
+        // Función para autorizar salida - ACTUALIZADA para nuevo flujo
         async function authorizeExit(e) {
             e.preventDefault();
             
+            const gradeId = document.getElementById('gradeSelect').value;
             const studentId = document.getElementById('studentSelect').value;
             const reasonId = document.getElementById('reasonSelect').value;
             const exitDate = document.getElementById('exitDate').value;
             const exitTime = document.getElementById('exitTime').value;
             const observations = document.getElementById('observations').value;
 
-            if (!studentId || !reasonId || !exitDate || !exitTime) {
+            if (!gradeId) {
+                showError('Por favor, selecciona primero un grado');
+                return;
+            }
+
+            if (!studentId) {
+                showError('Por favor, selecciona un estudiante del grado elegido');
+                return;
+            }
+
+            if (!reasonId || !exitDate || !exitTime) {
                 showError('Por favor, completa todos los campos obligatorios');
                 return;
             }
@@ -1284,12 +1423,26 @@
 
                 if (error) throw error;
 
-                showSuccess('Autorización de salida creada exitosamente');
+                // Obtener información del estudiante y grado para mostrar en el mensaje
+                const gradeSelect = document.getElementById('gradeSelect');
+                const studentSelect = document.getElementById('studentSelect');
+                const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
+                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+
+                showSuccess(`✅ Autorización creada exitosamente para ${studentName} (${gradeName})`);
+                
+                // Limpiar formulario
                 document.getElementById('authorizeForm').reset();
+                
+                // Restablecer selectores
+                document.getElementById('studentSelect').innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                document.getElementById('studentSelect').disabled = true;
                 
                 // Establecer fecha actual de Colombia por defecto
                 const todayColombia = getColombiaDate();
                 document.getElementById('exitDate').value = todayColombia;
+                
+                console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
                 
             } catch (error) {
                 showError('Error al crear la autorización: ' + error.message);
@@ -1397,10 +1550,10 @@
                     userMap[user.id] = user;
                 });
 
-                // Mostrar resultados
+                // Mostrar resultados con el nuevo diseño
                 const currentTime = getColombiaTime();
-                let html = `<div style="text-align: center; margin-bottom: 15px; background: rgba(52, 152, 219, 0.1); padding: 10px; border-radius: 5px;">
-                    <p style="color: #2c3e50; font-size: 14px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
+                    <p style="color: #2c3e50; font-size: 15px; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
                 </div>`;
                 
                 matchingAuth.forEach(auth => {
@@ -1409,31 +1562,75 @@
                     const user = userMap[auth.usuario_autorizador_id];
 
                     // Determinar el estado y color de la tarjeta
-                    let cardClass, titleText, buttonHtml;
+                    let cardClass, titleText, footerHtml;
                     
                     if (auth.salida_efectiva) {
                         cardClass = 'verified';  // Azul para ya confirmados
                         titleText = '✅ SALIDA YA CONFIRMADA';
-                        buttonHtml = `<p style="color: white; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
-                            <strong>✅ Confirmada: ${formatDateTime(auth.salida_efectiva)}</strong><br>
-                            <small>Por: ${currentUser.nombre}</small>
-                        </p>`;
+                        footerHtml = `
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre || 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${auth.observaciones}
+                                    </div>
+                                ` : ''}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
+                                        <small>Vigilante: ${currentUser.nombre}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        `;
                     } else {
                         cardClass = 'authorized';  // Verde para pendientes
                         titleText = '✅ AUTORIZADO PARA SALIR';
-                        buttonHtml = `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>`;
+                        footerHtml = `
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre || 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${auth.observaciones}
+                                    </div>
+                                ` : ''}
+                                <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                    ✅ CONFIRMAR SALIDA
+                                </button>
+                            </div>
+                        `;
                     }
 
                     html += `
                         <div class="verification-card ${cardClass}">
                             <h3>${titleText}</h3>
-                            <p><strong>Estudiante:</strong> ${student?.nombre} ${student?.apellidos}</p>
-                            <p><strong>Grado:</strong> ${student?.grado?.nombre}</p>
-                            <p><strong>Motivo:</strong> ${reason?.nombre}</p>
-                            <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
-                            <p><strong>Autorizado por:</strong> ${user?.nombre}</p>
-                            ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                            ${buttonHtml}
+                            
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>👨‍🎓 Estudiante:</strong>
+                                        <span class="info-value">${student?.nombre} ${student?.apellidos}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🎓 Grado:</strong>
+                                        <span class="info-value">${student?.grado?.nombre}</span>
+                                    </p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>📝 Motivo de Salida:</strong>
+                                        <span class="info-value">${reason?.nombre}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🕐 Hora Autorizada:</strong>
+                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            ${footerHtml}
                         </div>
                     `;
                 });
@@ -1487,15 +1684,37 @@
                             titleElement.textContent = '✅ SALIDA CONFIRMADA';
                         }
                         
-                        // Reemplazar el botón con mensaje de confirmación
-                        confirmButton.outerHTML = `
-                            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
-                                <p style="color: white; font-weight: bold; margin: 0;">
-                                    ✅ SALIDA CONFIRMADA<br>
-                                    <small>Hora: ${colombiaTime} - Vigilante: ${currentUser.nombre}</small>
-                                </p>
-                            </div>
-                        `;
+                        // Reemplazar el botón con mensaje de confirmación usando el nuevo diseño
+                        const footerElement = confirmButton.closest('.verification-card-footer');
+                        if (footerElement) {
+                            const observationsHtml = auth.observaciones ? `
+                                <div class="verification-card-obs">
+                                    <strong>📝 Observaciones:</strong><br>
+                                    ${auth.observaciones}
+                                </div>
+                            ` : '';
+                            
+                            footerElement.innerHTML = `
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre || 'Usuario'}</p>
+                                ${observationsHtml}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ SALIDA CONFIRMADA<br>
+                                        <small>Hora: ${colombiaTime} - Vigilante: ${currentUser.nombre}</small>
+                                    </p>
+                                </div>
+                            `;
+                        } else {
+                            // Fallback si no encuentra el footer
+                            confirmButton.outerHTML = `
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ SALIDA CONFIRMADA<br>
+                                        <small>Hora: ${colombiaTime} - Vigilante: ${currentUser.nombre}</small>
+                                    </p>
+                                </div>
+                            `;
+                        }
                         
                         // Animar el cambio de color
                         card.style.transform = 'scale(1.02)';
