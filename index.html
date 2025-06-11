@@ -1298,27 +1298,24 @@
         return;
     }
 
+    const select = document.getElementById('studentGrade');
     const gradeSelect = document.getElementById('gradeSelect');
-    const studentGrade = document.getElementById('studentGrade');
-    if (gradeSelect) gradeSelect.innerHTML = '<option value="">Seleccionar grado</option>';
-    if (studentGrade) studentGrade.innerHTML = '<option value="">Seleccionar grado</option>';
 
-    const seen = new Set();
+    select.innerHTML = '<option value="">Seleccionar grado</option>';
+    gradeSelect.innerHTML = '<option value="">Seleccionar grado</option>';
+
     grades.forEach(grade => {
-        if (!grade.nombre || !grade.nivel) return;
-        const key = grade.nombre + '-' + grade.nivel;
-        if (seen.has(key)) return;
-        seen.add(key);
+        if (grade.nombre && grade.nivel) {
+            const option1 = document.createElement('option');
+            option1.value = grade.id;
+            option1.textContent = `${grade.nombre} - ${grade.nivel}`;
+            select.appendChild(option1);
 
-        const option1 = document.createElement('option');
-        option1.value = grade.id;
-        option1.textContent = `${grade.nombre} - ${grade.nivel}`;
-        if (gradeSelect) gradeSelect.appendChild(option1);
-
-        const option2 = document.createElement('option');
-        option2.value = grade.id;
-        option2.textContent = `${grade.nombre} - ${grade.nivel}`;
-        if (studentGrade) studentGrade.appendChild(option2);
+            const option2 = document.createElement('option');
+            option2.value = grade.id;
+            option2.textContent = `${grade.nombre} - ${grade.nivel}`;
+            gradeSelect.appendChild(option2);
+        }
     });
 } = await supabase
                     .from('grados')
