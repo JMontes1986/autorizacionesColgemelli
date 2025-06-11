@@ -308,6 +308,13 @@
             border: 1px solid #f5c6cb;
         }
 
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
         .card {
             background: white;
             padding: 20px;
@@ -517,7 +524,7 @@
                     </form>
                 </div>
 
-                <!-- Sección para Verificar Salidas (Vigilante) -->
+                <!-- Sección para Verificar Salidas (Vigilante) - NUEVA Y MEJORADA -->
                 <div id="verifySectionDiv" class="section">
                     <h2>🔍 Control de Salidas - Vigilancia</h2>
                     <div class="nav-buttons">
@@ -871,7 +878,7 @@
 
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
-            const date = new Date(dateString + 'T00:00:00-05:00');
+            const date = new Date(dateString + 'T00:00:00-05:00'); // Forzar zona horaria Colombia
             return date.toLocaleDateString('es-CO', { 
                 timeZone: 'America/Bogota',
                 day: '2-digit',
@@ -908,6 +915,7 @@
                 return;
             }
 
+            // Verificar conexión primero
             const connected = await initSupabase();
             if (!connected) {
                 showError('No se puede conectar a la base de datos. Verifica tu conexión a internet.');
@@ -917,6 +925,7 @@
             try {
                 console.log('Intentando login con:', email);
                 
+                // Buscar usuario en la base de datos
                 const { data: user, error } = await supabase
                     .from('usuarios')
                     .select(`
@@ -946,6 +955,7 @@
 
                 console.log('Usuario encontrado:', user.nombre);
 
+                // Verificar contraseña (en producción debería ser con hash)
                 if (user.password_hash !== password) {
                     showError('Contraseña incorrecta');
                     return;
@@ -985,6 +995,7 @@
             
             navButtons.innerHTML = '';
 
+            // Botones según el rol
             if (role === 'administrador') {
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
@@ -1004,6 +1015,7 @@
                 `;
             }
 
+            // Mostrar la primera sección disponible
             if (role === 'vigilante') {
                 showSection('verifySectionDiv');
             } else {
@@ -1012,56 +1024,53 @@
         }
 
         function showSection(sectionId) {
+            // Ocultar todas las secciones
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
+            // Mostrar la sección seleccionada
             document.getElementById(sectionId).classList.add('active');
             
+            // Cargar datos específicos según la sección
             if (sectionId === 'historySectionDiv') {
-                loadHistory(true);
+                loadHistory(true); // Cargar todo el historial por defecto
             } else if (sectionId === 'verifySectionDiv' && currentUser && currentUser.rol.nombre === 'vigilante') {
+                // Cargar automáticamente las salidas pendientes para vigilantes
                 loadPendingExits();
             }
         }
 
-        // FUNCIÓN CORREGIDA: loadInitialData
         async function loadInitialData() {
-            try {
-                console.log('🚀 Iniciando carga de datos...');
-                
-                // Cargar en orden: primero grados, luego el resto
-                await loadGrades();        // Esto carga los selectores de grados
-                await loadReasons();       // Motivos de salida
-                await loadRoles();         // Roles de usuario
-                await loadStudents();      // Solo para tabla de administración
-                
-                if (currentUser.rol.nombre === 'administrador') {
-                    await loadUsers();     // Usuarios (solo administradores)
-                }
-                
-                setupEventListeners();
-                console.log('✅ Carga inicial completa');
-                
-            } catch (error) {
-                console.error('❌ Error en carga inicial:', error);
-                showError('Error al cargar datos iniciales: ' + error.message);
+            await loadStudents();
+            await loadReasons();
+            await loadGrades();
+            await loadRoles();
+            
+            if (currentUser.rol.nombre === 'administrador') {
+                await loadUsers();
             }
+            
+            setupEventListeners();
         }
 
         function setupEventListeners() {
+            // Autorización de salidas
             document.getElementById('authorizeForm').addEventListener('submit', authorizeExit);
             
+            // Búsqueda de estudiantes para verificación (solo si existe el elemento)
             const studentSearchInput = document.getElementById('studentSearch');
             if (studentSearchInput) {
                 studentSearchInput.addEventListener('input', searchStudent);
             }
             
+            // Formularios de administración
             document.getElementById('studentForm').addEventListener('submit', saveStudent);
             document.getElementById('userForm').addEventListener('submit', saveUser);
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
 
+            // Establecer fecha actual de Colombia por defecto
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
@@ -1069,6 +1078,9 @@
             console.log('📅 Fecha actual Colombia establecida:', todayColombia);
         }
 
+        // NUEVAS FUNCIONES PARA VIGILANTES
+        
+        // Función para mostrar/ocultar búsqueda manual
         function toggleSearch() {
             const searchSection = document.getElementById('searchSection');
             const pendingSection = document.getElementById('pendingExitsSection');
@@ -1079,11 +1091,13 @@
             } else {
                 searchSection.style.display = 'none';
                 pendingSection.style.display = 'block';
+                // Limpiar búsqueda
                 document.getElementById('studentSearch').value = '';
                 document.getElementById('searchResult').innerHTML = '';
             }
         }
 
+        // Función para cargar todos los estudiantes con salidas pendientes
         async function loadPendingExits() {
             const pendingList = document.getElementById('pendingExitsList');
             
@@ -1093,6 +1107,7 @@
                 const todayColombia = getColombiaDate();
                 console.log('📅 Cargando salidas pendientes para Colombia:', todayColombia);
                 
+                // Obtener autorizaciones pendientes para hoy
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -1121,6 +1136,7 @@
 
                 console.log('📊 Salidas pendientes encontradas:', authorizations.length);
 
+                // Obtener información de estudiantes, motivos y usuarios
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
                 const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
@@ -1140,6 +1156,7 @@
                         .in('id', userIds)
                 ]);
 
+                // Crear mapas para búsqueda rápida
                 const studentMap = {};
                 const reasonMap = {};
                 const userMap = {};
@@ -1156,6 +1173,7 @@
                     userMap[user.id] = user;
                 });
 
+                // Generar HTML para cada autorización pendiente
                 const currentTime = getColombiaTime();
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
@@ -1228,109 +1246,7 @@
             }
         }
 
-        // FUNCIÓN CORREGIDA: loadGrades - carga AMBOS selectores
-        async function loadGrades() {
-            try {
-                const { data: grades, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                // Cargar el selector principal para autorizar salidas
-                const gradeSelect = document.getElementById('gradeSelect');
-                if (gradeSelect) {
-                    gradeSelect.innerHTML = '<option value="">Seleccionar grado primero...</option>';
-                    
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = grade.id;
-                        option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                        gradeSelect.appendChild(option);
-                    });
-                }
-
-                // Cargar el selector del modal de estudiantes
-                const studentGradeSelect = document.getElementById('studentGrade');
-                if (studentGradeSelect) {
-                    studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
-                    
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = grade.id;
-                        option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                        studentGradeSelect.appendChild(option);
-                    });
-                }
-
-                updateGradesTable(grades);
-                console.log('✅ Grados cargados exitosamente:', grades.length);
-                
-            } catch (error) {
-                console.error('❌ Error loading grades:', error);
-                showError('Error al cargar los grados: ' + error.message);
-            }
-        }
-
-        // FUNCIÓN NUEVA: loadStudentsByGrade
-        async function loadStudentsByGrade() {
-            const gradeId = document.getElementById('gradeSelect').value;
-            const studentSelect = document.getElementById('studentSelect');
-            
-            if (!gradeId) {
-                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                studentSelect.disabled = true;
-                return;
-            }
-
-            try {
-                console.log('🔍 Cargando estudiantes para grado ID:', gradeId);
-                
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        id, nombre, apellidos,
-                        grado:grados(nombre)
-                    `)
-                    .eq('grado_id', gradeId)
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) {
-                    console.error('❌ Error al cargar estudiantes por grado:', error);
-                    throw error;
-                }
-
-                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                if (!students || students.length === 0) {
-                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
-                    studentSelect.disabled = true;
-                    console.log('📊 No se encontraron estudiantes para el grado:', gradeId);
-                    return;
-                }
-
-                students.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = student.id;
-                    option.textContent = `${student.nombre} ${student.apellidos}`;
-                    studentSelect.appendChild(option);
-                });
-
-                studentSelect.disabled = false;
-                console.log('✅ Estudiantes cargados por grado:', students.length);
-                
-            } catch (error) {
-                console.error('❌ Error general en loadStudentsByGrade:', error);
-                showError('Error al cargar estudiantes del grado: ' + error.message);
-                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-                studentSelect.disabled = true;
-            }
-        }
-
-        // FUNCIÓN CORREGIDA: loadStudents - solo para tabla de administración
+        // Funciones de carga de datos
         async function loadStudents() {
             try {
                 const { data: students, error } = await supabase
@@ -1344,13 +1260,23 @@
 
                 if (error) throw error;
 
-                // Solo actualizar la tabla de administración, no los selectores
+                const select = document.getElementById('studentSelect');
+                const gradeSelect = document.getElementById('studentGrade');
+                
+                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.nombre} ${student.apellidos} - ${student.grado.nombre}`;
+                    select.appendChild(option);
+                });
+
+                // Actualizar tabla de administración si está visible
                 updateStudentsTable(students);
-                console.log('✅ Estudiantes cargados para administración:', students.length);
                 
             } catch (error) {
-                console.error('❌ Error loading students:', error);
-                showError('Error al cargar estudiantes: ' + error.message);
+                console.error('Error loading students:', error);
             }
         }
 
@@ -1378,6 +1304,33 @@
                 
             } catch (error) {
                 console.error('Error loading reasons:', error);
+            }
+        }
+
+        async function loadGrades() {
+            try {
+                const { data: grades, error } = await supabase
+                    .from('grados')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('studentGrade');
+                select.innerHTML = '<option value="">Seleccionar grado...</option>';
+                
+                grades.forEach(grade => {
+                    const option = document.createElement('option');
+                    option.value = grade.id;
+                    option.textContent = `${grade.nombre} - ${grade.nivel}`;
+                    select.appendChild(option);
+                });
+
+                updateGradesTable(grades);
+                
+            } catch (error) {
+                console.error('Error loading grades:', error);
             }
         }
 
@@ -1424,6 +1377,7 @@
             }
         }
 
+        // Función para autorizar salida - ACTUALIZADA para nuevo flujo
         async function authorizeExit(e) {
             e.preventDefault();
             
@@ -1450,6 +1404,7 @@
             }
 
             try {
+                // Crear timestamp en zona horaria de Colombia
                 const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
                     timeZone: 'America/Bogota' 
                 });
@@ -1468,6 +1423,7 @@
 
                 if (error) throw error;
 
+                // Obtener información del estudiante y grado para mostrar en el mensaje
                 const gradeSelect = document.getElementById('gradeSelect');
                 const studentSelect = document.getElementById('studentSelect');
                 const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
@@ -1475,11 +1431,14 @@
 
                 showSuccess(`✅ Autorización creada exitosamente para ${studentName} (${gradeName})`);
                 
+                // Limpiar formulario
                 document.getElementById('authorizeForm').reset();
                 
+                // Restablecer selectores
                 document.getElementById('studentSelect').innerHTML = '<option value="">Primero selecciona un grado...</option>';
                 document.getElementById('studentSelect').disabled = true;
                 
+                // Establecer fecha actual de Colombia por defecto
                 const todayColombia = getColombiaDate();
                 document.getElementById('exitDate').value = todayColombia;
                 
@@ -1490,6 +1449,7 @@
             }
         }
 
+        // Función para buscar y verificar estudiante (búsqueda manual)
         async function searchStudent() {
             const searchTerm = document.getElementById('studentSearch').value.trim();
             const resultDiv = document.getElementById('searchResult');
@@ -1504,6 +1464,7 @@
                 
                 console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha Colombia:', todayColombia);
                 
+                // Buscar autorizaciones que coincidan con el nombre
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -1526,6 +1487,7 @@
                     return;
                 }
 
+                // Obtener estudiantes que coincidan con el término de búsqueda
                 const { data: students, error: studentsError } = await supabase
                     .from('estudiantes')
                     .select('id, nombre, apellidos, grado:grados(nombre)')
@@ -1543,6 +1505,7 @@
                     return;
                 }
 
+                // Filtrar autorizaciones por estudiantes encontrados
                 const studentIds = students?.map(s => s.id) || [];
                 const matchingAuth = authorizations.filter(auth => 
                     studentIds.includes(auth.estudiante_id)
@@ -1561,6 +1524,7 @@
                     return;
                 }
 
+                // Obtener información adicional para mostrar los resultados
                 const reasonIds = [...new Set(matchingAuth.map(auth => auth.motivo_id))];
                 const userIds = [...new Set(matchingAuth.map(auth => auth.usuario_autorizador_id))];
 
@@ -1569,6 +1533,7 @@
                     supabase.from('usuarios').select('id, nombre').in('id', userIds)
                 ]);
 
+                // Crear mapas
                 const studentMap = {};
                 const reasonMap = {};
                 const userMap = {};
@@ -1585,6 +1550,7 @@
                     userMap[user.id] = user;
                 });
 
+                // Mostrar resultados con el nuevo diseño
                 const currentTime = getColombiaTime();
                 let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
                     <p style="color: #2c3e50; font-size: 15px; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
@@ -1595,10 +1561,11 @@
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
 
+                    // Determinar el estado y color de la tarjeta
                     let cardClass, titleText, footerHtml;
                     
                     if (auth.salida_efectiva) {
-                        cardClass = 'verified';
+                        cardClass = 'verified';  // Azul para ya confirmados
                         titleText = '✅ SALIDA YA CONFIRMADA';
                         footerHtml = `
                             <div class="verification-card-footer">
@@ -1618,7 +1585,7 @@
                             </div>
                         `;
                     } else {
-                        cardClass = 'authorized';
+                        cardClass = 'authorized';  // Verde para pendientes
                         titleText = '✅ AUTORIZADO PARA SALIR';
                         footerHtml = `
                             <div class="verification-card-footer">
@@ -1684,6 +1651,7 @@
 
         async function confirmExit(authId) {
             try {
+                // Crear timestamp de salida efectiva en zona horaria de Colombia
                 const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
                     timeZone: 'America/Bogota' 
                 });
@@ -1701,22 +1669,34 @@
                 const colombiaTime = getColombiaTime();
                 showSuccess(`Salida confirmada exitosamente a las ${colombiaTime}`);
                 
+                // Actualizar visualmente la tarjeta que se acaba de confirmar
                 const confirmButton = document.querySelector(`button[onclick="confirmExit(${authId})"]`);
                 if (confirmButton) {
                     const card = confirmButton.closest('.verification-card');
                     if (card) {
+                        // Cambiar la clase de 'authorized' a 'verified' (azul)
                         card.classList.remove('authorized');
                         card.classList.add('verified');
                         
+                        // Actualizar el título
                         const titleElement = card.querySelector('h3');
                         if (titleElement) {
                             titleElement.textContent = '✅ SALIDA CONFIRMADA';
                         }
                         
+                        // Reemplazar el botón con mensaje de confirmación usando el nuevo diseño
                         const footerElement = confirmButton.closest('.verification-card-footer');
                         if (footerElement) {
+                            const observationsHtml = auth.observaciones ? `
+                                <div class="verification-card-obs">
+                                    <strong>📝 Observaciones:</strong><br>
+                                    ${auth.observaciones}
+                                </div>
+                            ` : '';
+                            
                             footerElement.innerHTML = `
-                                <p><strong>✅ Autorizado por:</strong> Usuario</p>
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre || 'Usuario'}</p>
+                                ${observationsHtml}
                                 <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
                                     <p style="color: white; font-weight: bold; margin: 0;">
                                         ✅ SALIDA CONFIRMADA<br>
@@ -1725,6 +1705,7 @@
                                 </div>
                             `;
                         } else {
+                            // Fallback si no encuentra el footer
                             confirmButton.outerHTML = `
                                 <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
                                     <p style="color: white; font-weight: bold; margin: 0;">
@@ -1735,6 +1716,7 @@
                             `;
                         }
                         
+                        // Animar el cambio de color
                         card.style.transform = 'scale(1.02)';
                         setTimeout(() => {
                             card.style.transform = 'scale(1)';
@@ -1742,6 +1724,7 @@
                     }
                 }
                 
+                // Limpiar búsqueda si estaba activa
                 const searchInput = document.getElementById('studentSearch');
                 if (searchInput) {
                     searchInput.value = '';
@@ -1751,6 +1734,7 @@
                     searchResult.innerHTML = '';
                 }
                 
+                // Si estamos en la vista de pendientes, actualizar después de 2 segundos para mostrar el efecto visual
                 if (currentUser.rol.nombre === 'vigilante') {
                     setTimeout(async () => {
                         await loadPendingExits();
@@ -1762,6 +1746,7 @@
             }
         }
 
+        // Funciones de administración
         function showAdminSection(section) {
             document.querySelectorAll('.admin-subsection').forEach(sub => {
                 sub.style.display = 'none';
@@ -1769,14 +1754,17 @@
             document.getElementById(`admin${section.charAt(0).toUpperCase() + section.slice(1)}`).style.display = 'block';
         }
 
+        // Funciones de modales - MEJORADAS
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'block';
             currentEditingId = null;
             
+            // Limpiar formularios
             if (modalId === 'studentModal') {
                 document.getElementById('studentForm').reset();
             } else if (modalId === 'userModal') {
                 document.getElementById('userForm').reset();
+                // Mostrar nota para nuevos usuarios
                 document.getElementById('passwordNote').textContent = '(obligatorio para nuevos usuarios)';
                 document.getElementById('userPassword').required = true;
             } else if (modalId === 'reasonModal') {
@@ -1791,6 +1779,7 @@
             currentEditingId = null;
         }
 
+        // Funciones CRUD - CORREGIDAS
         async function saveStudent(e) {
             e.preventDefault();
             
@@ -1864,6 +1853,7 @@
             try {
                 let result;
                 if (currentEditingId) {
+                    // Al editar, solo actualizar contraseña si se proporcionó una nueva
                     const updateData = {
                         nombre: name,
                         email: email,
@@ -1997,6 +1987,7 @@
             }
         }
 
+        // Funciones de actualización de tablas
         function updateStudentsTable(students) {
             const tbody = document.querySelector('#studentsTable tbody');
             if (!tbody) return;
@@ -2075,10 +2066,12 @@
             });
         }
 
+        // Funciones de historial - MEJORADAS para zona horaria Colombia
         async function loadHistory(all = false) {
             try {
                 console.log('🔍 Cargando historial...');
                 
+                // Primero, intentar consulta simple sin JOINs para debug
                 let query = supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -2090,6 +2083,7 @@
                         console.log('🗓️ Filtrando por fecha:', date);
                         query = query.eq('fecha_salida', date);
                     } else {
+                        // Si no hay fecha, mostrar solo los últimos 30 días desde hoy (Colombia)
                         const todayColombia = getColombiaDate();
                         const thirtyDaysAgo = new Date(todayColombia);
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -2124,12 +2118,14 @@
 
                 console.log('📊 Autorizaciones encontradas:', authorizations.length);
 
+                // Ahora obtener los datos relacionados (estudiantes, motivos, usuarios)
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
                 const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
 
                 console.log('👥 IDs únicos - Estudiantes:', studentIds.length, 'Motivos:', reasonIds.length, 'Usuarios:', userIds.length);
 
+                // Obtener estudiantes con sus grados
                 const { data: students, error: studentsError } = await supabase
                     .from('estudiantes')
                     .select(`
@@ -2138,11 +2134,13 @@
                     `)
                     .in('id', studentIds);
 
+                // Obtener motivos
                 const { data: reasons, error: reasonsError } = await supabase
                     .from('motivos')
                     .select('id, nombre')
                     .in('id', reasonIds);
 
+                // Obtener usuarios
                 const { data: users, error: usersError } = await supabase
                     .from('usuarios')
                     .select('id, nombre')
@@ -2152,6 +2150,7 @@
                 if (reasonsError) console.error('Error motivos:', reasonsError);
                 if (usersError) console.error('Error usuarios:', usersError);
 
+                // Crear mapas para búsqueda rápida
                 const studentMap = {};
                 const reasonMap = {};
                 const userMap = {};
@@ -2170,6 +2169,7 @@
 
                 console.log('📋 Mapas creados - Estudiantes:', Object.keys(studentMap).length, 'Motivos:', Object.keys(reasonMap).length, 'Usuarios:', Object.keys(userMap).length);
 
+                // Llenar la tabla
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
                 
@@ -2206,6 +2206,7 @@
             }
         }
 
+        // Función de debug para historial - MEJORADA para Colombia
         async function debugHistory() {
             const debugDiv = document.getElementById('historyDebug');
             const debugContent = document.getElementById('historyDebugContent');
@@ -2219,31 +2220,38 @@
                 const todayColombia = getColombiaDate();
                 const currentTime = getColombiaTime();
                 
+                // 1. Contar registros en autorizaciones_salida
                 const { data: totalAuth, error: errorAuth } = await supabase
                     .from('autorizaciones_salida')
                     .select('*');
                 
+                // 2. Contar estudiantes
                 const { data: totalStudents, error: errorStudents } = await supabase
                     .from('estudiantes')
                     .select('*');
                 
+                // 3. Contar usuarios
                 const { data: totalUsers, error: errorUsers } = await supabase
                     .from('usuarios')
                     .select('*');
 
+                // 4. Contar motivos
                 const { data: totalReasons, error: errorReasons } = await supabase
                     .from('motivos')
                     .select('*');
 
+                // 5. Contar grados
                 const { data: totalGrades, error: errorGrades } = await supabase
                     .from('grados')
                     .select('*');
                 
+                // 6. Verificar autorizaciones recientes
                 const { data: todayAuth, error: errorToday } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
                     .eq('fecha_salida', todayColombia);
 
+                // 7. Verificar últimas 5 autorizaciones
                 const { data: lastAuth, error: errorLast } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -2269,6 +2277,7 @@
                     html += '</li>';
                 }
 
+                // Verificar estructura de datos
                 if (totalAuth && totalAuth.length > 0) {
                     const sampleAuth = totalAuth[0];
                     html += '<li><strong>🔍 Estructura de autorización (muestra):</strong><br>';
@@ -2324,4 +2333,163 @@
                     await loadStudents();
                     
                 } catch (error) {
-                    showError('Error al eliminar el estudiante:
+                    showError('Error al eliminar el estudiante: ' + error.message);
+                }
+            }
+        }
+
+        // Funciones similares para otros elementos...
+        async function editUser(id) {
+            try {
+                const { data: user, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('userName').value = user.nombre;
+                document.getElementById('userEmail').value = user.email;
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userRole').value = user.rol_id;
+                
+                // Actualizar nota y requerimiento de contraseña para edición
+                document.getElementById('passwordNote').textContent = '(dejar vacío para mantener actual)';
+                document.getElementById('userPassword').required = false;
+                
+                openModal('userModal');
+                
+            } catch (error) {
+                showError('Error al cargar los datos del usuario: ' + error.message);
+            }
+        }
+
+        async function deleteUser(id) {
+            if (id === currentUser.id) {
+                showError('No puedes eliminar tu propio usuario');
+                return;
+            }
+            
+            if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+                try {
+                    const { data, error } = await supabase
+                        .from('usuarios')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    showSuccess('Usuario eliminado exitosamente');
+                    await loadUsers();
+                    
+                } catch (error) {
+                    showError('Error al eliminar el usuario: ' + error.message);
+                }
+            }
+        }
+
+        async function editReason(id) {
+            try {
+                const { data: reason, error } = await supabase
+                    .from('motivos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('reasonName').value = reason.nombre;
+                document.getElementById('reasonDescription').value = reason.descripcion || '';
+                
+                openModal('reasonModal');
+                
+            } catch (error) {
+                showError('Error al cargar los datos del motivo: ' + error.message);
+            }
+        }
+
+        async function deleteReason(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este motivo?')) {
+                try {
+                    const { data, error } = await supabase
+                        .from('motivos')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    showSuccess('Motivo eliminado exitosamente');
+                    await loadReasons();
+                    
+                } catch (error) {
+                    showError('Error al eliminar el motivo: ' + error.message);
+                }
+            }
+        }
+
+        async function editGrade(id) {
+            try {
+                const { data: grade, error } = await supabase
+                    .from('grados')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('gradeName').value = grade.nombre;
+                document.getElementById('gradeLevel').value = grade.nivel;
+                
+                openModal('gradeModal');
+                
+            } catch (error) {
+                showError('Error al cargar los datos del grado: ' + error.message);
+            }
+        }
+
+        async function deleteGrade(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este grado?')) {
+                try {
+                    const { data, error } = await supabase
+                        .from('grados')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    showSuccess('Grado eliminado exitosamente');
+                    await loadGrades();
+                    
+                } catch (error) {
+                    showError('Error al eliminar el grado: ' + error.message);
+                }
+            }
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Sistema iniciado');
+            updateConnectionStatus(false, 'Conectando...');
+            
+            // Esperar un momento para que Supabase termine de cargar
+            setTimeout(() => {
+                initSupabase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
