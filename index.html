@@ -737,12 +737,46 @@
             }
         }
 
+        // Funciones de utilidad para zona horaria de Colombia
+        function getColombiaDate() {
+            return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Bogota' });
+        }
+
+        function getColombiaDateTime() {
+            return new Date().toLocaleString('sv-SE', { timeZone: 'America/Bogota' }).replace(' ', 'T');
+        }
+
+        function getColombiaTime() {
+            return new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Bogota', hour12: false }).substring(0, 5);
+        }
+
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('es-ES');
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString + 'T00:00:00-05:00'); // Forzar zona horaria Colombia
+            return date.toLocaleDateString('es-CO', { 
+                timeZone: 'America/Bogota',
+                day: '2-digit',
+                month: '2-digit', 
+                year: 'numeric'
+            });
         }
 
         function formatTime(timeString) {
+            if (!timeString) return 'N/A';
             return timeString.substring(0, 5);
+        }
+
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return 'N/A';
+            const date = new Date(dateTimeString);
+            return date.toLocaleString('es-CO', { 
+                timeZone: 'America/Bogota',
+                day: '2-digit',
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
 
         // Funciones de autenticación
@@ -910,10 +944,12 @@
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
 
-            // Establecer fecha actual por defecto
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('exitDate').value = today;
-            document.getElementById('historyDate').value = today;
+            // Establecer fecha actual de Colombia por defecto
+            const todayColombia = getColombiaDate();
+            document.getElementById('exitDate').value = todayColombia;
+            document.getElementById('historyDate').value = todayColombia;
+            
+            console.log('📅 Fecha actual Colombia establecida:', todayColombia);
         }
 
         // NUEVAS FUNCIONES PARA VIGILANTES
@@ -942,14 +978,14 @@
             try {
                 pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando salidas pendientes...</p></div>';
                 
-                const today = new Date().toISOString().split('T')[0];
-                console.log('📅 Cargando salidas pendientes para:', today);
+                const todayColombia = getColombiaDate();
+                console.log('📅 Cargando salidas pendientes para Colombia:', todayColombia);
                 
                 // Obtener autorizaciones pendientes para hoy
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
-                    .eq('fecha_salida', today)
+                    .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
                     .is('salida_efectiva', null)
                     .order('hora_salida', { ascending: true });
@@ -960,10 +996,12 @@
                 }
 
                 if (!authorizations || authorizations.length === 0) {
+                    const currentTime = getColombiaTime();
                     pendingList.innerHTML = `
                         <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
                             <h3>✅ ¡Todo en orden!</h3>
                             <p><strong>No hay salidas pendientes para hoy</strong></p>
+                            <p>Fecha: ${formatDate(todayColombia)} - Hora: ${currentTime}</p>
                             <p>Todos los estudiantes autorizados ya han sido confirmados</p>
                         </div>
                     `;
@@ -1010,7 +1048,12 @@
                 });
 
                 // Generar HTML para cada autorización pendiente
-                let html = '';
+                const currentTime = getColombiaTime();
+                let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 10px;">
+                    <p style="color: #2c3e50; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                    <p style="color: #7f8c8d;">Salidas pendientes de confirmación: ${authorizations.length}</p>
+                </div>`;
+                
                 authorizations.forEach(auth => {
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
@@ -1203,6 +1246,11 @@
             }
 
             try {
+                // Crear timestamp en zona horaria de Colombia
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
+                    timeZone: 'America/Bogota' 
+                });
+
                 const { data, error } = await supabase
                     .from('autorizaciones_salida')
                     .insert([{
@@ -1211,7 +1259,8 @@
                         usuario_autorizador_id: currentUser.id,
                         fecha_salida: exitDate,
                         hora_salida: exitTime,
-                        observaciones: observations || null
+                        observaciones: observations || null,
+                        fecha_creacion: colombiaDateTime
                     }]);
 
                 if (error) throw error;
@@ -1219,9 +1268,9 @@
                 showSuccess('Autorización de salida creada exitosamente');
                 document.getElementById('authorizeForm').reset();
                 
-                // Establecer fecha actual por defecto
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('exitDate').value = today;
+                // Establecer fecha actual de Colombia por defecto
+                const todayColombia = getColombiaDate();
+                document.getElementById('exitDate').value = todayColombia;
                 
             } catch (error) {
                 showError('Error al crear la autorización: ' + error.message);
@@ -1239,15 +1288,15 @@
             }
 
             try {
-                const today = new Date().toISOString().split('T')[0];
+                const todayColombia = getColombiaDate();
                 
-                console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha:', today);
+                console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha Colombia:', todayColombia);
                 
                 // Buscar autorizaciones que coincidan con el nombre
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
-                    .eq('fecha_salida', today)
+                    .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true);
 
                 if (error) {
@@ -1260,7 +1309,7 @@
                     resultDiv.innerHTML = `
                         <div class="verification-card not-authorized">
                             <h3>❌ NO HAY AUTORIZACIONES</h3>
-                            <p>No se encontraron autorizaciones para la fecha de hoy.</p>
+                            <p>No se encontraron autorizaciones para la fecha de hoy (${formatDate(todayColombia)}).</p>
                         </div>
                     `;
                     return;
@@ -1295,7 +1344,7 @@
                     resultDiv.innerHTML = `
                         <div class="verification-card not-authorized">
                             <h3>❌ NO AUTORIZADO</h3>
-                            <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy.</p>
+                            <p>No se encontraron autorizaciones para "${searchTerm}" en la fecha de hoy (${formatDate(todayColombia)}).</p>
                             ${studentsList ? `<p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>` : ''}
                             <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
                         </div>
@@ -1330,7 +1379,11 @@
                 });
 
                 // Mostrar resultados
-                let html = '';
+                const currentTime = getColombiaTime();
+                let html = `<div style="text-align: center; margin-bottom: 15px; background: rgba(52, 152, 219, 0.1); padding: 10px; border-radius: 5px;">
+                    <p style="color: #2c3e50; font-size: 14px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                </div>`;
+                
                 matchingAuth.forEach(auth => {
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
@@ -1345,9 +1398,9 @@
                             <p><strong>Hora autorizada:</strong> ${formatTime(auth.hora_salida)}</p>
                             <p><strong>Autorizado por:</strong> ${user?.nombre}</p>
                             ${auth.observaciones ? `<p><strong>Observaciones:</strong> ${auth.observaciones}</p>` : ''}
-                            ${!auth.salida_efectiva ? 
-                                `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>` : 
-                                `<p style="color: #2ecc71; margin-top: 10px;"><strong>✅ Salida ya confirmada</strong></p>`
+                            ${auth.salida_efectiva ? 
+                                `<p style="color: #2ecc71; margin-top: 10px;"><strong>✅ Salida confirmada: ${formatDateTime(auth.salida_efectiva)}</strong></p>` :
+                                `<button class="btn btn-success" onclick="confirmExit(${auth.id})">Confirmar Salida</button>`
                             }
                         </div>
                     `;
@@ -1369,17 +1422,23 @@
 
         async function confirmExit(authId) {
             try {
+                // Crear timestamp de salida efectiva en zona horaria de Colombia
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
+                    timeZone: 'America/Bogota' 
+                });
+
                 const { data, error } = await supabase
                     .from('autorizaciones_salida')
                     .update({
-                        salida_efectiva: new Date().toISOString(),
+                        salida_efectiva: colombiaDateTime,
                         vigilante_id: currentUser.id
                     })
                     .eq('id', authId);
 
                 if (error) throw error;
 
-                showSuccess('Salida confirmada exitosamente');
+                const colombiaTime = getColombiaTime();
+                showSuccess(`Salida confirmada exitosamente a las ${colombiaTime}`);
                 
                 // Recargar la lista de salidas pendientes
                 if (currentUser.rol.nombre === 'vigilante') {
@@ -1656,7 +1715,7 @@
             });
         }
 
-        // Funciones de historial - MEJORADAS
+        // Funciones de historial - MEJORADAS para zona horaria Colombia
         async function loadHistory(all = false) {
             try {
                 console.log('🔍 Cargando historial...');
@@ -1673,11 +1732,12 @@
                         console.log('🗓️ Filtrando por fecha:', date);
                         query = query.eq('fecha_salida', date);
                     } else {
-                        // Si no hay fecha, mostrar solo los últimos 30 días
-                        const thirtyDaysAgo = new Date();
+                        // Si no hay fecha, mostrar solo los últimos 30 días desde hoy (Colombia)
+                        const todayColombia = getColombiaDate();
+                        const thirtyDaysAgo = new Date(todayColombia);
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                         const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
-                        console.log('🗓️ Filtrando últimos 30 días desde:', dateLimit);
+                        console.log('🗓️ Filtrando últimos 30 días desde:', dateLimit, 'hasta:', todayColombia);
                         query = query.gte('fecha_salida', dateLimit);
                     }
                 }
@@ -1696,7 +1756,8 @@
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="7" style="text-align: center; color: #666; padding: 20px;">
-                                No se encontraron registros para el período seleccionado
+                                No se encontraron registros para el período seleccionado<br>
+                                <small>Zona horaria: Colombia (UTC-5)</small>
                             </td>
                         </tr>
                     `;
@@ -1778,12 +1839,14 @@
                             <span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">
                                 ${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}
                             </span>
+                            ${record.salida_efectiva ? `<br><small style="color: #666;">Hora: ${formatDateTime(record.salida_efectiva)}</small>` : ''}
                             ${record.observaciones ? `<br><small style="color: #666;">Obs: ${record.observaciones}</small>` : ''}
                         </td>
                     `;
                 });
 
-                showSuccess(`Historial cargado: ${authorizations.length} registros`);
+                const currentTime = getColombiaTime();
+                showSuccess(`Historial cargado: ${authorizations.length} registros (${currentTime} - Colombia)`);
                 console.log('✅ Historial cargado exitosamente');
                 
             } catch (error) {
@@ -1792,7 +1855,7 @@
             }
         }
 
-        // Función de debug para historial - MEJORADA
+        // Función de debug para historial - MEJORADA para Colombia
         async function debugHistory() {
             const debugDiv = document.getElementById('historyDebug');
             const debugContent = document.getElementById('historyDebugContent');
@@ -1802,6 +1865,9 @@
             
             try {
                 console.log('🔧 Iniciando debug del historial...');
+                
+                const todayColombia = getColombiaDate();
+                const currentTime = getColombiaTime();
                 
                 // 1. Contar registros en autorizaciones_salida
                 const { data: totalAuth, error: errorAuth } = await supabase
@@ -1829,11 +1895,10 @@
                     .select('*');
                 
                 // 6. Verificar autorizaciones recientes
-                const today = new Date().toISOString().split('T')[0];
                 const { data: todayAuth, error: errorToday } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
-                    .eq('fecha_salida', today);
+                    .eq('fecha_salida', todayColombia);
 
                 // 7. Verificar últimas 5 autorizaciones
                 const { data: lastAuth, error: errorLast } = await supabase
@@ -1843,18 +1908,20 @@
                     .limit(5);
                 
                 let html = '<ul style="text-align: left;">';
+                html += `<li><strong>🕐 Hora actual Colombia:</strong> ${formatDate(todayColombia)} ${currentTime} (UTC-5)</li>`;
                 html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
                 html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
                 html += `<li><strong>👥 Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
                 html += `<li><strong>📝 Total motivos:</strong> ${totalReasons?.length || 0} ${errorReasons ? '❌ Error: ' + errorReasons.message : '✅'}</li>`;
                 html += `<li><strong>🎓 Total grados:</strong> ${totalGrades?.length || 0} ${errorGrades ? '❌ Error: ' + errorGrades.message : '✅'}</li>`;
-                html += `<li><strong>📅 Autorizaciones hoy (${today}):</strong> ${todayAuth?.length || 0} ${errorToday ? '❌ Error: ' + errorToday.message : '✅'}</li>`;
+                html += `<li><strong>📅 Autorizaciones hoy (${formatDate(todayColombia)}):</strong> ${todayAuth?.length || 0} ${errorToday ? '❌ Error: ' + errorToday.message : '✅'}</li>`;
                 html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuth?.length || 0} ${errorLast ? '❌ Error: ' + errorLast.message : '✅'}</li>`;
                 
                 if (lastAuth && lastAuth.length > 0) {
                     html += '<li><strong>📋 Detalles de últimas autorizaciones:</strong><br>';
                     lastAuth.forEach((auth, index) => {
-                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante ID: ${auth.estudiante_id}, Fecha: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}<br>`;
+                        const fechaCreacion = auth.fecha_creacion ? formatDateTime(auth.fecha_creacion) : 'N/A';
+                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante ID: ${auth.estudiante_id}, Fecha salida: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}, Creada: ${fechaCreacion}<br>`;
                     });
                     html += '</li>';
                 }
