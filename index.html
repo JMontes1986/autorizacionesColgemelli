@@ -1248,7 +1248,68 @@
             }
         }
 
-        // Funciones de carga de datos - CORREGIDAS
+        // FUNCIÓN CLAVE: loadStudentsByGrade - NUEVA Y CORREGIDA
+        async function loadStudentsByGrade() {
+            const gradeId = document.getElementById('gradeSelect').value;
+            const studentSelect = document.getElementById('studentSelect');
+            
+            // Limpiar selector de estudiantes
+            studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+            
+            if (!gradeId) {
+                studentSelect.disabled = true;
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                return;
+            }
+
+            try {
+                console.log('🔄 Cargando estudiantes para grado ID:', gradeId);
+                
+                studentSelect.disabled = true;
+                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+                
+                // Obtener estudiantes del grado seleccionado
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select('id, nombre, apellidos')
+                    .eq('grado_id', gradeId)
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) {
+                    console.error('❌ Error al cargar estudiantes por grado:', error);
+                    throw error;
+                }
+
+                console.log('📊 Estudiantes encontrados para el grado:', students?.length || 0);
+
+                // Llenar selector con estudiantes
+                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                if (students && students.length > 0) {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = `${student.nombre} ${student.apellidos}`;
+                        studentSelect.appendChild(option);
+                    });
+                    studentSelect.disabled = false;
+                    console.log('✅ Estudiantes cargados en selector');
+                } else {
+                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                    studentSelect.disabled = true;
+                    console.log('⚠️ No se encontraron estudiantes para este grado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en loadStudentsByGrade:', error);
+                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
+                studentSelect.disabled = true;
+                showError('Error al cargar estudiantes del grado: ' + error.message);
+            }
+        }
+
+        // Funciones de carga de datos - CORREGIDAS - CORREGIDAS
         async function loadStudents() {
             try {
                 console.log('🔄 Cargando estudiantes...');
