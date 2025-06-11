@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Salidas - Colegio Gemelli</title>
-    <!-- Supabase CDN - Usando cdnjs.cloudflare.com que está permitido -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/dist/umd/supabase.min.js"></script>
+    <!-- Supabase CDN para GitHub -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -621,7 +621,7 @@
         let currentUser = null;
         let currentEditingId = null;
 
-        // Inicializar Supabase - SIMPLIFICADO
+        // Inicializar Supabase
         async function initSupabase() {
             try {
                 console.log('🔄 Inicializando Supabase...');
@@ -690,7 +690,7 @@
             }
         }
 
-        // Función para probar conexión - SIMPLIFICADA
+        // Función para probar conexión
         async function testConnection() {
             updateConnectionStatus(false, 'Probando...');
             
@@ -1761,7 +1761,7 @@
             });
         }
 
-        // Inicializar la aplicación - SIMPLIFICADO
+        // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Sistema iniciado');
             updateConnectionStatus(false, 'Conectando...');
