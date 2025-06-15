@@ -1230,30 +1230,115 @@
             }
         }
 
-        // Funciones de carga de datos - CORREGIDAS
+        // NUEVA FUNCIÓN: Cargar estudiantes por grado seleccionado
+        async function loadStudentsByGrade() {
+            const gradeId = document.getElementById('gradeSelect').value;
+            const studentSelect = document.getElementById('studentSelect');
+            
+            // Si no hay grado seleccionado, deshabilitar el select de estudiantes
+            if (!gradeId) {
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                studentSelect.disabled = true;
+                return;
+            }
+            
+            try {
+                // Mostrar mensaje de carga
+                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+                studentSelect.disabled = true;
+                
+                console.log('🔄 Cargando estudiantes del grado ID:', gradeId);
+                
+                // Cargar estudiantes del grado seleccionado
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select(`
+                        id,
+                        nombre,
+                        apellidos,
+                        documento
+                    `)
+                    .eq('grado_id', gradeId)
+                    .eq('activo', true)
+                    .order('apellidos')
+                    .order('nombre');
+
+                if (error) throw error;
+
+                console.log('📊 Estudiantes encontrados:', students.length);
+
+                // Llenar el select con los estudiantes
+                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                if (students && students.length > 0) {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = `${student.apellidos}, ${student.nombre}${student.documento ? ' - Doc: ' + student.documento : ''}`;
+                        studentSelect.appendChild(option);
+                    });
+                    
+                    // Habilitar el select
+                    studentSelect.disabled = false;
+                    console.log('✅ Select de estudiantes habilitado con', students.length, 'estudiantes');
+                } else {
+                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                    console.log('⚠️ No se encontraron estudiantes para el grado seleccionado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al cargar estudiantes por grado:', error);
+                showError('Error al cargar los estudiantes: ' + error.message);
+                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
+                studentSelect.disabled = true;
+            }
+        }
+
+        // Función auxiliar para resetear el formulario de autorización
+        function resetAuthorizationForm() {
+            document.getElementById('authorizeForm').reset();
+            
+            // Resetear el select de estudiantes
+            const studentSelect = document.getElementById('studentSelect');
+            studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+            studentSelect.disabled = true;
+            
+            // Establecer fecha actual de Colombia
+            const todayColombia = getColombiaDate();
+            document.getElementById('exitDate').value = todayColombia;
+        }
+
+        // Funciones de carga de datos
         async function loadStudents() {
             try {
                 const { data: students, error } = await supabase
                     .from('estudiantes')
                     .select(`
                         *,
-                        grado:grados(id, nombre, nivel)
+                        grado:grados(nombre)
                     `)
                     .eq('activo', true)
                     .order('nombre');
 
                 if (error) throw error;
 
-                console.log('📚 Total de estudiantes cargados:', students.length);
+                const select = document.getElementById('studentSelect');
+                const gradeSelect = document.getElementById('studentGrade');
+                
+                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.nombre} ${student.apellidos} - ${student.grado.nombre}`;
+                    select.appendChild(option);
+                });
 
                 // Actualizar tabla de administración si está visible
-                if (currentUser && currentUser.rol.nombre === 'administrador') {
-                    updateStudentsTable(students);
-                }
+                updateStudentsTable(students);
                 
             } catch (error) {
                 console.error('Error loading students:', error);
-                showError('Error al cargar estudiantes: ' + error.message);
             }
         }
 
@@ -1307,14 +1392,16 @@
 
                 // También llenar el select de grados en el modal de estudiantes (admin)
                 const studentGradeSelect = document.getElementById('studentGrade');
-                studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
-                
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                    studentGradeSelect.appendChild(option);
-                });
+                if (studentGradeSelect) {
+                    studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                    
+                    grades.forEach(grade => {
+                        const option = document.createElement('option');
+                        option.value = grade.id;
+                        option.textContent = `${grade.nombre} - ${grade.nivel}`;
+                        studentGradeSelect.appendChild(option);
+                    });
+                }
 
                 // Actualizar tabla de administración si está visible
                 updateGradesTable(grades);
@@ -1324,71 +1411,6 @@
             } catch (error) {
                 console.error('Error loading grades:', error);
                 showError('Error al cargar los grados: ' + error.message);
-            }
-        }
-
-        // NUEVA FUNCIÓN: Cargar estudiantes por grado seleccionado
-        async function loadStudentsByGrade() {
-            const gradeId = document.getElementById('gradeSelect').value;
-            const studentSelect = document.getElementById('studentSelect');
-            
-            // Si no hay grado seleccionado, deshabilitar el select de estudiantes
-            if (!gradeId) {
-                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                studentSelect.disabled = true;
-                return;
-            }
-            
-            try {
-                // Mostrar mensaje de carga
-                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
-                studentSelect.disabled = true;
-                
-                console.log('🔄 Cargando estudiantes del grado ID:', gradeId);
-                
-                // Cargar estudiantes del grado seleccionado
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        id,
-                        nombre,
-                        apellidos,
-                        documento,
-                        grado:grados(id, nombre)
-                    `)
-                    .eq('grado_id', gradeId)
-                    .eq('activo', true)
-                    .order('apellidos')
-                    .order('nombre');
-
-                if (error) throw error;
-
-                console.log('📊 Estudiantes encontrados:', students.length);
-
-                // Llenar el select con los estudiantes
-                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                if (students && students.length > 0) {
-                    students.forEach(student => {
-                        const option = document.createElement('option');
-                        option.value = student.id;
-                        option.textContent = `${student.apellidos}, ${student.nombre}${student.documento ? ' - Doc: ' + student.documento : ''}`;
-                        studentSelect.appendChild(option);
-                    });
-                    
-                    // Habilitar el select
-                    studentSelect.disabled = false;
-                    console.log('✅ Select de estudiantes habilitado con', students.length, 'estudiantes');
-                } else {
-                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
-                    console.log('⚠️ No se encontraron estudiantes para el grado seleccionado');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error al cargar estudiantes por grado:', error);
-                showError('Error al cargar los estudiantes: ' + error.message);
-                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-                studentSelect.disabled = true;
             }
         }
 
@@ -1435,7 +1457,7 @@
             }
         }
 
-        // Función para autorizar salida - CORREGIDA
+        // Función para autorizar salida - ACTUALIZADA para nuevo flujo
         async function authorizeExit(e) {
             e.preventDefault();
             
@@ -1477,7 +1499,7 @@
                         hora_salida: exitTime,
                         observaciones: observations || null,
                         fecha_creacion: colombiaDateTime,
-                        autorizada: true  // Asegurarse de que se marque como autorizada
+                        autorizada: true
                     }]);
 
                 if (error) throw error;
@@ -1488,7 +1510,7 @@
                 const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
                 const studentName = studentSelect.options[studentSelect.selectedIndex].text;
 
-                showSuccess(`✅ Autorización creada exitosamente para ${studentName} del ${gradeName}`);
+                showSuccess(`✅ Autorización creada exitosamente para ${studentName} (${gradeName})`);
                 
                 // Resetear el formulario
                 resetAuthorizationForm();
@@ -1496,23 +1518,8 @@
                 console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
                 
             } catch (error) {
-                console.error('❌ Error al crear autorización:', error);
                 showError('Error al crear la autorización: ' + error.message);
             }
-        }
-
-        // Función auxiliar para resetear el formulario de autorización
-        function resetAuthorizationForm() {
-            document.getElementById('authorizeForm').reset();
-            
-            // Resetear el select de estudiantes
-            const studentSelect = document.getElementById('studentSelect');
-            studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-            studentSelect.disabled = true;
-            
-            // Establecer fecha actual de Colombia
-            const todayColombia = getColombiaDate();
-            document.getElementById('exitDate').value = todayColombia;
         }
 
         // Función para buscar y verificar estudiante (búsqueda manual)
@@ -2065,7 +2072,7 @@
                     <td>${student.nombre}</td>
                     <td>${student.apellidos}</td>
                     <td>${student.documento || 'N/A'}</td>
-                    <td>${student.grado?.nombre || 'Sin grado'}</td>
+                    <td>${student.grado.nombre}</td>
                     <td>
                         <button class="btn btn-secondary" onclick="editStudent(${student.id})">Editar</button>
                         <button class="btn btn-danger" onclick="deleteStudent(${student.id})">Eliminar</button>
