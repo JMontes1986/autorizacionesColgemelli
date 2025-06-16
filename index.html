@@ -19,8 +19,8 @@
 <script src="https://hcaptcha.com/1/api.js" async defer></script>
 <!-- CryptoJS para cifrado -->
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
-<!-- Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+<!-- Chart.js versión estable -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <style>
         * {
             margin: 0;
@@ -1999,6 +1999,10 @@
 <h3>🟢🔵 Estado de Salidas</h3>
 <div class="chart-container">
 <canvas id="statusChart"></canvas>
+<div id="statusChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+<p>📊 Cargando gráfico...</p>
+<p><small>Si no aparece, revisa que Chart.js esté cargado</small></p>
+</div>
 </div>
 </div>
 
@@ -2007,6 +2011,9 @@
 <h3>🎓 Salidas por Grado</h3>
 <div class="chart-container">
 <canvas id="gradeChart"></canvas>
+<div id="gradeChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+<p>📊 Cargando gráfico...</p>
+</div>
 </div>
 </div>
 
@@ -2023,6 +2030,9 @@
 <h3>📝 Motivos de Salida</h3>
 <div class="chart-container">
 <canvas id="reasonChart"></canvas>
+<div id="reasonChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+<p>📊 Cargando gráfico...</p>
+</div>
 </div>
 </div>
 
@@ -2031,16 +2041,24 @@
 <h3>⏱️ Timeline de Salidas Hoy</h3>
 <div class="chart-container">
 <canvas id="timelineChart"></canvas>
+<div id="timelineChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+<p>📊 Cargando gráfico...</p>
+</div>
 </div>
 </div>
 </div>
 
-<!-- Controles del Dashboard -->
+        <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
+<button class="btn" onclick="forceReloadCharts()" style="font-size: 12px; background: #e67e22;">🔄 Recargar Gráficos</button>
+</div>
+
+<div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
+<p style="margin: 0; color: #666;"><strong>Estado Chart.js:</strong> <span id="chartjsStatusText">Verificando...</span></p>
 </div>
 </div>
 
@@ -2180,8 +2198,132 @@
 </div>
 <script>
         // ========================================
-        // FUNCIONES DE RESPONSIVE DESIGN
+        // VERIFICACIÓN Y CARGA DE CHART.JS
         // ========================================
+
+        function waitForChartJS() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 segundos máximo
+                
+                const checkChart = () => {
+                    attempts++;
+                    console.log(`🔍 Verificando Chart.js - Intento ${attempts}/${maxAttempts}`);
+                    
+                    if (typeof Chart !== 'undefined') {
+                        console.log('✅ Chart.js cargado exitosamente:', Chart.version);
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        console.error('❌ Chart.js no se pudo cargar después de', maxAttempts, 'intentos');
+                        reject(new Error('Chart.js no se cargó'));
+                    } else {
+                        setTimeout(checkChart, 100);
+                    }
+                };
+                
+                checkChart();
+            });
+        }
+
+        async function loadChartJSFallback() {
+            try {
+                console.log('🔄 Intentando cargar Chart.js como fallback...');
+                
+                // Crear elemento script para Chart.js
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+                script.crossOrigin = 'anonymous';
+                
+                return new Promise((resolve, reject) => {
+                    script.onload = () => {
+                        console.log('✅ Chart.js fallback cargado exitosamente');
+                        resolve(true);
+                    };
+                    
+                    script.onerror = () => {
+                        console.error('❌ Error cargando Chart.js fallback');
+                        reject(new Error('Fallback falló'));
+                    };
+                    
+                    document.head.appendChild(script);
+                    
+                    // Timeout de 10 segundos
+                    setTimeout(() => {
+                        reject(new Error('Timeout cargando Chart.js'));
+                    }, 10000);
+                });
+                
+            } catch (error) {
+                console.error('❌ Error en fallback de Chart.js:', error);
+                throw error;
+            }
+        }
+
+        async function ensureChartJSLoaded() {
+            try {
+                // Intentar con la carga normal primero
+                await waitForChartJS();
+                return true;
+            } catch (error) {
+                console.log('⚠️ Carga normal falló, intentando fallback...');
+                try {
+                    await loadChartJSFallback();
+                    // Esperar un poco más después del fallback
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await waitForChartJS();
+                    return true;
+                } catch (fallbackError) {
+                    console.error('❌ Ambos métodos de carga fallaron:', fallbackError);
+                    return false;
+                }
+            }
+        }
+
+        // Crear gráficos simples sin Chart.js como última opción
+        function createSimpleCharts() {
+            console.log('📊 Creando gráficos simples sin Chart.js...');
+            
+            // Gráfico de estado simple
+            const statusChart = document.getElementById('statusChart');
+            if (statusChart) {
+                statusChart.parentElement.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <h4>Estado de Salidas</h4>
+                        <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+                            <div style="background: #2ecc71; color: white; padding: 15px; border-radius: 10px; flex: 1; margin: 0 5px;">
+                                <div style="font-size: 24px; font-weight: bold;" id="simple-pending">0</div>
+                                <div>🟢 Pendientes</div>
+                            </div>
+                            <div style="background: #3498db; color: white; padding: 15px; border-radius: 10px; flex: 1; margin: 0 5px;">
+                                <div style="font-size: 24px; font-weight: bold;" id="simple-confirmed">0</div>
+                                <div>🔵 Confirmadas</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Otros gráficos simples
+            ['gradeChart', 'reasonChart', 'timelineChart'].forEach(chartId => {
+                const chart = document.getElementById(chartId);
+                if (chart) {
+                    chart.parentElement.innerHTML = `
+                        <div style="padding: 20px; text-align: center; color: #666;">
+                            <p>📊 Gráfico no disponible</p>
+                            <p><small>Chart.js no se pudo cargar. Los datos básicos están disponibles arriba.</small></p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function updateSimpleCharts(pendingCount, confirmedCount) {
+            const simplePending = document.getElementById('simple-pending');
+            const simpleConfirmed = document.getElementById('simple-confirmed');
+            
+            if (simplePending) simplePending.textContent = pendingCount;
+            if (simpleConfirmed) simpleConfirmed.textContent = confirmedCount;
+        }
 
         // Detectar tipo de dispositivo y ajustar UI
         function detectDeviceAndAdjustUI() {
@@ -2334,13 +2476,6 @@
                 const authorizations = todayAuthorizations || [];
                 console.log(`📊 Autorizaciones encontradas: ${authorizations.length}`);
 
-                if (authorizations.length === 0) {
-                    console.log('⚠️ No hay autorizaciones para hoy');
-                    // Mostrar datos vacíos pero funcionales
-                    updateEmptyDashboard();
-                    return;
-                }
-                
                 // Procesar estadísticas básicas
                 const pending = authorizations.filter(auth => !auth.salida_efectiva);
                 const confirmed = authorizations.filter(auth => auth.salida_efectiva);
@@ -2363,8 +2498,22 @@
 
                 console.log('✅ Estadísticas básicas actualizadas');
 
-                // Ahora cargar datos relacionados para los gráficos
-                await loadDashboardCharts(authorizations);
+                // Verificar si Chart.js está disponible
+                console.log('🔍 Verificando disponibilidad de Chart.js...');
+                const chartJSAvailable = await ensureChartJSLoaded();
+                
+                if (chartJSAvailable) {
+                    console.log('✅ Chart.js disponible, cargando gráficos completos...');
+                    // Cargar gráficos con Chart.js
+                    await loadDashboardCharts(authorizations);
+                } else {
+                    console.log('⚠️ Chart.js no disponible, usando gráficos simples...');
+                    // Usar gráficos simples
+                    createSimpleCharts();
+                    updateSimpleCharts(pending.length, confirmed.length);
+                }
+
+                // Cargar actividad reciente (esto no depende de Chart.js)
                 await loadDashboardActivity(authorizations);
 
                 console.log('✅ Dashboard completamente cargado');
@@ -2386,15 +2535,24 @@
             document.getElementById('dashTotalCount').textContent = '0';
             document.getElementById('dashRecentCount').textContent = '0';
 
-            // Crear gráficos vacíos
-            createStatusChart(0, 0);
-            createGradeChart([]);
-            createReasonChart([]);
-            createTimelineChart([]);
+            // Verificar si Chart.js está disponible
+            if (typeof Chart !== 'undefined') {
+                // Crear gráficos vacíos con Chart.js
+                createStatusChart(0, 0);
+                createGradeChart([]);
+                createReasonChart([]);
+                createTimelineChart([]);
+            } else {
+                // Usar gráficos simples
+                createSimpleCharts();
+                updateSimpleCharts(0, 0);
+            }
             
             // Mostrar mensaje en actividad reciente
             const container = document.getElementById('recentActivity');
-            container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay salidas registradas para hoy</p>';
+            if (container) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay salidas registradas para hoy</p>';
+            }
             
             console.log('📊 Dashboard inicializado con datos vacíos');
         }
@@ -3190,50 +3348,147 @@
             }
         }
 
-        // Función de debug para verificar datos
+        // Función de debug mejorada para verificar datos
         async function debugDashboard() {
             try {
-                console.log('🔧 === DEBUG DASHBOARD ===');
+                console.log('🔧 === DEBUG DASHBOARD COMPLETO ===');
                 const todayColombia = getColombiaDate();
                 console.log('📅 Fecha Colombia:', todayColombia);
                 
-                // Verificar Chart.js
-                console.log('📊 Chart.js disponible:', typeof Chart !== 'undefined');
+                // 1. Verificar dependencias críticas
+                console.log('📊 === VERIFICACIÓN DE DEPENDENCIAS ===');
+                console.log('Chart.js disponible:', typeof Chart !== 'undefined');
+                if (typeof Chart !== 'undefined') {
+                    console.log('Chart.js versión:', Chart.version || 'Versión no disponible');
+                } else {
+                    console.error('❌ Chart.js NO ESTÁ CARGADO');
+                    
+                    // Intentar cargar Chart.js ahora
+                    console.log('🔄 Intentando cargar Chart.js...');
+                    try {
+                        const loaded = await ensureChartJSLoaded();
+                        console.log('Chart.js carga forzada:', loaded ? 'ÉXITO' : 'FALLÓ');
+                    } catch (error) {
+                        console.error('❌ Error cargando Chart.js:', error.message);
+                    }
+                }
                 
-                // Verificar elementos del DOM
-                const elements = ['statusChart', 'gradeChart', 'reasonChart', 'timelineChart', 'recentActivity'];
+                console.log('Supabase disponible:', typeof supabase !== 'undefined');
+                console.log('CryptoJS disponible:', typeof CryptoJS !== 'undefined');
+                
+                // 2. Verificar elementos del DOM
+                console.log('📊 === VERIFICACIÓN DE ELEMENTOS DOM ===');
+                const elements = [
+                    'statusChart', 'gradeChart', 'reasonChart', 'timelineChart', 'recentActivity',
+                    'dashPendingCount', 'dashConfirmedCount', 'dashTotalCount', 'dashRecentCount'
+                ];
                 elements.forEach(id => {
                     const element = document.getElementById(id);
-                    console.log(`🎯 Elemento ${id}:`, !!element);
+                    console.log(`🎯 Elemento ${id}:`, element ? 'ENCONTRADO' : '❌ NO ENCONTRADO');
+                    if (element && id.includes('Chart')) {
+                        console.log(`   Canvas ${id} dimensiones:`, element.offsetWidth, 'x', element.offsetHeight);
+                    }
                 });
                 
-                // Probar consulta básica
-                const { data, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .eq('fecha_salida', todayColombia);
+                // 3. Probar consulta de base de datos
+                console.log('📊 === VERIFICACIÓN DE BASE DE DATOS ===');
+                
+                try {
+                    const { data, error } = await supabase
+                        .from('autorizaciones_salida')
+                        .select('*')
+                        .eq('fecha_salida', todayColombia);
+                        
+                    console.log('📊 Consulta básica autorizaciones:', {
+                        error: error ? error.message : 'Sin error',
+                        count: data ? data.length : 0,
+                        sample: data && data.length > 0 ? data[0] : 'No hay datos'
+                    });
                     
-                console.log('📊 Consulta básica:', {
-                    error: error ? error.message : 'Sin error',
-                    count: data ? data.length : 0,
-                    data: data ? data.slice(0, 2) : null
-                });
+                    if (data && data.length > 0) {
+                        const pending = data.filter(auth => !auth.salida_efectiva);
+                        const confirmed = data.filter(auth => auth.salida_efectiva);
+                        console.log('📈 Estadísticas calculadas:', {
+                            total: data.length,
+                            pendientes: pending.length,
+                            confirmadas: confirmed.length
+                        });
+                    }
+                    
+                } catch (dbError) {
+                    console.error('❌ Error en consulta de base de datos:', dbError);
+                }
                 
-                // Verificar tablas relacionadas
-                const { data: estudiantes } = await supabase.from('estudiantes').select('*').limit(1);
-                const { data: motivos } = await supabase.from('motivos').select('*').limit(1);
-                const { data: usuarios } = await supabase.from('usuarios').select('*').limit(1);
+                // 4. Verificar tablas relacionadas
+                console.log('📊 === VERIFICACIÓN DE TABLAS RELACIONADAS ===');
+                try {
+                    const [estudiantes, motivos, usuarios] = await Promise.all([
+                        supabase.from('estudiantes').select('*').limit(1),
+                        supabase.from('motivos').select('*').limit(1),
+                        supabase.from('usuarios').select('*').limit(1)
+                    ]);
+                    
+                    console.log('📊 Tablas relacionadas:', {
+                        estudiantes: estudiantes.data ? `${estudiantes.data.length} encontrados` : `Error: ${estudiantes.error?.message}`,
+                        motivos: motivos.data ? `${motivos.data.length} encontrados` : `Error: ${motivos.error?.message}`,
+                        usuarios: usuarios.data ? `${usuarios.data.length} encontrados` : `Error: ${usuarios.error?.message}`
+                    });
+                } catch (tablesError) {
+                    console.error('❌ Error verificando tablas relacionadas:', tablesError);
+                }
                 
-                console.log('📊 Tablas relacionadas:', {
-                    estudiantes: estudiantes ? estudiantes.length : 'Error',
-                    motivos: motivos ? motivos.length : 'Error',
-                    usuarios: usuarios ? usuarios.length : 'Error'
-                });
+                // 5. Verificar estado actual del dashboard
+                console.log('📊 === ESTADO ACTUAL DEL DASHBOARD ===');
+                const currentStats = {
+                    pendientes: document.getElementById('dashPendingCount')?.textContent || 'N/A',
+                    confirmadas: document.getElementById('dashConfirmedCount')?.textContent || 'N/A',
+                    total: document.getElementById('dashTotalCount')?.textContent || 'N/A',
+                    recientes: document.getElementById('dashRecentCount')?.textContent || 'N/A'
+                };
+                console.log('📊 Estadísticas mostradas:', currentStats);
                 
-                console.log('🔧 === FIN DEBUG ===');
+                // 6. Verificar gráficos existentes
+                console.log('📊 === ESTADO DE GRÁFICOS ===');
+                console.log('Gráficos en dashboardCharts:', Object.keys(dashboardCharts || {}));
+                
+                // 7. Intentar crear un gráfico de prueba
+                if (typeof Chart !== 'undefined') {
+                    console.log('🧪 === PRUEBA DE CREACIÓN DE GRÁFICO ===');
+                    try {
+                        const testCanvas = document.createElement('canvas');
+                        testCanvas.width = 100;
+                        testCanvas.height = 100;
+                        
+                        const testChart = new Chart(testCanvas, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Prueba'],
+                                datasets: [{
+                                    data: [1],
+                                    backgroundColor: ['#2ecc71']
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                animation: false
+                            }
+                        });
+                        
+                        console.log('✅ Gráfico de prueba creado exitosamente');
+                        testChart.destroy();
+                    } catch (chartError) {
+                        console.error('❌ Error creando gráfico de prueba:', chartError);
+                    }
+                }
+                
+                console.log('🔧 === FIN DEBUG COMPLETO ===');
+                
+                // Mostrar resumen en la UI
+                showSuccess('Debug completado. Revisa la consola del navegador para detalles completos.');
                 
             } catch (error) {
-                console.error('❌ Error en debug:', error);
+                console.error('❌ Error en debug completo:', error);
+                showError('Error en debug: ' + error.message);
             }
         }
 
@@ -3320,8 +3575,74 @@
             document.body.removeChild(link);
         }
 
-        function showDetailedView() {
-            showSection('historySectionDiv');
+        async function forceReloadCharts() {
+            try {
+                console.log('🔄 Forzando recarga de gráficos...');
+                showSuccess('Intentando recargar Chart.js...');
+                
+                // Mostrar estado
+                const statusDiv = document.getElementById('chartjsStatus');
+                const statusText = document.getElementById('chartjsStatusText');
+                
+                if (statusDiv && statusText) {
+                    statusDiv.style.display = 'block';
+                    statusText.textContent = 'Recargando Chart.js...';
+                }
+                
+                // Intentar cargar Chart.js de nuevo
+                const loaded = await ensureChartJSLoaded();
+                
+                if (loaded) {
+                    console.log('✅ Chart.js recargado exitosamente');
+                    if (statusText) {
+                        statusText.textContent = 'Chart.js cargado ✅';
+                        statusText.style.color = '#2ecc71';
+                    }
+                    
+                    showSuccess('Chart.js cargado exitosamente. Actualizando dashboard...');
+                    
+                    // Recargar dashboard con gráficos
+                    setTimeout(async () => {
+                        await loadDashboard();
+                        showSuccess('Dashboard actualizado con gráficos completos');
+                    }, 500);
+                    
+                } else {
+                    console.error('❌ No se pudo cargar Chart.js');
+                    if (statusText) {
+                        statusText.textContent = 'Chart.js no disponible ❌';
+                        statusText.style.color = '#e74c3c';
+                    }
+                    showError('No se pudo cargar Chart.js. El dashboard funcionará en modo simplificado.');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error forzando recarga de gráficos:', error);
+                showError('Error al recargar gráficos: ' + error.message);
+                
+                const statusText = document.getElementById('chartjsStatusText');
+                if (statusText) {
+                    statusText.textContent = 'Error cargando Chart.js ❌';
+                    statusText.style.color = '#e74c3c';
+                }
+            }
+        }
+
+        function updateChartJSStatus() {
+            const statusDiv = document.getElementById('chartjsStatus');
+            const statusText = document.getElementById('chartjsStatusText');
+            
+            if (!statusDiv || !statusText) return;
+            
+            statusDiv.style.display = 'block';
+            
+            if (typeof Chart !== 'undefined') {
+                statusText.textContent = `Chart.js ${Chart.version || 'cargado'} ✅`;
+                statusText.style.color = '#2ecc71';
+            } else {
+                statusText.textContent = 'Chart.js no disponible ❌';
+                statusText.style.color = '#e74c3c';
+            }
         }
 
         // ========================================
@@ -4482,7 +4803,7 @@
             
             if (sectionId === 'historySectionDiv') {
                 loadHistory(true);
-                setTimeout(setupTableScroll, 100); // Configurar scroll después de cargar
+                setTimeout(setupTableScroll, 100);
             } else if (sectionId === 'verifySectionDiv') {
                 // Resetear las secciones de vigilancia al estado inicial
                 document.getElementById('searchSection').style.display = 'none';
@@ -4495,19 +4816,20 @@
             } else if (sectionId === 'dashboardSectionDiv') {
                 console.log('📊 Iniciando sección dashboard...');
                 
-                // Verificar que Chart.js esté disponible
-                if (typeof Chart === 'undefined') {
-                    console.error('❌ Chart.js no está disponible');
-                    showError('Error: Chart.js no se ha cargado correctamente. Recarga la página.');
-                    return;
-                }
+                // Mostrar mensaje de carga inmediatamente
+                document.getElementById('dashPendingCount').textContent = '...';
+                document.getElementById('dashConfirmedCount').textContent = '...';
+                document.getElementById('dashTotalCount').textContent = '...';
+                document.getElementById('dashRecentCount').textContent = '...';
                 
-                // Inicializar dashboard vacío primero
-                updateEmptyDashboard();
-                
-                // Luego cargar datos reales
-                setTimeout(() => {
-                    loadDashboard();
+                // Cargar dashboard con manejo de Chart.js
+                setTimeout(async () => {
+                    try {
+                        await loadDashboard();
+                    } catch (error) {
+                        console.error('❌ Error cargando dashboard desde showSection:', error);
+                        showError('Error al cargar el dashboard. Usa el botón Debug para más información.');
+                    }
                 }, 100);
             }
             
