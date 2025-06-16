@@ -2040,6 +2040,7 @@
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
+<button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 </div>
 </div>
 
@@ -2306,36 +2307,47 @@
                     return;
                 }
 
-                console.log('📊 Cargando dashboard general del sistema...');
+                console.log('📊 Iniciando carga del dashboard...');
+                
+                // Mostrar indicador de carga
+                document.getElementById('dashPendingCount').textContent = '...';
+                document.getElementById('dashConfirmedCount').textContent = '...';
+                document.getElementById('dashTotalCount').textContent = '...';
+                document.getElementById('dashRecentCount').textContent = '...';
                 
                 const todayColombia = getColombiaDate();
+                console.log('📅 Fecha Colombia para consulta:', todayColombia);
                 
-                // Obtener TODAS las autorizaciones de hoy (consulta general, no por usuario)
-                const { data: todayAuthorizations, error } = await supabase
+                // Consulta simplificada - solo datos básicos primero
+                const { data: todayAuthorizations, error: authError } = await supabase
                     .from('autorizaciones_salida')
-                    .select(`
-                        *,
-                        estudiante:estudiantes(nombre, apellidos, grado:grados(nombre)),
-                        motivo:motivos(nombre),
-                        usuario:usuarios(nombre),
-                        vigilante:usuarios!autorizaciones_salida_vigilante_id_fkey(nombre)
-                    `)
+                    .select('*')
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
                     .order('fecha_creacion', { ascending: false });
 
-                if (error) {
-                    console.error('Error cargando datos del dashboard:', error);
-                    throw error;
+                if (authError) {
+                    console.error('❌ Error en consulta de autorizaciones:', authError);
+                    throw authError;
                 }
 
                 const authorizations = todayAuthorizations || [];
+                console.log(`📊 Autorizaciones encontradas: ${authorizations.length}`);
+
+                if (authorizations.length === 0) {
+                    console.log('⚠️ No hay autorizaciones para hoy');
+                    // Mostrar datos vacíos pero funcionales
+                    updateEmptyDashboard();
+                    return;
+                }
                 
-                // Procesar estadísticas GENERALES (de todo el sistema)
+                // Procesar estadísticas básicas
                 const pending = authorizations.filter(auth => !auth.salida_efectiva);
                 const confirmed = authorizations.filter(auth => auth.salida_efectiva);
                 
-                // Actividad de la última hora (GENERAL)
+                console.log(`📈 Estadísticas: ${pending.length} pendientes, ${confirmed.length} confirmadas`);
+                
+                // Actividad de la última hora
                 const oneHourAgo = new Date();
                 oneHourAgo.setHours(oneHourAgo.getHours() - 1);
                 const recentActivity = authorizations.filter(auth => 
@@ -2343,303 +2355,632 @@
                     (auth.salida_efectiva && new Date(auth.salida_efectiva) > oneHourAgo)
                 );
 
-                // Actualizar estadísticas GENERALES
+                // Actualizar estadísticas básicas primero
                 document.getElementById('dashPendingCount').textContent = pending.length;
                 document.getElementById('dashConfirmedCount').textContent = confirmed.length;
                 document.getElementById('dashTotalCount').textContent = authorizations.length;
                 document.getElementById('dashRecentCount').textContent = recentActivity.length;
 
-                // Crear gráficos con datos GENERALES
-                createStatusChart(pending.length, confirmed.length);
-                createGradeChart(authorizations);
-                createReasonChart(authorizations);
-                createTimelineChart(authorizations);
-                
-                // Mostrar actividad reciente GENERAL (todas las salidas del sistema)
-                displayRecentActivity(authorizations.slice(0, 15));
+                console.log('✅ Estadísticas básicas actualizadas');
 
-                console.log(`✅ Dashboard general cargado: ${authorizations.length} autorizaciones totales (${pending.length} pendientes, ${confirmed.length} confirmadas)`);
+                // Ahora cargar datos relacionados para los gráficos
+                await loadDashboardCharts(authorizations);
+                await loadDashboardActivity(authorizations);
+
+                console.log('✅ Dashboard completamente cargado');
                 
             } catch (error) {
-                console.error('❌ Error cargando dashboard:', error);
+                console.error('❌ Error general en dashboard:', error);
                 await logSecurityEvent('error', 'Error al cargar dashboard', { 
                     error: error.message.substring(0, 200) 
                 }, false);
                 showError('Error al cargar el dashboard: ' + error.message);
+                updateEmptyDashboard();
+            }
+        }
+
+        function updateEmptyDashboard() {
+            // Mostrar ceros en lugar de errores
+            document.getElementById('dashPendingCount').textContent = '0';
+            document.getElementById('dashConfirmedCount').textContent = '0';
+            document.getElementById('dashTotalCount').textContent = '0';
+            document.getElementById('dashRecentCount').textContent = '0';
+
+            // Crear gráficos vacíos
+            createStatusChart(0, 0);
+            createGradeChart([]);
+            createReasonChart([]);
+            createTimelineChart([]);
+            
+            // Mostrar mensaje en actividad reciente
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay salidas registradas para hoy</p>';
+            
+            console.log('📊 Dashboard inicializado con datos vacíos');
+        }
+
+        async function loadDashboardCharts(authorizations) {
+            try {
+                console.log('📊 Cargando datos para gráficos...');
+                
+                // Obtener datos relacionados para gráficos
+                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
+                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
+
+                let students = [];
+                let reasons = [];
+
+                // Consultas separadas más robustas
+                if (studentIds.length > 0) {
+                    const { data: studentsData, error: studentsError } = await supabase
+                        .from('estudiantes')
+                        .select(`
+                            id, 
+                            nombre, 
+                            apellidos,
+                            grado:grados(nombre)
+                        `)
+                        .in('id', studentIds);
+
+                    if (studentsError) {
+                        console.error('Error cargando estudiantes:', studentsError);
+                    } else {
+                        students = studentsData || [];
+                    }
+                }
+
+                if (reasonIds.length > 0) {
+                    const { data: reasonsData, error: reasonsError } = await supabase
+                        .from('motivos')
+                        .select('id, nombre')
+                        .in('id', reasonIds);
+
+                    if (reasonsError) {
+                        console.error('Error cargando motivos:', reasonsError);
+                    } else {
+                        reasons = reasonsData || [];
+                    }
+                }
+
+                // Crear mapas para búsqueda rápida
+                const studentMap = {};
+                const reasonMap = {};
+
+                students.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasons.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                // Enriquecer datos de autorizaciones
+                const enrichedAuthorizations = authorizations.map(auth => ({
+                    ...auth,
+                    estudiante: studentMap[auth.estudiante_id],
+                    motivo: reasonMap[auth.motivo_id]
+                }));
+
+                // Crear gráficos con datos enriquecidos
+                const pending = enrichedAuthorizations.filter(auth => !auth.salida_efectiva);
+                const confirmed = enrichedAuthorizations.filter(auth => auth.salida_efectiva);
+
+                createStatusChart(pending.length, confirmed.length);
+                createGradeChart(enrichedAuthorizations);
+                createReasonChart(enrichedAuthorizations);
+                createTimelineChart(enrichedAuthorizations);
+
+                console.log('✅ Gráficos creados exitosamente');
+
+            } catch (error) {
+                console.error('❌ Error cargando datos para gráficos:', error);
+                // Crear gráficos básicos en caso de error
+                const pending = authorizations.filter(auth => !auth.salida_efectiva);
+                const confirmed = authorizations.filter(auth => auth.salida_efectiva);
+                createStatusChart(pending.length, confirmed.length);
+                createGradeChart([]);
+                createReasonChart([]);
+                createTimelineChart([]);
+            }
+        }
+
+        async function loadDashboardActivity(authorizations) {
+            try {
+                console.log('📊 Cargando actividad reciente...');
+                
+                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+                const vigilanteIds = [...new Set(authorizations.filter(auth => auth.vigilante_id).map(auth => auth.vigilante_id))];
+                const allUserIds = [...new Set([...userIds, ...vigilanteIds])];
+
+                let users = [];
+
+                if (allUserIds.length > 0) {
+                    const { data: usersData, error: usersError } = await supabase
+                        .from('usuarios')
+                        .select('id, nombre')
+                        .in('id', allUserIds);
+
+                    if (usersError) {
+                        console.error('Error cargando usuarios:', usersError);
+                    } else {
+                        users = usersData || [];
+                    }
+                }
+
+                const userMap = {};
+                users.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                // Enriquecer con datos de usuarios
+                const enrichedForActivity = authorizations.map(auth => ({
+                    ...auth,
+                    usuario: userMap[auth.usuario_autorizador_id],
+                    vigilante: userMap[auth.vigilante_id]
+                }));
+
+                displayRecentActivity(enrichedForActivity.slice(0, 15));
+                console.log('✅ Actividad reciente cargada');
+
+            } catch (error) {
+                console.error('❌ Error cargando actividad:', error);
+                // Mostrar actividad básica
+                displayRecentActivity(authorizations.slice(0, 10));
             }
         }
 
         function createStatusChart(pendingCount, confirmedCount) {
-            const ctx = document.getElementById('statusChart');
-            
-            // Destruir gráfico existente si existe
-            if (dashboardCharts.statusChart) {
-                dashboardCharts.statusChart.destroy();
-            }
+            try {
+                const ctx = document.getElementById('statusChart');
+                if (!ctx) {
+                    console.error('❌ Elemento statusChart no encontrado');
+                    return;
+                }
+                
+                // Verificar que Chart.js esté disponible
+                if (typeof Chart === 'undefined') {
+                    console.error('❌ Chart.js no está disponible');
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chart.js no está cargado</p>';
+                    return;
+                }
+                
+                console.log(`📊 Creando gráfico de estado: ${pendingCount} pendientes, ${confirmedCount} confirmadas`);
+                
+                // Destruir gráfico existente si existe
+                if (dashboardCharts.statusChart) {
+                    dashboardCharts.statusChart.destroy();
+                }
 
-            dashboardCharts.statusChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['🟢 Pendientes', '🔵 Confirmadas'],
-                    datasets: [{
-                        data: [pendingCount, confirmedCount],
-                        backgroundColor: ['#2ecc71', '#3498db'],
-                        borderColor: ['#27ae60', '#2980b9'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    size: 14
+                // Si no hay datos, mostrar gráfico vacío
+                if (pendingCount === 0 && confirmedCount === 0) {
+                    dashboardCharts.statusChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Sin datos'],
+                            datasets: [{
+                                data: [1],
+                                backgroundColor: ['#ecf0f1'],
+                                borderColor: ['#bdc3c7'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
                                 }
                             }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = pendingCount + confirmedCount;
-                                    const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
-                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    });
+                    return;
+                }
+
+                dashboardCharts.statusChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['🟢 Pendientes', '🔵 Confirmadas'],
+                        datasets: [{
+                            data: [pendingCount, confirmedCount],
+                            backgroundColor: ['#2ecc71', '#3498db'],
+                            borderColor: ['#27ae60', '#2980b9'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = pendingCount + confirmedCount;
+                                        const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
+                                        return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                    }
                                 }
                             }
                         }
                     }
+                });
+                
+                console.log('✅ Gráfico de estado creado');
+                
+            } catch (error) {
+                console.error('❌ Error creando gráfico de estado:', error);
+                const ctx = document.getElementById('statusChart');
+                if (ctx) {
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
-            });
+            }
         }
 
         function createGradeChart(authorizations) {
-            const ctx = document.getElementById('gradeChart');
-            
-            // Agrupar por grado
-            const gradeData = {};
-            authorizations.forEach(auth => {
-                const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
-                if (!gradeData[gradeName]) {
-                    gradeData[gradeName] = { pending: 0, confirmed: 0 };
+            try {
+                const ctx = document.getElementById('gradeChart');
+                if (!ctx || typeof Chart === 'undefined') {
+                    console.error('❌ gradeChart no disponible o Chart.js no cargado');
+                    return;
                 }
                 
-                if (auth.salida_efectiva) {
-                    gradeData[gradeName].confirmed++;
-                } else {
-                    gradeData[gradeName].pending++;
+                console.log(`📊 Creando gráfico por grados con ${authorizations.length} autorizaciones`);
+                
+                // Destruir gráfico existente
+                if (dashboardCharts.gradeChart) {
+                    dashboardCharts.gradeChart.destroy();
                 }
-            });
 
-            const labels = Object.keys(gradeData);
-            const pendingData = labels.map(grade => gradeData[grade].pending);
-            const confirmedData = labels.map(grade => gradeData[grade].confirmed);
+                // Agrupar por grado
+                const gradeData = {};
+                authorizations.forEach(auth => {
+                    const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
+                    if (!gradeData[gradeName]) {
+                        gradeData[gradeName] = { pending: 0, confirmed: 0 };
+                    }
+                    
+                    if (auth.salida_efectiva) {
+                        gradeData[gradeName].confirmed++;
+                    } else {
+                        gradeData[gradeName].pending++;
+                    }
+                });
 
-            if (dashboardCharts.gradeChart) {
-                dashboardCharts.gradeChart.destroy();
-            }
+                const labels = Object.keys(gradeData);
+                const pendingData = labels.map(grade => gradeData[grade].pending);
+                const confirmedData = labels.map(grade => gradeData[grade].confirmed);
 
-            dashboardCharts.gradeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '🟢 Pendientes',
-                            data: pendingData,
-                            backgroundColor: '#2ecc71',
-                            borderColor: '#27ae60',
-                            borderWidth: 1
+                // Si no hay datos, mostrar gráfico vacío
+                if (labels.length === 0) {
+                    dashboardCharts.gradeChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Sin datos'],
+                            datasets: [{
+                                label: 'Sin datos',
+                                data: [0],
+                                backgroundColor: '#ecf0f1'
+                            }]
                         },
-                        {
-                            label: '🔵 Confirmadas',
-                            data: confirmedData,
-                            backgroundColor: '#3498db',
-                            borderColor: '#2980b9',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { stepSize: 1 }
+                                }
                             }
                         }
+                    });
+                    return;
+                }
+
+                dashboardCharts.gradeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '🟢 Pendientes',
+                                data: pendingData,
+                                backgroundColor: '#2ecc71',
+                                borderColor: '#27ae60',
+                                borderWidth: 1
+                            },
+                            {
+                                label: '🔵 Confirmadas',
+                                data: confirmedData,
+                                backgroundColor: '#3498db',
+                                borderColor: '#2980b9',
+                                borderWidth: 1
+                            }
+                        ]
                     },
-                    plugins: {
-                        legend: {
-                            position: 'top'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
                         }
                     }
+                });
+                
+                console.log('✅ Gráfico por grados creado');
+                
+            } catch (error) {
+                console.error('❌ Error creando gráfico por grados:', error);
+                const ctx = document.getElementById('gradeChart');
+                if (ctx) {
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
-            });
+            }
         }
 
         function createReasonChart(authorizations) {
-            const ctx = document.getElementById('reasonChart');
-            
-            // Agrupar por motivo
-            const reasonData = {};
-            authorizations.forEach(auth => {
-                const reasonName = auth.motivo?.nombre || 'Sin motivo';
-                reasonData[reasonName] = (reasonData[reasonName] || 0) + 1;
-            });
+            try {
+                const ctx = document.getElementById('reasonChart');
+                if (!ctx || typeof Chart === 'undefined') {
+                    console.error('❌ reasonChart no disponible o Chart.js no cargado');
+                    return;
+                }
+                
+                console.log(`📊 Creando gráfico por motivos con ${authorizations.length} autorizaciones`);
+                
+                // Destruir gráfico existente
+                if (dashboardCharts.reasonChart) {
+                    dashboardCharts.reasonChart.destroy();
+                }
 
-            const labels = Object.keys(reasonData);
-            const data = Object.values(reasonData);
-            const colors = ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
+                // Agrupar por motivo
+                const reasonData = {};
+                authorizations.forEach(auth => {
+                    const reasonName = auth.motivo?.nombre || 'Sin motivo';
+                    reasonData[reasonName] = (reasonData[reasonName] || 0) + 1;
+                });
 
-            if (dashboardCharts.reasonChart) {
-                dashboardCharts.reasonChart.destroy();
-            }
+                const labels = Object.keys(reasonData);
+                const data = Object.values(reasonData);
+                const colors = ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
 
-            dashboardCharts.reasonChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors.slice(0, labels.length),
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                font: {
-                                    size: 12
+                // Si no hay datos
+                if (labels.length === 0) {
+                    dashboardCharts.reasonChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Sin datos'],
+                            datasets: [{
+                                data: [1],
+                                backgroundColor: ['#ecf0f1']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    return;
+                }
+
+                dashboardCharts.reasonChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length),
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
                                 }
                             }
                         }
                     }
+                });
+                
+                console.log('✅ Gráfico por motivos creado');
+                
+            } catch (error) {
+                console.error('❌ Error creando gráfico por motivos:', error);
+                const ctx = document.getElementById('reasonChart');
+                if (ctx) {
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
-            });
+            }
         }
 
         function createTimelineChart(authorizations) {
-            const ctx = document.getElementById('timelineChart');
-            
-            // Agrupar por hora
-            const hourlyData = {};
-            for (let i = 6; i <= 18; i++) {
-                hourlyData[i] = { pending: 0, confirmed: 0 };
-            }
-
-            authorizations.forEach(auth => {
-                const hour = parseInt(auth.hora_salida.split(':')[0]);
-                if (hour >= 6 && hour <= 18) {
-                    if (auth.salida_efectiva) {
-                        hourlyData[hour].confirmed++;
-                    } else {
-                        hourlyData[hour].pending++;
-                    }
+            try {
+                const ctx = document.getElementById('timelineChart');
+                if (!ctx || typeof Chart === 'undefined') {
+                    console.error('❌ timelineChart no disponible o Chart.js no cargado');
+                    return;
                 }
-            });
+                
+                console.log(`📊 Creando timeline con ${authorizations.length} autorizaciones`);
+                
+                // Destruir gráfico existente
+                if (dashboardCharts.timelineChart) {
+                    dashboardCharts.timelineChart.destroy();
+                }
 
-            const labels = Object.keys(hourlyData).map(hour => `${hour}:00`);
-            const pendingData = Object.values(hourlyData).map(data => data.pending);
-            const confirmedData = Object.values(hourlyData).map(data => data.confirmed);
+                // Agrupar por hora
+                const hourlyData = {};
+                for (let i = 6; i <= 18; i++) {
+                    hourlyData[i] = { pending: 0, confirmed: 0 };
+                }
 
-            if (dashboardCharts.timelineChart) {
-                dashboardCharts.timelineChart.destroy();
-            }
-
-            dashboardCharts.timelineChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: '🟢 Pendientes',
-                            data: pendingData,
-                            borderColor: '#2ecc71',
-                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: '🔵 Confirmadas',
-                            data: confirmedData,
-                            borderColor: '#3498db',
-                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
+                authorizations.forEach(auth => {
+                    if (auth.hora_salida) {
+                        const hour = parseInt(auth.hora_salida.split(':')[0]);
+                        if (hour >= 6 && hour <= 18) {
+                            if (auth.salida_efectiva) {
+                                hourlyData[hour].confirmed++;
+                            } else {
+                                hourlyData[hour].pending++;
                             }
                         }
+                    }
+                });
+
+                const labels = Object.keys(hourlyData).map(hour => `${hour}:00`);
+                const pendingData = Object.values(hourlyData).map(data => data.pending);
+                const confirmedData = Object.values(hourlyData).map(data => data.confirmed);
+
+                dashboardCharts.timelineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '🟢 Pendientes',
+                                data: pendingData,
+                                borderColor: '#2ecc71',
+                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: '🔵 Confirmadas',
+                                data: confirmedData,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
                     },
-                    plugins: {
-                        legend: {
-                            position: 'top'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
                         }
                     }
+                });
+                
+                console.log('✅ Timeline creado');
+                
+            } catch (error) {
+                console.error('❌ Error creando timeline:', error);
+                const ctx = document.getElementById('timelineChart');
+                if (ctx) {
+                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
-            });
+            }
         }
 
         function displayRecentActivity(authorizations) {
             const container = document.getElementById('recentActivity');
+            
+            if (!container) {
+                console.error('❌ Contenedor recentActivity no encontrado');
+                return;
+            }
             
             if (!authorizations || authorizations.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay actividad reciente en el sistema</p>';
                 return;
             }
 
-            let html = '';
-            authorizations.forEach(auth => {
-                const isConfirmed = !!auth.salida_efectiva;
-                const studentName = auth.estudiante ? `${auth.estudiante.nombre} ${auth.estudiante.apellidos}` : 'Estudiante no encontrado';
-                const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
-                const time = formatTime(auth.hora_salida);
-                const authorizedBy = auth.usuario?.nombre || 'Usuario no encontrado';
-                const confirmedBy = auth.vigilante?.nombre || '';
-                
-                // Mostrar hora de creación vs hora de confirmación
-                const activityTime = isConfirmed ? formatDateTime(auth.salida_efectiva) : formatDateTime(auth.fecha_creacion);
-                const actionText = isConfirmed ? `Confirmada por ${confirmedBy}` : `Autorizada por ${authorizedBy}`;
+            console.log(`📋 Mostrando ${authorizations.length} actividades recientes`);
 
-                html += `
-                    <div class="student-item ${isConfirmed ? 'confirmed' : 'pending'}">
-                        <div class="student-info">
-                            <div class="student-name">${sanitizeHtml(studentName)}</div>
-                            <div class="student-details">
-                                ${sanitizeHtml(gradeName)} • Hora salida: ${time}<br>
-                                <small>${actionText} • ${activityTime}</small>
+            let html = '';
+            authorizations.forEach((auth, index) => {
+                try {
+                    const isConfirmed = !!auth.salida_efectiva;
+                    
+                    // Manejar datos faltantes de manera segura
+                    const studentName = auth.estudiante ? 
+                        `${auth.estudiante.nombre || ''} ${auth.estudiante.apellidos || ''}`.trim() : 
+                        'Estudiante no encontrado';
+                    
+                    const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
+                    const time = auth.hora_salida ? formatTime(auth.hora_salida) : 'N/A';
+                    const authorizedBy = auth.usuario?.nombre || 'Usuario no encontrado';
+                    const confirmedBy = auth.vigilante?.nombre || '';
+                    
+                    // Mostrar hora de creación vs hora de confirmación
+                    let activityTime, actionText;
+                    
+                    if (isConfirmed) {
+                        activityTime = auth.salida_efectiva ? formatDateTime(auth.salida_efectiva) : 'N/A';
+                        actionText = confirmedBy ? `Confirmada por ${confirmedBy}` : 'Confirmada';
+                    } else {
+                        activityTime = auth.fecha_creacion ? formatDateTime(auth.fecha_creacion) : 'N/A';
+                        actionText = `Autorizada por ${authorizedBy}`;
+                    }
+
+                    html += `
+                        <div class="student-item ${isConfirmed ? 'confirmed' : 'pending'}">
+                            <div class="student-info">
+                                <div class="student-name">${sanitizeHtml(studentName)}</div>
+                                <div class="student-details">
+                                    ${sanitizeHtml(gradeName)} • Hora salida: ${time}<br>
+                                    <small>${sanitizeHtml(actionText)} • ${activityTime}</small>
+                                </div>
                             </div>
+                            <span class="status-badge ${isConfirmed ? 'status-confirmed' : 'status-pending'}">
+                                ${isConfirmed ? '🔵 Confirmada' : '🟢 Pendiente'}
+                            </span>
                         </div>
-                        <span class="status-badge ${isConfirmed ? 'status-confirmed' : 'status-pending'}">
-                            ${isConfirmed ? '🔵 Confirmada' : '🟢 Pendiente'}
-                        </span>
-                    </div>
-                `;
+                    `;
+                } catch (error) {
+                    console.error(`❌ Error procesando actividad ${index}:`, error, auth);
+                    // Continuar con el siguiente elemento en lugar de fallar completamente
+                }
             });
 
-            container.innerHTML = html;
+            container.innerHTML = html || '<p style="text-align: center; color: #666; padding: 20px;">Error al mostrar actividades</p>';
         }
 
         // ========================================
@@ -2826,9 +3167,74 @@
         }
 
         async function refreshDashboard() {
-            showSuccess('Actualizando dashboard...');
-            await loadDashboard();
-            showSuccess('Dashboard actualizado exitosamente');
+            try {
+                console.log('🔄 Iniciando actualización manual del dashboard...');
+                showSuccess('Actualizando dashboard...');
+                
+                // Limpiar datos actuales
+                document.getElementById('dashPendingCount').textContent = '...';
+                document.getElementById('dashConfirmedCount').textContent = '...';
+                document.getElementById('dashTotalCount').textContent = '...';
+                document.getElementById('dashRecentCount').textContent = '...';
+                
+                // Recargar dashboard
+                await loadDashboard();
+                
+                const currentTime = getColombiaTime();
+                showSuccess(`✅ Dashboard actualizado exitosamente a las ${currentTime}`);
+                console.log('✅ Actualización manual completada');
+                
+            } catch (error) {
+                console.error('❌ Error en actualización manual:', error);
+                showError('Error al actualizar el dashboard: ' + error.message);
+            }
+        }
+
+        // Función de debug para verificar datos
+        async function debugDashboard() {
+            try {
+                console.log('🔧 === DEBUG DASHBOARD ===');
+                const todayColombia = getColombiaDate();
+                console.log('📅 Fecha Colombia:', todayColombia);
+                
+                // Verificar Chart.js
+                console.log('📊 Chart.js disponible:', typeof Chart !== 'undefined');
+                
+                // Verificar elementos del DOM
+                const elements = ['statusChart', 'gradeChart', 'reasonChart', 'timelineChart', 'recentActivity'];
+                elements.forEach(id => {
+                    const element = document.getElementById(id);
+                    console.log(`🎯 Elemento ${id}:`, !!element);
+                });
+                
+                // Probar consulta básica
+                const { data, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .eq('fecha_salida', todayColombia);
+                    
+                console.log('📊 Consulta básica:', {
+                    error: error ? error.message : 'Sin error',
+                    count: data ? data.length : 0,
+                    data: data ? data.slice(0, 2) : null
+                });
+                
+                // Verificar tablas relacionadas
+                const { data: estudiantes } = await supabase.from('estudiantes').select('*').limit(1);
+                const { data: motivos } = await supabase.from('motivos').select('*').limit(1);
+                const { data: usuarios } = await supabase.from('usuarios').select('*').limit(1);
+                
+                console.log('📊 Tablas relacionadas:', {
+                    estudiantes: estudiantes ? estudiantes.length : 'Error',
+                    motivos: motivos ? motivos.length : 'Error',
+                    usuarios: usuarios ? usuarios.length : 'Error'
+                });
+                
+                console.log('🔧 === FIN DEBUG ===');
+                
+            } catch (error) {
+                console.error('❌ Error en debug:', error);
+            }
         }
 
         async function exportDashboardData() {
@@ -4087,7 +4493,22 @@
                     loadPendingExits();
                 }
             } else if (sectionId === 'dashboardSectionDiv') {
-                loadDashboard();
+                console.log('📊 Iniciando sección dashboard...');
+                
+                // Verificar que Chart.js esté disponible
+                if (typeof Chart === 'undefined') {
+                    console.error('❌ Chart.js no está disponible');
+                    showError('Error: Chart.js no se ha cargado correctamente. Recarga la página.');
+                    return;
+                }
+                
+                // Inicializar dashboard vacío primero
+                updateEmptyDashboard();
+                
+                // Luego cargar datos reales
+                setTimeout(() => {
+                    loadDashboard();
+                }, 100);
             }
             
             renewSession();
@@ -6201,6 +6622,35 @@
             updateConnectionStatus(false, 'Conectando...');
             updateSecurityIndicator('warning', 'Iniciando Sistema');
             
+            // Verificar dependencias críticas
+            setTimeout(() => {
+                console.log('🔍 Verificando dependencias...');
+                
+                // Verificar Chart.js
+                if (typeof Chart === 'undefined') {
+                    console.error('❌ Chart.js no se cargó correctamente');
+                    updateSecurityIndicator('error', 'Error: Chart.js no cargado');
+                } else {
+                    console.log('✅ Chart.js cargado correctamente:', Chart.version);
+                }
+                
+                // Verificar Supabase
+                if (!window.supabase) {
+                    console.error('❌ Supabase no se cargó correctamente');
+                    updateSecurityIndicator('error', 'Error: Supabase no cargado');
+                } else {
+                    console.log('✅ Supabase disponible');
+                }
+                
+                // Verificar CryptoJS
+                if (typeof CryptoJS === 'undefined') {
+                    console.error('❌ CryptoJS no se cargó correctamente');
+                } else {
+                    console.log('✅ CryptoJS disponible');
+                }
+                
+            }, 500);
+            
             // Configurar observador de DOM
             observer.observe(document.body, {
                 childList: true,
@@ -6230,6 +6680,7 @@
             
             // Esperar un momento para que todas las librerías terminen de cargar
             setTimeout(() => {
+                console.log('🔗 Iniciando conexión a Supabase...');
                 initSupabase();
             }, 1000);
         });
