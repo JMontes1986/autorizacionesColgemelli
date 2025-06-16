@@ -1239,12 +1239,38 @@
             background: #7f8c8d;
         }
 
+        /* Estilos específicos para vigilancia */
         .btn-warning {
             background: #f39c12;
+            color: white;
         }
 
         .btn-warning:hover {
             background: #e67e22;
+        }
+
+        /* Mejoras para los botones de navegación en vigilancia */
+        @media (max-width: 768px) {
+            .nav-buttons .btn {
+                font-size: 14px;
+                padding: 10px 15px;
+                margin: 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-buttons {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .nav-buttons .btn {
+                width: 100%;
+                margin: 0;
+                font-size: 13px;
+                padding: 12px;
+            }
         }
 
         .dashboard {
@@ -1760,13 +1786,26 @@
 <div class="nav-buttons">
 <button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
 <button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
+<button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
 </div>
+
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
 <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 Búsqueda Manual de Estudiante</h3>
 <input class="search-box" id="studentSearch" placeholder="Buscar estudiante específico por nombre..." type="text" maxlength="100" oninput="validateSearchInput(this)"/>
 <div id="searchResult"></div>
 </div>
+
+<!-- Sección de salidas confirmadas por el vigilante (inicialmente oculta) -->
+<div id="myConfirmedSection" style="display: none; margin-top: 20px;">
+<h3 style="color: #2c3e50; margin: 20px 0 15px 0;">✅ Salidas Confirmadas por Mí Hoy</h3>
+<div id="myConfirmedList">
+<div class="card" style="text-align: center; padding: 30px;">
+<p style="color: #666;">Cargando salidas confirmadas...</p>
+</div>
+</div>
+</div>
+
 <!-- Lista de estudiantes con salidas pendientes -->
 <div id="pendingExitsSection">
 <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
@@ -2267,18 +2306,19 @@
                     return;
                 }
 
-                console.log('📊 Cargando dashboard...');
+                console.log('📊 Cargando dashboard general del sistema...');
                 
                 const todayColombia = getColombiaDate();
                 
-                // Obtener datos de autorizaciones de hoy
+                // Obtener TODAS las autorizaciones de hoy (consulta general, no por usuario)
                 const { data: todayAuthorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select(`
                         *,
                         estudiante:estudiantes(nombre, apellidos, grado:grados(nombre)),
                         motivo:motivos(nombre),
-                        usuario:usuarios(nombre)
+                        usuario:usuarios(nombre),
+                        vigilante:usuarios!autorizaciones_salida_vigilante_id_fkey(nombre)
                     `)
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
@@ -2291,33 +2331,34 @@
 
                 const authorizations = todayAuthorizations || [];
                 
-                // Procesar estadísticas
+                // Procesar estadísticas GENERALES (de todo el sistema)
                 const pending = authorizations.filter(auth => !auth.salida_efectiva);
                 const confirmed = authorizations.filter(auth => auth.salida_efectiva);
                 
-                // Actividad de la última hora
+                // Actividad de la última hora (GENERAL)
                 const oneHourAgo = new Date();
                 oneHourAgo.setHours(oneHourAgo.getHours() - 1);
                 const recentActivity = authorizations.filter(auth => 
-                    new Date(auth.fecha_creacion) > oneHourAgo
+                    new Date(auth.fecha_creacion) > oneHourAgo || 
+                    (auth.salida_efectiva && new Date(auth.salida_efectiva) > oneHourAgo)
                 );
 
-                // Actualizar estadísticas
+                // Actualizar estadísticas GENERALES
                 document.getElementById('dashPendingCount').textContent = pending.length;
                 document.getElementById('dashConfirmedCount').textContent = confirmed.length;
                 document.getElementById('dashTotalCount').textContent = authorizations.length;
                 document.getElementById('dashRecentCount').textContent = recentActivity.length;
 
-                // Crear gráficos
+                // Crear gráficos con datos GENERALES
                 createStatusChart(pending.length, confirmed.length);
                 createGradeChart(authorizations);
                 createReasonChart(authorizations);
                 createTimelineChart(authorizations);
                 
-                // Mostrar actividad reciente
-                displayRecentActivity(authorizations.slice(0, 10));
+                // Mostrar actividad reciente GENERAL (todas las salidas del sistema)
+                displayRecentActivity(authorizations.slice(0, 15));
 
-                console.log('✅ Dashboard cargado exitosamente');
+                console.log(`✅ Dashboard general cargado: ${authorizations.length} autorizaciones totales (${pending.length} pendientes, ${confirmed.length} confirmadas)`);
                 
             } catch (error) {
                 console.error('❌ Error cargando dashboard:', error);
@@ -2565,7 +2606,7 @@
             const container = document.getElementById('recentActivity');
             
             if (!authorizations || authorizations.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay actividad reciente</p>';
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay actividad reciente en el sistema</p>';
                 return;
             }
 
@@ -2575,14 +2616,20 @@
                 const studentName = auth.estudiante ? `${auth.estudiante.nombre} ${auth.estudiante.apellidos}` : 'Estudiante no encontrado';
                 const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
                 const time = formatTime(auth.hora_salida);
-                const createdTime = formatDateTime(auth.fecha_creacion);
+                const authorizedBy = auth.usuario?.nombre || 'Usuario no encontrado';
+                const confirmedBy = auth.vigilante?.nombre || '';
+                
+                // Mostrar hora de creación vs hora de confirmación
+                const activityTime = isConfirmed ? formatDateTime(auth.salida_efectiva) : formatDateTime(auth.fecha_creacion);
+                const actionText = isConfirmed ? `Confirmada por ${confirmedBy}` : `Autorizada por ${authorizedBy}`;
 
                 html += `
                     <div class="student-item ${isConfirmed ? 'confirmed' : 'pending'}">
                         <div class="student-info">
                             <div class="student-name">${sanitizeHtml(studentName)}</div>
                             <div class="student-details">
-                                ${sanitizeHtml(gradeName)} • ${time} • ${createdTime}
+                                ${sanitizeHtml(gradeName)} • Hora salida: ${time}<br>
+                                <small>${actionText} • ${activityTime}</small>
                             </div>
                         </div>
                         <span class="status-badge ${isConfirmed ? 'status-confirmed' : 'status-pending'}">
@@ -2593,6 +2640,189 @@
             });
 
             container.innerHTML = html;
+        }
+
+        // ========================================
+        // FUNCIONES ESPECÍFICAS PARA VIGILANCIA
+        // ========================================
+
+        function showMyConfirmedExits() {
+            // Alternar visibilidad de las secciones
+            const myConfirmedSection = document.getElementById('myConfirmedSection');
+            const pendingSection = document.getElementById('pendingExitsSection');
+            const searchSection = document.getElementById('searchSection');
+            
+            if (myConfirmedSection.style.display === 'none') {
+                myConfirmedSection.style.display = 'block';
+                pendingSection.style.display = 'none';
+                searchSection.style.display = 'none';
+                loadMyConfirmedExits();
+            } else {
+                myConfirmedSection.style.display = 'none';
+                pendingSection.style.display = 'block';
+                loadPendingExits();
+            }
+        }
+
+        async function loadMyConfirmedExits() {
+            const confirmedList = document.getElementById('myConfirmedList');
+            
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                confirmedList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando mis confirmaciones...</p></div>';
+                
+                const todayColombia = getColombiaDate();
+                console.log(`📋 Cargando salidas confirmadas por ${currentUser.nombre} para Colombia:`, todayColombia);
+                
+                // Obtener autorizaciones confirmadas por el vigilante actual
+                const { data: myConfirmations, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .eq('fecha_salida', todayColombia)
+                    .eq('vigilante_id', currentUser.id)
+                    .not('salida_efectiva', 'is', null)
+                    .order('salida_efectiva', { ascending: false });
+
+                if (error) {
+                    console.error('❌ Error al cargar mis confirmaciones:', error);
+                    throw error;
+                }
+
+                if (!myConfirmations || myConfirmations.length === 0) {
+                    const currentTime = getColombiaTime();
+                    confirmedList.innerHTML = `
+                        <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
+                            <h3>📋 Sin confirmaciones aún</h3>
+                            <p><strong>No has confirmado salidas hoy</strong></p>
+                            <p>Fecha: ${formatDate(todayColombia)} - Hora: ${currentTime}</p>
+                            <p>Las salidas que confirmes aparecerán aquí</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('📊 Mis confirmaciones encontradas:', myConfirmations.length);
+
+                // Obtener información adicional de estudiantes, motivos y usuarios
+                const studentIds = [...new Set(myConfirmations.map(auth => auth.estudiante_id))];
+                const reasonIds = [...new Set(myConfirmations.map(auth => auth.motivo_id))];
+                const userIds = [...new Set(myConfirmations.map(auth => auth.usuario_autorizador_id))];
+
+                const [studentsResult, reasonsResult, usersResult] = await Promise.all([
+                    supabase
+                        .from('estudiantes')
+                        .select('id, nombre, apellidos, grado:grados(nombre)')
+                        .in('id', studentIds),
+                    supabase
+                        .from('motivos')
+                        .select('id, nombre')
+                        .in('id', reasonIds),
+                    supabase
+                        .from('usuarios')
+                        .select('id, nombre')
+                        .in('id', userIds)
+                ]);
+
+                // Crear mapas para búsqueda rápida
+                const studentMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                studentsResult.data?.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasonsResult.data?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                usersResult.data?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                // Generar HTML para cada confirmación
+                const currentTime = getColombiaTime();
+                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
+                    <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas confirmadas por mí: <strong>${myConfirmations.length}</strong></p>
+                </div>`;
+                
+                myConfirmations.forEach(auth => {
+                    const student = studentMap[auth.estudiante_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card verified">
+                            <h3>✅ SALIDA CONFIRMADA POR MÍ</h3>
+                            
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>👨‍🎓 Estudiante:</strong>
+                                        <span class="info-value">${student ? sanitizeHtml(`${student.nombre} ${student.apellidos}`) : 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🎓 Grado:</strong>
+                                        <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span>
+                                    </p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>📝 Motivo de Salida:</strong>
+                                        <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🕐 Hora Autorizada:</strong>
+                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${sanitizeHtml(auth.observaciones)}
+                                    </div>
+                                ` : ''}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
+                                        <small>Confirmada por: ${sanitizeHtml(currentUser.nombre)}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                confirmedList.innerHTML = html;
+                console.log('✅ Mis confirmaciones cargadas exitosamente');
+
+            } catch (error) {
+                console.error('❌ Error general:', error);
+                await logSecurityEvent('error', 'Error al cargar confirmaciones del vigilante', { 
+                    vigilanteId: currentUser.id,
+                    error: error.message.substring(0, 200) 
+                }, false);
+                confirmedList.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ Error al cargar</h3>
+                        <p>No se pudieron cargar mis confirmaciones</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button class="btn btn-secondary" onclick="loadMyConfirmedExits()" style="margin-top: 10px;">
+                            🔄 Intentar de nuevo
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         async function refreshDashboard() {
@@ -2611,26 +2841,48 @@
                         *,
                         estudiante:estudiantes(nombre, apellidos, documento, grado:grados(nombre)),
                         motivo:motivos(nombre),
-                        usuario:usuarios(nombre)
+                        usuario:usuarios(nombre),
+                        vigilante:usuarios!autorizaciones_salida_vigilante_id_fkey(nombre)
                     `)
                     .eq('fecha_salida', todayColombia);
 
                 if (error) throw error;
 
-                // Crear CSV
+                // Crear CSV con información completa
                 const csvContent = generateCSVFromData(authorizations);
-                downloadCSV(csvContent, `dashboard_salidas_${todayColombia}.csv`);
+                downloadCSV(csvContent, `dashboard_salidas_general_${todayColombia}.csv`);
                 
-                showSuccess('Datos exportados exitosamente');
+                await logSecurityEvent('export', 'Exportación de datos del dashboard', { 
+                    fecha: todayColombia,
+                    registros: authorizations.length 
+                }, true);
+                
+                showSuccess(`Datos exportados exitosamente: ${authorizations.length} registros`);
                 
             } catch (error) {
                 console.error('Error exportando datos:', error);
+                await logSecurityEvent('error', 'Error al exportar datos del dashboard', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al exportar datos: ' + error.message);
             }
         }
 
         function generateCSVFromData(data) {
-            const headers = ['Estudiante', 'Documento', 'Grado', 'Motivo', 'Fecha Salida', 'Hora Salida', 'Estado', 'Autorizado Por', 'Fecha Creación'];
+            const headers = [
+                'Estudiante', 
+                'Documento', 
+                'Grado', 
+                'Motivo', 
+                'Fecha Salida', 
+                'Hora Salida', 
+                'Estado', 
+                'Autorizado Por', 
+                'Fecha Autorización',
+                'Confirmado Por',
+                'Fecha Confirmación',
+                'Observaciones'
+            ];
             
             const rows = data.map(auth => [
                 auth.estudiante ? `${auth.estudiante.nombre} ${auth.estudiante.apellidos}` : '',
@@ -2641,7 +2893,10 @@
                 auth.hora_salida,
                 auth.salida_efectiva ? 'Confirmada' : 'Pendiente',
                 auth.usuario?.nombre || '',
-                auth.fecha_creacion
+                auth.fecha_creacion,
+                auth.vigilante?.nombre || '',
+                auth.salida_efectiva || '',
+                auth.observaciones || ''
             ]);
 
             return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
@@ -3766,8 +4021,9 @@
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
                 `;
-            } else if (role === 'vigilante') {
+            } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
+                    <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
@@ -3778,20 +4034,30 @@
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-            } else {
+            } else if (email === 'enfermeria@colgemelli.edu.co') {
+                // Enfermería NO tiene acceso al dashboard
                 navButtons.innerHTML = `
+                    <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
+                    <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
+                `;
+            } else {
+                // Todos los demás usuarios tienen acceso al dashboard
+                navButtons.innerHTML = `
+                    <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             }
 
             // Mostrar la primera sección disponible
-            if (role === 'vigilante') {
-                showSection('verifySectionDiv');
+            if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
+                showSection('dashboardSectionDiv'); // Vigilancia empieza con dashboard
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
                 showSection('dashboardSectionDiv');
+            } else if (email === 'enfermeria@colgemelli.edu.co') {
+                showSection('authorizeSectionDiv'); // Enfermería empieza con autorizar
             } else {
-                showSection('authorizeSectionDiv');
+                showSection('dashboardSectionDiv'); // Todos los demás empiezan con dashboard
             }
         }
 
@@ -3811,8 +4077,15 @@
             if (sectionId === 'historySectionDiv') {
                 loadHistory(true);
                 setTimeout(setupTableScroll, 100); // Configurar scroll después de cargar
-            } else if (sectionId === 'verifySectionDiv' && currentUser && currentUser.rol.nombre === 'vigilante') {
-                loadPendingExits();
+            } else if (sectionId === 'verifySectionDiv') {
+                // Resetear las secciones de vigilancia al estado inicial
+                document.getElementById('searchSection').style.display = 'none';
+                document.getElementById('myConfirmedSection').style.display = 'none';
+                document.getElementById('pendingExitsSection').style.display = 'block';
+                
+                if (currentUser && (currentUser.rol.nombre === 'vigilante' || currentUser.email === 'vigilancia@colgemelli.edu.co')) {
+                    loadPendingExits();
+                }
             } else if (sectionId === 'dashboardSectionDiv') {
                 loadDashboard();
             }
@@ -4652,15 +4925,21 @@
         function toggleSearch() {
             const searchSection = document.getElementById('searchSection');
             const pendingSection = document.getElementById('pendingExitsSection');
+            const myConfirmedSection = document.getElementById('myConfirmedSection');
             
             if (searchSection.style.display === 'none') {
                 searchSection.style.display = 'block';
                 pendingSection.style.display = 'none';
+                myConfirmedSection.style.display = 'none';
             } else {
                 searchSection.style.display = 'none';
                 pendingSection.style.display = 'block';
+                myConfirmedSection.style.display = 'none';
+                // Limpiar búsqueda
                 document.getElementById('studentSearch').value = '';
                 document.getElementById('searchResult').innerHTML = '';
+                // Recargar pendientes
+                loadPendingExits();
             }
         }
 
@@ -5916,6 +6195,8 @@
             console.log('  ✅ Sesiones Seguras');
             console.log('  ✅ Cifrado de Datos');
             console.log('  ✅ Diseño Responsive');
+            console.log('  ✅ Dashboard General');
+            console.log('  ✅ Control de Vigilancia');
             
             updateConnectionStatus(false, 'Conectando...');
             updateSecurityIndicator('warning', 'Iniciando Sistema');
