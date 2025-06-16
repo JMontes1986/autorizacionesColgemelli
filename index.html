@@ -4,12 +4,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta http-equiv="X-Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline';">
+<!-- HEADERS DE SEGURIDAD MEJORADOS -->
+<meta http-equiv="X-Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;">
 <meta http-equiv="X-Frame-Options" content="DENY">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+<meta name="robots" content="noindex, nofollow">
 <title>Sistema de Salidas - Colegio Gemelli</title>
 <!-- Supabase CDN para GitHub -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- hCaptcha -->
+<script src="https://hcaptcha.com/1/api.js" async defer></script>
+<!-- CryptoJS para cifrado -->
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 <style>
         * {
             margin: 0;
@@ -572,6 +581,52 @@
             width: 100%;
         }
 
+        /* Estilos para CAPTCHA */
+        .captcha-container {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .security-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .security-indicator.secure {
+            background: rgba(46, 204, 113, 0.9);
+        }
+
+        .security-indicator.warning {
+            background: rgba(243, 156, 18, 0.9);
+        }
+
+        /* Estilos para input validation */
+        .input-secure {
+            border-color: #2ecc71 !important;
+            box-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+        }
+
+        .input-warning {
+            border-color: #f39c12 !important;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.3);
+        }
+
+        .input-error {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+        }
+
         @media (max-width: 768px) {
             .container {
                 width: 100%;
@@ -594,7 +649,7 @@
 <div class="container">
 <div class="header">
 <h1>🏫 Colegio Gemelli</h1>
-<div class="subtitle">Sistema de Control de Salidas Estudiantiles</div>
+<div class="subtitle">Sistema de Control de Salidas Estudiantiles - Versión Segura</div>
 <div class="connection-status" id="connectionStatus">
 <span id="connectionIcon">🔴</span>
 <span id="connectionText">Verificando conexión...</span>
@@ -606,16 +661,26 @@
 <div class="rate-limit-warning" id="rateLimitWarning">
 ⚠️ Demasiados intentos. Por favor espera antes de intentar de nuevo.
 </div>
+
+<!-- Security Indicator -->
+<div class="security-indicator secure" id="securityIndicator">
+🔒 Conexión Segura
+</div>
+
 <!-- Login Form -->
 <div class="login-form" id="loginSection">
 <div class="form-group">
 <label for="email">Email:</label>
-<input id="email" placeholder="sistemas@colgemelli.edu.co" type="email" maxlength="100" autocomplete="username"/>
+<input id="email" placeholder="sistemas@colgemelli.edu.co" type="email" maxlength="100" autocomplete="username" oninput="validateEmailInput(this)"/>
 </div>
 <div class="form-group">
 <label for="password">Contraseña:</label>
-<input id="password" placeholder="••••••••" type="password" maxlength="50" autocomplete="current-password"/>
+<input id="password" placeholder="••••••••" type="password" maxlength="50" autocomplete="current-password" oninput="validatePasswordInput(this)"/>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
+</div>
+<!-- CAPTCHA -->
+<div class="captcha-container">
+<div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001"></div>
 </div>
 <button class="btn" onclick="login()" id="loginBtn" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
@@ -661,12 +726,12 @@
 </div>
 <div class="form-group">
 <label for="observations">Observaciones adicionales:</label>
-<textarea id="observations" placeholder="Observaciones opcionales sobre la salida..." rows="3" maxlength="500"></textarea>
+<textarea id="observations" placeholder="Observaciones opcionales sobre la salida..." rows="3" maxlength="500" oninput="validateTextInput(this)"></textarea>
 </div>
 <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
 </form>
 </div>
-<!-- Sección para Verificar Salidas (Vigilante) - NUEVA Y MEJORADA -->
+<!-- Sección para Verificar Salidas (Vigilante) -->
 <div class="section" id="verifySectionDiv">
 <h2>🔍 Control de Salidas - Vigilancia</h2>
 <div class="nav-buttons">
@@ -676,7 +741,7 @@
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
 <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 Búsqueda Manual de Estudiante</h3>
-<input class="search-box" id="studentSearch" placeholder="Buscar estudiante específico por nombre..." type="text" maxlength="100"/>
+<input class="search-box" id="studentSearch" placeholder="Buscar estudiante específico por nombre..." type="text" maxlength="100" oninput="validateSearchInput(this)"/>
 <div id="searchResult"></div>
 </div>
 <!-- Lista de estudiantes con salidas pendientes -->
@@ -761,7 +826,7 @@
 <tbody></tbody>
 </table>
 </div>
-<!-- Nueva sección de Seguridad -->
+<!-- Sección de Seguridad -->
 <div class="admin-subsection" id="adminSecurity" style="display: none;">
 <h3>🔒 Seguridad y Logs de Auditoría</h3>
 <div class="security-stats">
@@ -869,15 +934,15 @@
 <form id="studentForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="studentName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}"/>
+<input id="studentName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
 </div>
 <div class="form-group">
 <label>Apellidos: *</label>
-<input id="studentLastName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}"/>
+<input id="studentLastName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
 </div>
 <div class="form-group">
 <label>Documento:</label>
-<input id="studentDocument" type="text" maxlength="20" pattern="[0-9]{6,20}"/>
+<input id="studentDocument" type="text" maxlength="20" pattern="[0-9]{6,20}" oninput="validateDocumentInput(this)"/>
 </div>
 <div class="form-group">
 <label>Grado: *</label>
@@ -897,15 +962,15 @@
 <form id="userForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="userName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}"/>
+<input id="userName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
 </div>
 <div class="form-group">
 <label>Email: *</label>
-<input id="userEmail" required="" type="email" maxlength="100"/>
+<input id="userEmail" required="" type="email" maxlength="100" oninput="validateEmailInput(this)"/>
 </div>
 <div class="form-group">
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
-<input id="userPassword" type="password" maxlength="50" onkeyup="checkPasswordStrength()"/>
+<input id="userPassword" type="password" maxlength="50" onkeyup="checkPasswordStrength()" oninput="validatePasswordInput(this)"/>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
 </div>
 <div class="form-group">
@@ -926,11 +991,11 @@
 <form id="reasonForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="reasonName" required="" type="text" maxlength="50"/>
+<input id="reasonName" required="" type="text" maxlength="50" oninput="validateTextInput(this)"/>
 </div>
 <div class="form-group">
 <label>Descripción:</label>
-<textarea id="reasonDescription" rows="3" maxlength="200"></textarea>
+<textarea id="reasonDescription" rows="3" maxlength="200" oninput="validateTextInput(this)"></textarea>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('reasonModal')" type="button">Cancelar</button>
@@ -944,7 +1009,7 @@
 <form id="gradeForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="gradeName" required="" type="text" maxlength="20"/>
+<input id="gradeName" required="" type="text" maxlength="20" oninput="validateTextInput(this)"/>
 </div>
 <div class="form-group">
 <label>Nivel: *</label>
@@ -960,9 +1025,16 @@
 </div>
 </div>
 <script>
+        // ========================================
+        // CONFIGURACIÓN Y VARIABLES GLOBALES
+        // ========================================
+        
         // Configuración de Supabase
         const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
+        
+        // Configuración de cifrado
+        const ENCRYPTION_KEY = 'GemellisecureSystem2024@#$%^&*()';
         
         let supabase;
         let currentUser = null;
@@ -970,26 +1042,517 @@
         let sessionToken = null;
         let loginAttempts = 0;
         let lastLoginAttempt = null;
+        let sessionStartTime = null;
+        let sessionTimeout = null;
 
-        // Rate limiting configuration
+        // Configuración de seguridad
         const MAX_LOGIN_ATTEMPTS = 5;
-        const LOGIN_COOLDOWN = 300000; // 5 minutos en milisegundos
+        const LOGIN_COOLDOWN = 300000; // 5 minutos
+        const SESSION_TIMEOUT = 1800000; // 30 minutos
+        const SECURE_HEADERS = {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': generateCSRFToken()
+        };
 
-        // Funciones de seguridad
+        // ========================================
+        // FUNCIONES DE SEGURIDAD AVANZADAS
+        // ========================================
+
+        // Generar token CSRF
+        function generateCSRFToken() {
+            return 'csrf_' + Date.now() + '_' + Math.random().toString(36).substr(2, 16);
+        }
+
+        // Función de sanitización XSS mejorada
         function sanitizeHtml(str) {
             if (!str) return '';
+            
+            // Crear elemento temporal para escape
             const temp = document.createElement('div');
             temp.textContent = str;
-            return temp.innerHTML;
+            let escaped = temp.innerHTML;
+            
+            // Filtros adicionales contra XSS
+            escaped = escaped.replace(/javascript:/gi, '')
+                           .replace(/vbscript:/gi, '')
+                           .replace(/data:/gi, '')
+                           .replace(/on\w+=/gi, '')
+                           .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                           .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+                           .replace(/<object[^>]*>.*?<\/object>/gi, '')
+                           .replace(/<embed[^>]*>/gi, '')
+                           .replace(/<link[^>]*>/gi, '')
+                           .replace(/<meta[^>]*>/gi, '');
+            
+            return escaped;
         }
 
+        // Función de cifrado de contraseñas
+        function encryptPassword(password) {
+            if (!password) return '';
+            try {
+                // Crear salt único
+                const salt = CryptoJS.lib.WordArray.random(32);
+                const iterations = 10000;
+                
+                // Derivar clave usando PBKDF2
+                const key = CryptoJS.PBKDF2(password, salt, {
+                    keySize: 256/32,
+                    iterations: iterations,
+                    hasher: CryptoJS.algo.SHA256
+                });
+                
+                // Cifrar con AES
+                const encrypted = CryptoJS.AES.encrypt(password, key.toString()).toString();
+                
+                // Combinar salt + iterations + encrypted
+                return salt.toString() + ':' + iterations + ':' + encrypted;
+            } catch (error) {
+                console.error('Error al cifrar contraseña:', error);
+                return CryptoJS.SHA256(password).toString(); // Fallback a SHA256
+            }
+        }
+
+        // Función para verificar contraseña
+        function verifyPassword(password, hash) {
+            if (!password || !hash) return false;
+            
+            try {
+                // Si es el formato nuevo (salt:iterations:encrypted)
+                if (hash.includes(':')) {
+                    const parts = hash.split(':');
+                    if (parts.length === 3) {
+                        const salt = CryptoJS.enc.Hex.parse(parts[0]);
+                        const iterations = parseInt(parts[1]);
+                        const encrypted = parts[2];
+                        
+                        // Derivar la misma clave
+                        const key = CryptoJS.PBKDF2(password, salt, {
+                            keySize: 256/32,
+                            iterations: iterations,
+                            hasher: CryptoJS.algo.SHA256
+                        });
+                        
+                        // Intentar descifrar
+                        try {
+                            const decrypted = CryptoJS.AES.decrypt(encrypted, key.toString()).toString(CryptoJS.enc.Utf8);
+                            return decrypted === password;
+                        } catch {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Fallback: comparación directa para contraseñas no cifradas (legacy)
+                return password === hash;
+                
+            } catch (error) {
+                console.error('Error al verificar contraseña:', error);
+                return false;
+            }
+        }
+
+        // Validación de email mejorada
         function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email) && email.length <= 100;
+            if (!email) return false;
+            
+            // Verificar longitud
+            if (email.length > 100) return false;
+            
+            // Patrón RFC compliant
+            const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+            
+            // Verificar patrón básico
+            if (!emailPattern.test(email)) return false;
+            
+            // Verificar caracteres peligrosos
+            const dangerousChars = /<|>|"|'|;|&|javascript:|vbscript:|data:/i;
+            if (dangerousChars.test(email)) return false;
+            
+            return true;
         }
 
+        // Validación de contraseña mejorada
         function validatePassword(password) {
-            return password.length >= 8 && password.length <= 50;
+            if (!password) return false;
+            if (password.length < 8 || password.length > 50) return false;
+            
+            // Verificar caracteres peligrosos
+            const dangerousChars = /<|>|"|'|;|&|javascript:|vbscript:|data:/i;
+            if (dangerousChars.test(password)) return false;
+            
+            return true;
+        }
+
+        // Validación de nombres
+        function validateName(name) {
+            if (!name) return false;
+            if (name.length < 2 || name.length > 50) return false;
+            
+            // Solo letras, espacios y acentos
+            const namePattern = /^[A-Za-zÀ-ÿ\u00f1\u00d1\s]{2,50}$/;
+            if (!namePattern.test(name)) return false;
+            
+            // Verificar caracteres peligrosos
+            const dangerousChars = /<|>|"|'|;|&|javascript:|vbscript:|data:/i;
+            if (dangerousChars.test(name)) return false;
+            
+            return true;
+        }
+
+        // Validación de documento
+        function validateDocument(document) {
+            if (!document) return true; // Es opcional
+            
+            // Solo números, 6-20 dígitos
+            const docPattern = /^[0-9]{6,20}$/;
+            return docPattern.test(document);
+        }
+
+        // Validación de texto general
+        function validateText(text) {
+            if (!text) return true; // Campos opcionales
+            
+            // Verificar caracteres peligrosos
+            const dangerousChars = /<script|<iframe|<object|<embed|javascript:|vbscript:|data:|on\w+=/i;
+            if (dangerousChars.test(text)) return false;
+            
+            return true;
+        }
+
+        // ========================================
+        // FUNCIONES DE VALIDACIÓN EN TIEMPO REAL
+        // ========================================
+
+        function validateEmailInput(input) {
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validateEmail(value)) {
+                input.className = input.className.replace(/input-(warning|error)/g, '');
+                input.classList.add('input-secure');
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        function validatePasswordInput(input) {
+            const value = input.value;
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validatePassword(value)) {
+                const strength = calculatePasswordStrength(value);
+                if (strength >= 4) {
+                    input.className = input.className.replace(/input-(warning|error)/g, '');
+                    input.classList.add('input-secure');
+                } else {
+                    input.className = input.className.replace(/input-(secure|error)/g, '');
+                    input.classList.add('input-warning');
+                }
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        function validateNameInput(input) {
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validateName(value)) {
+                input.className = input.className.replace(/input-(warning|error)/g, '');
+                input.classList.add('input-secure');
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        function validateDocumentInput(input) {
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validateDocument(value)) {
+                input.className = input.className.replace(/input-(warning|error)/g, '');
+                input.classList.add('input-secure');
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        function validateTextInput(input) {
+            const value = input.value;
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validateText(value)) {
+                input.className = input.className.replace(/input-(warning|error)/g, '');
+                input.classList.add('input-secure');
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        function validateSearchInput(input) {
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.className = input.className.replace(/input-(secure|warning|error)/g, '');
+                return;
+            }
+            
+            if (validateText(value) && value.length >= 3) {
+                input.className = input.className.replace(/input-(warning|error)/g, '');
+                input.classList.add('input-secure');
+                
+                // Trigger search with debounce
+                clearTimeout(input.searchTimeout);
+                input.searchTimeout = setTimeout(() => {
+                    searchStudent();
+                }, 500);
+            } else if (value.length < 3) {
+                input.className = input.className.replace(/input-(secure|error)/g, '');
+                input.classList.add('input-warning');
+            } else {
+                input.className = input.className.replace(/input-(secure|warning)/g, '');
+                input.classList.add('input-error');
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE TOKENS Y SESIONES SEGURAS
+        // ========================================
+
+        function generateSecureToken() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return 'sess_' + Date.now() + '_' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function validateSession() {
+            if (!sessionToken || !sessionStartTime) {
+                return false;
+            }
+            
+            const now = Date.now();
+            if (now - sessionStartTime > SESSION_TIMEOUT) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        function renewSession() {
+            if (validateSession()) {
+                sessionStartTime = Date.now();
+                resetSessionTimeout();
+                return true;
+            }
+            return false;
+        }
+
+        // ========================================
+        // FUNCIONES DE RATE LIMITING MEJORADAS
+        // ========================================
+
+        function checkRateLimit() {
+            const now = Date.now();
+            const clientId = getClientId();
+            
+            // Obtener intentos desde localStorage (por cliente)
+            const attemptsKey = `login_attempts_${clientId}`;
+            const lastAttemptKey = `last_attempt_${clientId}`;
+            
+            const storedAttempts = localStorage.getItem(attemptsKey);
+            const storedLastAttempt = localStorage.getItem(lastAttemptKey);
+            
+            const attempts = storedAttempts ? parseInt(storedAttempts) : 0;
+            const lastAttempt = storedLastAttempt ? parseInt(storedLastAttempt) : 0;
+            
+            if (attempts >= MAX_LOGIN_ATTEMPTS) {
+                if (now - lastAttempt < LOGIN_COOLDOWN) {
+                    const remainingTime = Math.ceil((LOGIN_COOLDOWN - (now - lastAttempt)) / 1000);
+                    showRateLimitWarning(remainingTime);
+                    return false;
+                } else {
+                    // Reset intentos después del cooldown
+                    localStorage.setItem(attemptsKey, '0');
+                    localStorage.removeItem(lastAttemptKey);
+                }
+            }
+            
+            return true;
+        }
+
+        function recordFailedAttempt() {
+            const clientId = getClientId();
+            const attemptsKey = `login_attempts_${clientId}`;
+            const lastAttemptKey = `last_attempt_${clientId}`;
+            
+            const storedAttempts = localStorage.getItem(attemptsKey);
+            const attempts = storedAttempts ? parseInt(storedAttempts) + 1 : 1;
+            
+            localStorage.setItem(attemptsKey, attempts.toString());
+            localStorage.setItem(lastAttemptKey, Date.now().toString());
+        }
+
+        function getClientId() {
+            let clientId = localStorage.getItem('client_id');
+            if (!clientId) {
+                clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('client_id', clientId);
+            }
+            return clientId;
+        }
+
+        // ========================================
+        // FUNCIONES DE CAPTCHA
+        // ========================================
+
+        function validateCaptcha() {
+            const captchaResponse = hcaptcha.getResponse();
+            if (!captchaResponse) {
+                showError('Por favor, completa el CAPTCHA de verificación');
+                return false;
+            }
+            return true;
+        }
+
+        function resetCaptcha() {
+            if (typeof hcaptcha !== 'undefined') {
+                hcaptcha.reset();
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE AUDITORÍA MEJORADAS
+        // ========================================
+
+        async function logSecurityEvent(type, action, details = {}, success = true) {
+            try {
+                const now = new Date();
+                const userAgent = navigator.userAgent;
+                const clientId = getClientId();
+                
+                // Obtener información de geolocalización (opcional)
+                let location = 'No disponible';
+                if (navigator.geolocation && currentUser) {
+                    // Solo para usuarios autenticados y con permiso
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            location = `${position.coords.latitude},${position.coords.longitude}`;
+                        },
+                        () => {
+                            location = 'Geolocalización no disponible';
+                        },
+                        { timeout: 5000 }
+                    );
+                }
+
+                const logEntry = {
+                    usuario_id: currentUser?.id || null,
+                    tipo: sanitizeHtml(type),
+                    accion: sanitizeHtml(action),
+                    detalles: JSON.stringify({
+                        ...details,
+                        clientId: clientId,
+                        sessionToken: sessionToken ? sessionToken.substring(0, 20) + '...' : null,
+                        userAgent: userAgent.substring(0, 200), // Limitar longitud
+                        timestamp: now.toISOString(),
+                        location: location
+                    }),
+                    ip_address: 'Cliente', // En producción, obtener desde el servidor
+                    user_agent: userAgent.substring(0, 500), // Limitar longitud
+                    exitoso: success,
+                    timestamp: now.toISOString()
+                };
+
+                await supabase
+                    .from('audit_logs')
+                    .insert([logEntry]);
+                    
+                console.log('🔒 Evento de seguridad registrado:', type, action);
+                
+            } catch (error) {
+                console.error('Error al registrar evento de seguridad:', error);
+                // No mostrar error al usuario para no revelar información del sistema
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE INDICADORES DE SEGURIDAD
+        // ========================================
+
+        function updateSecurityIndicator(status, message) {
+            const indicator = document.getElementById('securityIndicator');
+            if (!indicator) return;
+            
+            indicator.className = 'security-indicator';
+            
+            switch (status) {
+                case 'secure':
+                    indicator.classList.add('secure');
+                    indicator.innerHTML = '🔒 ' + message;
+                    break;
+                case 'warning':
+                    indicator.classList.add('warning');
+                    indicator.innerHTML = '⚠️ ' + message;
+                    break;
+                case 'error':
+                    indicator.classList.add('error');
+                    indicator.innerHTML = '🚨 ' + message;
+                    break;
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE FUERZA DE CONTRASEÑA
+        // ========================================
+
+        function calculatePasswordStrength(password) {
+            if (!password) return 0;
+            
+            let strength = 0;
+            
+            // Longitud
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            
+            // Complejidad
+            if (password.match(/[a-z]+/)) strength++;
+            if (password.match(/[A-Z]+/)) strength++;
+            if (password.match(/[0-9]+/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]+/)) strength++;
+            
+            // Patrones comunes (penalizar)
+            const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', '111111'];
+            if (commonPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
+                strength = Math.max(0, strength - 2);
+            }
+            
+            return Math.min(strength, 6);
         }
 
         function checkPasswordStrength() {
@@ -1003,113 +1566,258 @@
             
             strengthDiv.style.display = 'block';
             
-            let strength = 0;
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]+/)) strength++;
-            if (password.match(/[A-Z]+/)) strength++;
-            if (password.match(/[0-9]+/)) strength++;
-            if (password.match(/[^a-zA-Z0-9]+/)) strength++;
+            const strength = calculatePasswordStrength(password);
             
             strengthDiv.className = 'password-strength';
             if (strength < 3) {
                 strengthDiv.classList.add('weak');
-            } else if (strength < 4) {
+            } else if (strength < 5) {
                 strengthDiv.classList.add('medium');
             } else {
                 strengthDiv.classList.add('strong');
             }
         }
 
-        function generateSessionToken() {
-            return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
+        // ========================================
+        // FUNCIONES PRINCIPALES (MEJORADAS)
+        // ========================================
 
-        function checkRateLimit() {
-            const now = Date.now();
-            if (lastLoginAttempt && loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-                if (now - lastLoginAttempt < LOGIN_COOLDOWN) {
-                    const remainingTime = Math.ceil((LOGIN_COOLDOWN - (now - lastLoginAttempt)) / 1000);
-                    showRateLimitWarning(remainingTime);
-                    return false;
-                } else {
-                    loginAttempts = 0;
-                }
-            }
-            return true;
-        }
-
-        function showRateLimitWarning(seconds) {
-            const warning = document.getElementById('rateLimitWarning');
-            warning.textContent = `⚠️ Demasiados intentos. Espera ${seconds} segundos antes de intentar de nuevo.`;
-            warning.style.display = 'block';
-            setTimeout(() => {
-                warning.style.display = 'none';
-            }, 5000);
-        }
-
-        async function logSecurityEvent(type, action, details = {}, success = true) {
-            try {
-                // Obtener información del navegador
-                const userAgent = navigator.userAgent;
-                const ip = 'Cliente'; // En producción, obtener desde el servidor
-                
-                await supabase
-                    .from('audit_logs')
-                    .insert([{
-                        usuario_id: currentUser?.id || null,
-                        tipo: type,
-                        accion: action,
-                        detalles: JSON.stringify(details),
-                        ip_address: ip,
-                        user_agent: userAgent,
-                        exitoso: success,
-                        timestamp: new Date().toISOString()
-                    }]);
-            } catch (error) {
-                console.error('Error al registrar evento de seguridad:', error);
-            }
-        }
-
-        // Inicializar Supabase
+        // Inicializar Supabase con seguridad mejorada
         async function initSupabase() {
             try {
-                console.log('🔄 Inicializando Supabase...');
+                console.log('🔄 Inicializando Supabase con medidas de seguridad...');
                 
                 if (!window.supabase) {
                     console.error('❌ window.supabase no está disponible');
                     throw new Error('Supabase no está cargado');
                 }
                 
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('✅ Cliente Supabase creado');
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: {
+                        persistSession: false, // No persistir sesiones por seguridad
+                        autoRefreshToken: false
+                    }
+                });
+                
+                console.log('✅ Cliente Supabase creado con configuración segura');
                 
                 // Verificar conexión
                 const { data, error } = await supabase.from('roles').select('*').limit(1);
                 
                 if (error) throw error;
                 
-                updateConnectionStatus(true, 'Conectado');
-                console.log('✅ Conexión exitosa');
-                
-                // Crear tabla de logs si no existe
-                await createAuditLogsTable();
+                updateConnectionStatus(true, 'Conexión Segura');
+                updateSecurityIndicator('secure', 'Conexión Segura');
+                console.log('✅ Conexión segura establecida');
                 
                 return true;
                 
             } catch (error) {
                 console.error('❌ Error:', error);
                 updateConnectionStatus(false, 'Error de conexión');
+                updateSecurityIndicator('error', 'Error de Conexión');
+                
+                // Log del error de manera segura
+                await logSecurityEvent('error', 'Error de conexión', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+                
                 return false;
             }
         }
 
-        async function createAuditLogsTable() {
-            // Esta función normalmente se ejecutaría en el backend
-            // Por ahora, asumimos que la tabla ya existe
-            console.log('📊 Verificando tabla de audit_logs...');
+        // Función de login con seguridad mejorada
+        async function login() {
+            try {
+                // Verificar rate limiting
+                if (!checkRateLimit()) {
+                    return;
+                }
+
+                // Verificar CAPTCHA
+                if (!validateCaptcha()) {
+                    recordFailedAttempt();
+                    return;
+                }
+
+                const email = document.getElementById('email').value.trim().toLowerCase();
+                const password = document.getElementById('password').value;
+
+                // Validaciones de seguridad
+                if (!email || !password) {
+                    showError('Por favor, ingresa email y contraseña');
+                    recordFailedAttempt();
+                    return;
+                }
+
+                if (!validateEmail(email)) {
+                    showError('Formato de email inválido');
+                    recordFailedAttempt();
+                    await logSecurityEvent('login', 'Intento con email inválido', { email: email.substring(0, 20) + '...' }, false);
+                    return;
+                }
+
+                if (!validatePassword(password)) {
+                    showError('Formato de contraseña inválido');
+                    recordFailedAttempt();
+                    await logSecurityEvent('login', 'Intento con contraseña inválida', { email: email.substring(0, 20) + '...' }, false);
+                    return;
+                }
+
+                // Deshabilitar botón de login
+                const loginBtn = document.getElementById('loginBtn');
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Verificando...';
+
+                // Verificar conexión
+                const connected = await initSupabase();
+                if (!connected) {
+                    showError('No se puede conectar a la base de datos. Verifica tu conexión a internet.');
+                    resetCaptcha();
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Iniciar Sesión';
+                    return;
+                }
+
+                console.log('🔐 Intentando login seguro para:', email.substring(0, 5) + '...');
+                
+                // Buscar usuario en la base de datos
+                const { data: user, error } = await supabase
+                    .from('usuarios')
+                    .select(`
+                        *,
+                        rol:roles(nombre, descripcion)
+                    `)
+                    .eq('email', email)
+                    .eq('activo', true)
+                    .single();
+
+                if (error || !user) {
+                    recordFailedAttempt();
+                    await logSecurityEvent('login', 'Usuario no encontrado', { email: email.substring(0, 20) + '...' }, false);
+                    showError('Credenciales incorrectas');
+                    resetCaptcha();
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Iniciar Sesión';
+                    return;
+                }
+
+                console.log('✅ Usuario encontrado:', user.nombre);
+
+                // Verificar contraseña con cifrado
+                if (!verifyPassword(password, user.password_hash)) {
+                    recordFailedAttempt();
+                    await logSecurityEvent('login', 'Contraseña incorrecta', { 
+                        email: email.substring(0, 20) + '...',
+                        userId: user.id 
+                    }, false);
+                    showError('Credenciales incorrectas');
+                    resetCaptcha();
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Iniciar Sesión';
+                    return;
+                }
+
+                console.log('✅ Login exitoso para:', user.nombre);
+                
+                // Limpiar intentos fallidos
+                const clientId = getClientId();
+                localStorage.removeItem(`login_attempts_${clientId}`);
+                localStorage.removeItem(`last_attempt_${clientId}`);
+                
+                // Generar token de sesión seguro
+                sessionToken = generateSecureToken();
+                sessionStartTime = Date.now();
+                currentUser = user;
+                
+                // Registrar login exitoso
+                await logSecurityEvent('login', 'Login exitoso', { 
+                    userId: user.id, 
+                    email: email.substring(0, 20) + '...',
+                    role: user.rol.nombre 
+                }, true);
+                
+                resetCaptcha();
+                showDashboard();
+                updateSecurityIndicator('secure', 'Sesión Activa');
+                
+            } catch (error) {
+                console.error('❌ Error general en login:', error);
+                recordFailedAttempt();
+                await logSecurityEvent('error', 'Error general en login', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+                showError('Error al iniciar sesión. Inténtalo de nuevo.');
+                resetCaptcha();
+            } finally {
+                const loginBtn = document.getElementById('loginBtn');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Iniciar Sesión';
+            }
         }
 
-        // Actualizar estado de conexión
+        // Función de logout mejorada
+        async function logout() {
+            try {
+                if (currentUser) {
+                    await logSecurityEvent('logout', 'Cierre de sesión', { 
+                        userId: currentUser.id,
+                        sessionDuration: sessionStartTime ? Date.now() - sessionStartTime : 0
+                    }, true);
+                }
+                
+                // Limpiar datos de sesión
+                currentUser = null;
+                sessionToken = null;
+                sessionStartTime = null;
+                clearTimeout(sessionTimeout);
+                
+                // Limpiar UI
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                document.querySelector('.logout-btn').style.display = 'none';
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                
+                // Resetear CAPTCHA
+                resetCaptcha();
+                
+                updateSecurityIndicator('secure', 'Conexión Segura');
+                showSuccess('Sesión cerrada exitosamente');
+                
+            } catch (error) {
+                console.error('Error en logout:', error);
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE TIMEOUT DE SESIÓN
+        // ========================================
+
+        function resetSessionTimeout() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(() => {
+                showError('Tu sesión ha expirado por inactividad');
+                logout();
+            }, SESSION_TIMEOUT);
+        }
+
+        // Resetear timeout en actividad del usuario
+        function setupActivityListeners() {
+            const events = ['click', 'keypress', 'mousemove', 'scroll'];
+            events.forEach(event => {
+                document.addEventListener(event, () => {
+                    if (currentUser && validateSession()) {
+                        renewSession();
+                    }
+                }, { passive: true });
+            });
+        }
+
+        // ========================================
+        // RESTO DE FUNCIONES (COPIADAS DEL ORIGINAL CON MEJORAS DE SEGURIDAD)
+        // ========================================
+
         function updateConnectionStatus(connected, message) {
             const statusElement = document.getElementById('connectionStatus');
             const iconElement = document.getElementById('connectionIcon');
@@ -1126,10 +1834,9 @@
             }
         }
 
-        // Funciones de utilidad
         function showError(message) {
             const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = message;
+            errorDiv.textContent = sanitizeHtml(message);
             errorDiv.style.display = 'block';
             setTimeout(() => {
                 errorDiv.style.display = 'none';
@@ -1139,23 +1846,31 @@
         function showSuccess(message) {
             const infoDiv = document.getElementById('loginInfo');
             if (infoDiv) {
-                infoDiv.textContent = message;
+                infoDiv.textContent = sanitizeHtml(message);
                 infoDiv.style.display = 'block';
                 setTimeout(() => {
                     infoDiv.style.display = 'none';
                 }, 5000);
             } else {
-                alert('✅ ' + message);
+                alert('✅ ' + sanitizeHtml(message));
             }
         }
 
-        // Función para probar conexión
+        function showRateLimitWarning(seconds) {
+            const warning = document.getElementById('rateLimitWarning');
+            warning.textContent = `⚠️ Demasiados intentos. Espera ${seconds} segundos antes de intentar de nuevo.`;
+            warning.style.display = 'block';
+            setTimeout(() => {
+                warning.style.display = 'none';
+            }, 5000);
+        }
+
         async function testConnection() {
             updateConnectionStatus(false, 'Probando...');
+            updateSecurityIndicator('warning', 'Probando Conexión');
             
             try {
-                console.log('🔄 Test de conexión');
-                console.log('window.supabase:', !!window.supabase);
+                console.log('🔄 Test de conexión segura');
                 
                 if (!window.supabase) {
                     throw new Error('Supabase no está cargado. Recarga la página.');
@@ -1164,13 +1879,14 @@
                 const connected = await initSupabase();
                 
                 if (connected) {
-                    showSuccess('✅ Conexión exitosa!');
+                    showSuccess('✅ Conexión segura establecida!');
                 } else {
                     showError('❌ Error en la conexión');
                 }
             } catch (error) {
                 console.error('❌ Error:', error);
                 showError('Error: ' + error.message);
+                updateSecurityIndicator('error', 'Error de Conexión');
             }
         }
 
@@ -1189,7 +1905,7 @@
 
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
-            const date = new Date(dateString + 'T00:00:00-05:00'); // Forzar zona horaria Colombia
+            const date = new Date(dateString + 'T00:00:00-05:00');
             return date.toLocaleDateString('es-CO', { 
                 timeZone: 'America/Bogota',
                 day: '2-digit',
@@ -1216,145 +1932,6 @@
             });
         }
 
-        // Funciones de autenticación con mejoras de seguridad
-        async function login() {
-            // Check rate limiting
-            if (!checkRateLimit()) {
-                return;
-            }
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            // Validaciones básicas
-            if (!email || !password) {
-                showError('Por favor, ingresa email y contraseña');
-                return;
-            }
-
-            // Validar formato de email
-            if (!validateEmail(email)) {
-                showError('Formato de email inválido');
-                loginAttempts++;
-                lastLoginAttempt = Date.now();
-                await logSecurityEvent('login', 'Intento de login con email inválido', { email }, false);
-                return;
-            }
-
-            // Deshabilitar botón de login
-            const loginBtn = document.getElementById('loginBtn');
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Verificando...';
-
-            // Verificar conexión primero
-            const connected = await initSupabase();
-            if (!connected) {
-                showError('No se puede conectar a la base de datos. Verifica tu conexión a internet.');
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Iniciar Sesión';
-                return;
-            }
-
-            try {
-                console.log('Intentando login con:', email);
-                
-                // Buscar usuario en la base de datos
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .eq('email', email)
-                    .eq('activo', true)
-                    .single();
-
-                console.log('Resultado de búsqueda:', { user, error });
-
-                if (error) {
-                    console.error('Error en consulta:', error);
-                    loginAttempts++;
-                    lastLoginAttempt = Date.now();
-                    
-                    if (error.code === 'PGRST116') {
-                        await logSecurityEvent('login', 'Intento de login con usuario no encontrado', { email }, false);
-                        showError('Usuario no encontrado. Verifica tu email.');
-                    } else {
-                        showError('Error al buscar usuario: ' + error.message);
-                    }
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Iniciar Sesión';
-                    return;
-                }
-
-                if (!user) {
-                    loginAttempts++;
-                    lastLoginAttempt = Date.now();
-                    await logSecurityEvent('login', 'Intento de login con usuario inactivo', { email }, false);
-                    showError('Usuario no encontrado o inactivo');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Iniciar Sesión';
-                    return;
-                }
-
-                console.log('Usuario encontrado:', user.nombre);
-
-                // Verificar contraseña (en producción debería ser con hash)
-                // TODO: Implementar bcrypt o similar
-                if (user.password_hash !== password) {
-                    loginAttempts++;
-                    lastLoginAttempt = Date.now();
-                    await logSecurityEvent('login', 'Intento de login con contraseña incorrecta', { email, userId: user.id }, false);
-                    showError('Contraseña incorrecta');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Iniciar Sesión';
-                    return;
-                }
-
-                console.log('Login exitoso para:', user.nombre);
-                
-                // Generar token de sesión
-                sessionToken = generateSessionToken();
-                
-                // Resetear intentos de login
-                loginAttempts = 0;
-                lastLoginAttempt = null;
-                
-                currentUser = user;
-                
-                // Registrar login exitoso
-                await logSecurityEvent('login', 'Login exitoso', { 
-                    userId: user.id, 
-                    email: user.email,
-                    role: user.rol.nombre 
-                }, true);
-                
-                showDashboard();
-                
-            } catch (error) {
-                console.error('Error general en login:', error);
-                await logSecurityEvent('error', 'Error general en login', { error: error.message }, false);
-                showError('Error al iniciar sesión: ' + error.message);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Iniciar Sesión';
-            }
-        }
-
-        async function logout() {
-            if (currentUser) {
-                await logSecurityEvent('logout', 'Cierre de sesión', { userId: currentUser.id }, true);
-            }
-            
-            currentUser = null;
-            sessionToken = null;
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-            document.querySelector('.logout-btn').style.display = 'none';
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-        }
-
         function showDashboard() {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
@@ -1362,6 +1939,7 @@
             
             setupNavigation();
             loadInitialData();
+            resetSessionTimeout();
         }
 
         function setupNavigation() {
@@ -1370,7 +1948,6 @@
             
             navButtons.innerHTML = '';
 
-            // Botones según el rol
             if (role === 'administrador') {
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
@@ -1390,7 +1967,6 @@
                 `;
             }
 
-            // Mostrar la primera sección disponible
             if (role === 'vigilante') {
                 showSection('verifySectionDiv');
             } else {
@@ -1399,54 +1975,64 @@
         }
 
         function showSection(sectionId) {
-            // Ocultar todas las secciones
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
-            // Mostrar la sección seleccionada
             document.getElementById(sectionId).classList.add('active');
             
-            // Cargar datos específicos según la sección
             if (sectionId === 'historySectionDiv') {
-                loadHistory(true); // Cargar todo el historial por defecto
+                loadHistory(true);
             } else if (sectionId === 'verifySectionDiv' && currentUser && currentUser.rol.nombre === 'vigilante') {
-                // Cargar automáticamente las salidas pendientes para vigilantes
                 loadPendingExits();
             }
+            
+            renewSession();
         }
 
         async function loadInitialData() {
-            await loadStudents();
-            await loadReasons();
-            await loadGrades();
-            await loadRoles();
-            
-            if (currentUser.rol.nombre === 'administrador') {
-                await loadUsers();
-                await loadSecurityStats();
+            try {
+                await loadStudents();
+                await loadReasons();
+                await loadGrades();
+                await loadRoles();
+                
+                if (currentUser.rol.nombre === 'administrador') {
+                    await loadUsers();
+                    await loadSecurityStats();
+                }
+                
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Error al cargar datos iniciales:', error);
+                await logSecurityEvent('error', 'Error al cargar datos iniciales', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
             }
-            
-            setupEventListeners();
         }
 
         function setupEventListeners() {
-            // Autorización de salidas
             document.getElementById('authorizeForm').addEventListener('submit', authorizeExit);
             
-            // Búsqueda de estudiantes para verificación (solo si existe el elemento)
             const studentSearchInput = document.getElementById('studentSearch');
             if (studentSearchInput) {
-                studentSearchInput.addEventListener('input', searchStudent);
+                studentSearchInput.addEventListener('input', () => {
+                    validateSearchInput(studentSearchInput);
+                });
             }
             
-            // Formularios de administración
             document.getElementById('studentForm').addEventListener('submit', saveStudent);
             document.getElementById('userForm').addEventListener('submit', saveUser);
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
 
-            // Establecer fecha actual de Colombia por defecto
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
@@ -1456,174 +2042,562 @@
             console.log('📅 Fecha actual Colombia establecida:', todayColombia);
         }
 
-        // NUEVAS FUNCIONES DE SEGURIDAD
-        async function loadSecurityStats() {
+        // ========================================
+        // FUNCIONES DE CARGA DE DATOS (COPIADAS CON MEJORAS)
+        // ========================================
+
+        async function loadStudents() {
             try {
-                const todayColombia = getColombiaDate();
+                if (!validateSession()) return;
+
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select(`
+                        *,
+                        grado:grados(nombre)
+                    `)
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('studentSelect');
+                const gradeSelect = document.getElementById('studentGrade');
                 
-                // Cargar estadísticas del día
-                const { data: todayLogs, error: logsError } = await supabase
-                    .from('audit_logs')
-                    .select('*')
-                    .gte('timestamp', todayColombia + 'T00:00:00')
-                    .lte('timestamp', todayColombia + 'T23:59:59');
+                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = sanitizeHtml(`${student.nombre} ${student.apellidos} - ${student.grado.nombre}`);
+                    select.appendChild(option);
+                });
 
-                if (!logsError && todayLogs) {
-                    const loginCount = todayLogs.filter(log => log.tipo === 'login' && log.exitoso).length;
-                    const changeCount = todayLogs.filter(log => ['create', 'update', 'delete'].includes(log.tipo)).length;
-                    const failedCount = todayLogs.filter(log => !log.exitoso).length;
-                    
-                    document.getElementById('todayLogins').textContent = loginCount;
-                    document.getElementById('todayChanges').textContent = changeCount;
-                    document.getElementById('failedAttempts').textContent = failedCount;
-                }
-
-                // Cargar usuarios activos
-                const { data: activeUsers, error: usersError } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('activo', true);
-
-                if (!usersError && activeUsers) {
-                    document.getElementById('activeUsers').textContent = activeUsers.length;
-                }
-
-                // Cargar lista de usuarios para el filtro
-                const logUserSelect = document.getElementById('logUser');
-                if (activeUsers && logUserSelect) {
-                    logUserSelect.innerHTML = '<option value="">Todos</option>';
-                    activeUsers.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.nombre;
-                        logUserSelect.appendChild(option);
-                    });
-                }
+                updateStudentsTable(students);
                 
             } catch (error) {
-                console.error('Error al cargar estadísticas de seguridad:', error);
+                console.error('Error loading students:', error);
+                await logSecurityEvent('error', 'Error al cargar estudiantes', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
             }
         }
 
-        async function loadSecurityLogs() {
+        async function loadReasons() {
             try {
-                const dateFrom = document.getElementById('logDateFrom').value;
-                const dateTo = document.getElementById('logDateTo').value;
-                const logType = document.getElementById('logType').value;
-                const logUser = document.getElementById('logUser').value;
+                if (!validateSession()) return;
 
-                let query = supabase
-                    .from('audit_logs')
+                const { data: reasons, error } = await supabase
+                    .from('motivos')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('reasonSelect');
+                select.innerHTML = '<option value="">Seleccionar motivo...</option>';
+                
+                reasons.forEach(reason => {
+                    const option = document.createElement('option');
+                    option.value = reason.id;
+                    option.textContent = sanitizeHtml(reason.nombre);
+                    select.appendChild(option);
+                });
+
+                updateReasonsTable(reasons);
+                
+            } catch (error) {
+                console.error('Error loading reasons:', error);
+                await logSecurityEvent('error', 'Error al cargar motivos', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        async function loadGrades() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: grades, error } = await supabase
+                    .from('grados')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const gradeSelect = document.getElementById('gradeSelect');
+                gradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                
+                grades.forEach(grade => {
+                    const option = document.createElement('option');
+                    option.value = grade.id;
+                    option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
+                    gradeSelect.appendChild(option);
+                });
+
+                const studentGradeSelect = document.getElementById('studentGrade');
+                if (studentGradeSelect) {
+                    studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                    
+                    grades.forEach(grade => {
+                        const option = document.createElement('option');
+                        option.value = grade.id;
+                        option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
+                        studentGradeSelect.appendChild(option);
+                    });
+                }
+
+                updateGradesTable(grades);
+                console.log('✅ Grados cargados:', grades.length);
+                
+            } catch (error) {
+                console.error('Error loading grades:', error);
+                await logSecurityEvent('error', 'Error al cargar grados', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        async function loadRoles() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: roles, error } = await supabase
+                    .from('roles')
+                    .select('*')
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('userRole');
+                select.innerHTML = '<option value="">Seleccionar rol...</option>';
+                
+                roles.forEach(role => {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = sanitizeHtml(role.descripcion);
+                    select.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading roles:', error);
+                await logSecurityEvent('error', 'Error al cargar roles', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: users, error } = await supabase
+                    .from('usuarios')
                     .select(`
                         *,
-                        usuario:usuarios(nombre, email)
+                        rol:roles(nombre, descripcion)
                     `)
-                    .order('timestamp', { ascending: false })
-                    .limit(100);
+                    .order('nombre');
 
-                if (dateFrom) {
-                    query = query.gte('timestamp', dateFrom + 'T00:00:00');
-                }
-                if (dateTo) {
-                    query = query.lte('timestamp', dateTo + 'T23:59:59');
-                }
-                if (logType) {
-                    query = query.eq('tipo', logType);
-                }
-                if (logUser) {
-                    query = query.eq('usuario_id', logUser);
-                }
+                if (error) throw error;
 
-                const { data: logs, error } = await query;
+                updateUsersTable(users);
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                await logSecurityEvent('error', 'Error al cargar usuarios', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
 
-                if (error) {
-                    console.error('Error al cargar logs:', error);
-                    showError('Error al cargar los logs de seguridad');
+        async function loadStudentsByGrade() {
+            const gradeId = document.getElementById('gradeSelect').value;
+            const studentSelect = document.getElementById('studentSelect');
+            
+            if (!gradeId) {
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                studentSelect.disabled = true;
+                return;
+            }
+            
+            try {
+                if (!validateSession()) return;
+
+                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+                studentSelect.disabled = true;
+                
+                console.log('🔄 Cargando estudiantes del grado ID:', gradeId);
+                
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select(`
+                        id,
+                        nombre,
+                        apellidos,
+                        documento
+                    `)
+                    .eq('grado_id', gradeId)
+                    .eq('activo', true)
+                    .order('apellidos')
+                    .order('nombre');
+
+                if (error) throw error;
+
+                console.log('📊 Estudiantes encontrados:', students.length);
+
+                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                if (students && students.length > 0) {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = sanitizeHtml(`${student.apellidos}, ${student.nombre}${student.documento ? ' - Doc: ' + student.documento : ''}`);
+                        studentSelect.appendChild(option);
+                    });
+                    
+                    studentSelect.disabled = false;
+                    console.log('✅ Select de estudiantes habilitado con', students.length, 'estudiantes');
+                } else {
+                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                    console.log('⚠️ No se encontraron estudiantes para el grado seleccionado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al cargar estudiantes por grado:', error);
+                showError('Error al cargar los estudiantes: ' + error.message);
+                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
+                studentSelect.disabled = true;
+                
+                await logSecurityEvent('error', 'Error al cargar estudiantes por grado', { 
+                    gradeId: gradeId,
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE AUTORIZACIÓN Y VERIFICACIÓN (COPIADAS CON MEJORAS)
+        // ========================================
+
+        async function authorizeExit(e) {
+            e.preventDefault();
+            
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+                
+                const gradeId = document.getElementById('gradeSelect').value;
+                const studentId = document.getElementById('studentSelect').value;
+                const reasonId = document.getElementById('reasonSelect').value;
+                const exitDate = document.getElementById('exitDate').value;
+                const exitTime = document.getElementById('exitTime').value;
+                const observations = sanitizeHtml(document.getElementById('observations').value.trim());
+
+                // Validaciones de seguridad
+                if (!gradeId || !studentId || !reasonId || !exitDate || !exitTime) {
+                    showError('Por favor, completa todos los campos obligatorios');
                     return;
                 }
 
-                const tbody = document.querySelector('#securityLogsTable tbody');
-                tbody.innerHTML = '';
+                // Validar fecha no sea pasada
+                const todayColombia = getColombiaDate();
+                if (exitDate < todayColombia) {
+                    showError('No se puede autorizar una salida para una fecha pasada');
+                    return;
+                }
 
-                if (!logs || logs.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: #666; padding: 20px;">
-                                No se encontraron logs para los filtros seleccionados
-                            </td>
-                        </tr>
+                // Validar observaciones
+                if (observations && !validateText(observations)) {
+                    showError('Las observaciones contienen caracteres no permitidos');
+                    return;
+                }
+
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
+                    timeZone: 'America/Bogota' 
+                });
+
+                const { data, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .insert([{
+                        estudiante_id: studentId,
+                        motivo_id: reasonId,
+                        usuario_autorizador_id: currentUser.id,
+                        fecha_salida: exitDate,
+                        hora_salida: exitTime,
+                        observaciones: observations || null,
+                        fecha_creacion: colombiaDateTime,
+                        autorizada: true
+                    }]);
+
+                if (error) throw error;
+
+                const gradeSelect = document.getElementById('gradeSelect');
+                const studentSelect = document.getElementById('studentSelect');
+                const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
+                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+
+                await logSecurityEvent('create', 'Autorización de salida creada', {
+                    studentId,
+                    gradeId,
+                    reasonId,
+                    exitDate,
+                    exitTime
+                }, true);
+
+                showSuccess(`✅ Autorización creada exitosamente para ${sanitizeHtml(studentName)} (${sanitizeHtml(gradeName)})`);
+                
+                resetAuthorizationForm();
+                
+                console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
+                
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al crear autorización', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+                showError('Error al crear la autorización: ' + error.message);
+            }
+        }
+
+        function resetAuthorizationForm() {
+            document.getElementById('authorizeForm').reset();
+            
+            const studentSelect = document.getElementById('studentSelect');
+            studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+            studentSelect.disabled = true;
+            
+            const todayColombia = getColombiaDate();
+            document.getElementById('exitDate').value = todayColombia;
+        }
+
+        async function searchStudent() {
+            const searchTerm = sanitizeHtml(document.getElementById('studentSearch').value.trim());
+            const resultDiv = document.getElementById('searchResult');
+            
+            if (searchTerm.length < 3) {
+                resultDiv.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Escribe al menos 3 caracteres para buscar...</p></div>';
+                return;
+            }
+
+            // Validar entrada de búsqueda
+            if (!validateText(searchTerm)) {
+                resultDiv.innerHTML = '<div class="verification-card not-authorized"><h3>❌ BÚSQUEDA INVÁLIDA</h3><p>La búsqueda contiene caracteres no permitidos.</p></div>';
+                return;
+            }
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const todayColombia = getColombiaDate();
+                
+                console.log('🔍 Buscando autorizaciones para:', searchTerm.substring(0, 10) + '...', 'en fecha Colombia:', todayColombia);
+                
+                const { data: authorizations, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('*')
+                    .eq('fecha_salida', todayColombia)
+                    .eq('autorizada', true);
+
+                if (error) {
+                    console.error('Error en búsqueda:', error);
+                    showError('Error al buscar autorizaciones: ' + error.message);
+                    return;
+                }
+
+                if (!authorizations || authorizations.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ NO HAY AUTORIZACIONES</h3>
+                            <p>No se encontraron autorizaciones para la fecha de hoy (${formatDate(todayColombia)}).</p>
+                        </div>
                     `;
                     return;
                 }
 
-                logs.forEach(log => {
-                    const row = tbody.insertRow();
-                    const typeClass = getLogTypeClass(log.tipo);
-                    const details = log.detalles ? JSON.parse(log.detalles) : {};
+                const { data: students, error: studentsError } = await supabase
+                    .from('estudiantes')
+                    .select('id, nombre, apellidos, grado:grados(nombre)')
+                    .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
+                    .eq('activo', true);
+
+                if (studentsError) {
+                    console.error('Error buscando estudiantes:', studentsError);
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ ERROR EN BÚSQUEDA</h3>
+                            <p>Error al buscar estudiantes: ${studentsError.message}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const studentIds = students?.map(s => s.id) || [];
+                const matchingAuth = authorizations.filter(auth => 
+                    studentIds.includes(auth.estudiante_id)
+                );
+
+                if (matchingAuth.length === 0) {
+                    let studentsList = students?.map(s => `${sanitizeHtml(s.nombre)} ${sanitizeHtml(s.apellidos)} (${sanitizeHtml(s.grado.nombre)})`).join(', ') || '';
+                    resultDiv.innerHTML = `
+                        <div class="verification-card not-authorized">
+                            <h3>❌ NO AUTORIZADO</h3>
+                            <p>No se encontraron autorizaciones para "${sanitizeHtml(searchTerm)}" en la fecha de hoy (${formatDate(todayColombia)}).</p>
+                            ${studentsList ? `<p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>` : ''}
+                            <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const reasonIds = [...new Set(matchingAuth.map(auth => auth.motivo_id))];
+                const userIds = [...new Set(matchingAuth.map(auth => auth.usuario_autorizador_id))];
+
+                const [reasonsResult, usersResult] = await Promise.all([
+                    supabase.from('motivos').select('id, nombre').in('id', reasonIds),
+                    supabase.from('usuarios').select('id, nombre').in('id', userIds)
+                ]);
+
+                const studentMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                students?.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                reasonsResult.data?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                usersResult.data?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                const currentTime = getColombiaTime();
+                let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
+                    <p style="color: #2c3e50; font-size: 15px; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                </div>`;
+                
+                matchingAuth.forEach(auth => {
+                    const student = studentMap[auth.estudiante_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    let cardClass, titleText, footerHtml;
                     
-                    row.innerHTML = `
-                        <td>${formatDateTime(log.timestamp)}</td>
-                        <td>${log.usuario ? sanitizeHtml(log.usuario.nombre) : 'Sistema'}</td>
-                        <td><span class="log-type ${typeClass}">${sanitizeHtml(log.tipo)}</span></td>
-                        <td>${sanitizeHtml(log.accion)}</td>
-                        <td>${sanitizeHtml(JSON.stringify(details))}</td>
-                        <td>${sanitizeHtml(log.ip_address || 'N/A')}</td>
+                    if (auth.salida_efectiva) {
+                        cardClass = 'verified';
+                        titleText = '✅ SALIDA YA CONFIRMADA';
+                        footerHtml = `
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${sanitizeHtml(auth.observaciones)}
+                                    </div>
+                                ` : ''}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
+                                        <small>Vigilante: ${sanitizeHtml(currentUser.nombre)}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        cardClass = 'authorized';
+                        titleText = '✅ AUTORIZADO PARA SALIR';
+                        footerHtml = `
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${auth.observaciones ? `
+                                    <div class="verification-card-obs">
+                                        <strong>📝 Observaciones:</strong><br>
+                                        ${sanitizeHtml(auth.observaciones)}
+                                    </div>
+                                ` : ''}
+                                <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                    ✅ CONFIRMAR SALIDA
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="verification-card ${cardClass}">
+                            <h3>${titleText}</h3>
+                            
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>👨‍🎓 Estudiante:</strong>
+                                        <span class="info-value">${student ? `${sanitizeHtml(student.nombre)} ${sanitizeHtml(student.apellidos)}` : 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🎓 Grado:</strong>
+                                        <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span>
+                                    </p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p>
+                                        <strong>📝 Motivo de Salida:</strong>
+                                        <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span>
+                                    </p>
+                                    <p>
+                                        <strong>🕐 Hora Autorizada:</strong>
+                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            ${footerHtml}
+                        </div>
                     `;
                 });
 
-                showSuccess(`Se cargaron ${logs.length} registros de logs`);
+                resultDiv.innerHTML = html;
                 
             } catch (error) {
-                console.error('Error general al cargar logs:', error);
-                showError('Error al cargar los logs de seguridad');
+                console.error('Error general en búsqueda:', error);
+                await logSecurityEvent('error', 'Error en búsqueda de estudiante', { 
+                    searchTerm: searchTerm.substring(0, 20) + '...',
+                    error: error.message.substring(0, 200) 
+                }, false);
+                showError('Error al buscar autorizaciones: ' + error.message);
+                resultDiv.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ ERROR</h3>
+                        <p>Error en la búsqueda: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
-        function getLogTypeClass(type) {
-            const classes = {
-                'login': 'login',
-                'logout': 'logout',
-                'create': 'create',
-                'update': 'update',
-                'delete': 'delete',
-                'error': 'error'
-            };
-            return classes[type] || '';
-        }
-
-        async function exportLogs() {
-            // Implementar exportación de logs a CSV
-            showSuccess('Función de exportación en desarrollo');
-        }
-
-        // Función para mostrar/ocultar búsqueda manual
-        function toggleSearch() {
-            const searchSection = document.getElementById('searchSection');
-            const pendingSection = document.getElementById('pendingExitsSection');
-            
-            if (searchSection.style.display === 'none') {
-                searchSection.style.display = 'block';
-                pendingSection.style.display = 'none';
-            } else {
-                searchSection.style.display = 'none';
-                pendingSection.style.display = 'block';
-                // Limpiar búsqueda
-                document.getElementById('studentSearch').value = '';
-                document.getElementById('searchResult').innerHTML = '';
-            }
-        }
-
-        // Función para cargar todos los estudiantes con salidas pendientes
         async function loadPendingExits() {
             const pendingList = document.getElementById('pendingExitsList');
             
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando salidas pendientes...</p></div>';
                 
                 const todayColombia = getColombiaDate();
                 console.log('📅 Cargando salidas pendientes para Colombia:', todayColombia);
                 
-                // Obtener autorizaciones pendientes para hoy
                 const { data: authorizations, error } = await supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -1652,7 +2626,6 @@
 
                 console.log('📊 Salidas pendientes encontradas:', authorizations.length);
 
-                // Obtener información de estudiantes, motivos y usuarios
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
                 const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
@@ -1672,7 +2645,6 @@
                         .in('id', userIds)
                 ]);
 
-                // Crear mapas para búsqueda rápida
                 const studentMap = {};
                 const reasonMap = {};
                 const userMap = {};
@@ -1689,7 +2661,6 @@
                     userMap[user.id] = user;
                 });
 
-                // Generar HTML para cada autorización pendiente
                 const currentTime = getColombiaTime();
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
@@ -1749,6 +2720,9 @@
 
             } catch (error) {
                 console.error('❌ Error general:', error);
+                await logSecurityEvent('error', 'Error al cargar salidas pendientes', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 pendingList.innerHTML = `
                     <div class="verification-card not-authorized">
                         <h3>❌ Error al cargar</h3>
@@ -1762,518 +2736,14 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Cargar estudiantes por grado seleccionado
-        async function loadStudentsByGrade() {
-            const gradeId = document.getElementById('gradeSelect').value;
-            const studentSelect = document.getElementById('studentSelect');
-            
-            // Si no hay grado seleccionado, deshabilitar el select de estudiantes
-            if (!gradeId) {
-                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                studentSelect.disabled = true;
-                return;
-            }
-            
-            try {
-                // Mostrar mensaje de carga
-                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
-                studentSelect.disabled = true;
-                
-                console.log('🔄 Cargando estudiantes del grado ID:', gradeId);
-                
-                // Cargar estudiantes del grado seleccionado
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        id,
-                        nombre,
-                        apellidos,
-                        documento
-                    `)
-                    .eq('grado_id', gradeId)
-                    .eq('activo', true)
-                    .order('apellidos')
-                    .order('nombre');
-
-                if (error) throw error;
-
-                console.log('📊 Estudiantes encontrados:', students.length);
-
-                // Llenar el select con los estudiantes
-                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                if (students && students.length > 0) {
-                    students.forEach(student => {
-                        const option = document.createElement('option');
-                        option.value = student.id;
-                        option.textContent = `${student.apellidos}, ${student.nombre}${student.documento ? ' - Doc: ' + student.documento : ''}`;
-                        studentSelect.appendChild(option);
-                    });
-                    
-                    // Habilitar el select
-                    studentSelect.disabled = false;
-                    console.log('✅ Select de estudiantes habilitado con', students.length, 'estudiantes');
-                } else {
-                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
-                    console.log('⚠️ No se encontraron estudiantes para el grado seleccionado');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error al cargar estudiantes por grado:', error);
-                showError('Error al cargar los estudiantes: ' + error.message);
-                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-                studentSelect.disabled = true;
-            }
-        }
-
-        // Función auxiliar para resetear el formulario de autorización
-        function resetAuthorizationForm() {
-            document.getElementById('authorizeForm').reset();
-            
-            // Resetear el select de estudiantes
-            const studentSelect = document.getElementById('studentSelect');
-            studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-            studentSelect.disabled = true;
-            
-            // Establecer fecha actual de Colombia
-            const todayColombia = getColombiaDate();
-            document.getElementById('exitDate').value = todayColombia;
-        }
-
-        // Funciones de carga de datos
-        async function loadStudents() {
-            try {
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        *,
-                        grado:grados(nombre)
-                    `)
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('studentSelect');
-                const gradeSelect = document.getElementById('studentGrade');
-                
-                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                
-                students.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = student.id;
-                    option.textContent = `${student.nombre} ${student.apellidos} - ${student.grado.nombre}`;
-                    select.appendChild(option);
-                });
-
-                // Actualizar tabla de administración si está visible
-                updateStudentsTable(students);
-                
-            } catch (error) {
-                console.error('Error loading students:', error);
-            }
-        }
-
-        async function loadReasons() {
-            try {
-                const { data: reasons, error } = await supabase
-                    .from('motivos')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('reasonSelect');
-                select.innerHTML = '<option value="">Seleccionar motivo...</option>';
-                
-                reasons.forEach(reason => {
-                    const option = document.createElement('option');
-                    option.value = reason.id;
-                    option.textContent = reason.nombre;
-                    select.appendChild(option);
-                });
-
-                updateReasonsTable(reasons);
-                
-            } catch (error) {
-                console.error('Error loading reasons:', error);
-            }
-        }
-
-        async function loadGrades() {
-            try {
-                const { data: grades, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                // Llenar el select de grados en el formulario de autorización
-                const gradeSelect = document.getElementById('gradeSelect');
-                gradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
-                
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                    gradeSelect.appendChild(option);
-                });
-
-                // También llenar el select de grados en el modal de estudiantes (admin)
-                const studentGradeSelect = document.getElementById('studentGrade');
-                if (studentGradeSelect) {
-                    studentGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
-                    
-                    grades.forEach(grade => {
-                        const option = document.createElement('option');
-                        option.value = grade.id;
-                        option.textContent = `${grade.nombre} - ${grade.nivel}`;
-                        studentGradeSelect.appendChild(option);
-                    });
-                }
-
-                // Actualizar tabla de administración si está visible
-                updateGradesTable(grades);
-                
-                console.log('✅ Grados cargados:', grades.length);
-                
-            } catch (error) {
-                console.error('Error loading grades:', error);
-                showError('Error al cargar los grados: ' + error.message);
-            }
-        }
-
-        async function loadRoles() {
-            try {
-                const { data: roles, error } = await supabase
-                    .from('roles')
-                    .select('*')
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('userRole');
-                select.innerHTML = '<option value="">Seleccionar rol...</option>';
-                
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.descripcion;
-                    select.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Error loading roles:', error);
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const { data: users, error } = await supabase
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                updateUsersTable(users);
-                
-            } catch (error) {
-                console.error('Error loading users:', error);
-            }
-        }
-
-        // Función para autorizar salida con mejoras de seguridad
-        async function authorizeExit(e) {
-            e.preventDefault();
-            
-            const gradeId = document.getElementById('gradeSelect').value;
-            const studentId = document.getElementById('studentSelect').value;
-            const reasonId = document.getElementById('reasonSelect').value;
-            const exitDate = document.getElementById('exitDate').value;
-            const exitTime = document.getElementById('exitTime').value;
-            const observations = sanitizeHtml(document.getElementById('observations').value);
-
-            if (!gradeId) {
-                showError('Por favor, selecciona primero un grado');
-                return;
-            }
-
-            if (!studentId) {
-                showError('Por favor, selecciona un estudiante del grado elegido');
-                return;
-            }
-
-            if (!reasonId || !exitDate || !exitTime) {
-                showError('Por favor, completa todos los campos obligatorios');
-                return;
-            }
-
-            // Validar fecha no sea pasada
-            const todayColombia = getColombiaDate();
-            if (exitDate < todayColombia) {
-                showError('No se puede autorizar una salida para una fecha pasada');
-                return;
-            }
-
-            try {
-                // Crear timestamp en zona horaria de Colombia
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
-                    timeZone: 'America/Bogota' 
-                });
-
-                const { data, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .insert([{
-                        estudiante_id: studentId,
-                        motivo_id: reasonId,
-                        usuario_autorizador_id: currentUser.id,
-                        fecha_salida: exitDate,
-                        hora_salida: exitTime,
-                        observaciones: observations || null,
-                        fecha_creacion: colombiaDateTime,
-                        autorizada: true
-                    }]);
-
-                if (error) throw error;
-
-                // Obtener información del estudiante y grado para mostrar en el mensaje
-                const gradeSelect = document.getElementById('gradeSelect');
-                const studentSelect = document.getElementById('studentSelect');
-                const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
-                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
-
-                // Registrar evento
-                await logSecurityEvent('create', 'Autorización de salida creada', {
-                    studentId,
-                    gradeId,
-                    reasonId,
-                    exitDate,
-                    exitTime
-                }, true);
-
-                showSuccess(`✅ Autorización creada exitosamente para ${studentName} (${gradeName})`);
-                
-                // Resetear el formulario
-                resetAuthorizationForm();
-                
-                console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
-                
-            } catch (error) {
-                await logSecurityEvent('error', 'Error al crear autorización', { error: error.message }, false);
-                showError('Error al crear la autorización: ' + error.message);
-            }
-        }
-
-        // Función para buscar y verificar estudiante (búsqueda manual) con mejoras de seguridad
-        async function searchStudent() {
-            const searchTerm = sanitizeHtml(document.getElementById('studentSearch').value.trim());
-            const resultDiv = document.getElementById('searchResult');
-            
-            if (searchTerm.length < 3) {
-                resultDiv.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Escribe al menos 3 caracteres para buscar...</p></div>';
-                return;
-            }
-
-            try {
-                const todayColombia = getColombiaDate();
-                
-                console.log('🔍 Buscando autorizaciones para:', searchTerm, 'en fecha Colombia:', todayColombia);
-                
-                // Buscar autorizaciones que coincidan con el nombre
-                const { data: authorizations, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .eq('fecha_salida', todayColombia)
-                    .eq('autorizada', true);
-
-                if (error) {
-                    console.error('Error en búsqueda:', error);
-                    showError('Error al buscar autorizaciones: ' + error.message);
-                    return;
-                }
-
-                if (!authorizations || authorizations.length === 0) {
-                    resultDiv.innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>❌ NO HAY AUTORIZACIONES</h3>
-                            <p>No se encontraron autorizaciones para la fecha de hoy (${formatDate(todayColombia)}).</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Obtener estudiantes que coincidan con el término de búsqueda
-                const { data: students, error: studentsError } = await supabase
-                    .from('estudiantes')
-                    .select('id, nombre, apellidos, grado:grados(nombre)')
-                    .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
-                    .eq('activo', true);
-
-                if (studentsError) {
-                    console.error('Error buscando estudiantes:', studentsError);
-                    resultDiv.innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>❌ ERROR EN BÚSQUEDA</h3>
-                            <p>Error al buscar estudiantes: ${studentsError.message}</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Filtrar autorizaciones por estudiantes encontrados
-                const studentIds = students?.map(s => s.id) || [];
-                const matchingAuth = authorizations.filter(auth => 
-                    studentIds.includes(auth.estudiante_id)
-                );
-
-                if (matchingAuth.length === 0) {
-                    let studentsList = students?.map(s => `${sanitizeHtml(s.nombre)} ${sanitizeHtml(s.apellidos)} (${sanitizeHtml(s.grado.nombre)})`).join(', ') || '';
-                    resultDiv.innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>❌ NO AUTORIZADO</h3>
-                            <p>No se encontraron autorizaciones para "${sanitizeHtml(searchTerm)}" en la fecha de hoy (${formatDate(todayColombia)}).</p>
-                            ${studentsList ? `<p><strong>Estudiantes encontrados:</strong> ${studentsList}</p>` : ''}
-                            <p><em>Verifica que tengan autorización para hoy o contacta al personal autorizado.</em></p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Obtener información adicional para mostrar los resultados
-                const reasonIds = [...new Set(matchingAuth.map(auth => auth.motivo_id))];
-                const userIds = [...new Set(matchingAuth.map(auth => auth.usuario_autorizador_id))];
-
-                const [reasonsResult, usersResult] = await Promise.all([
-                    supabase.from('motivos').select('id, nombre').in('id', reasonIds),
-                    supabase.from('usuarios').select('id, nombre').in('id', userIds)
-                ]);
-
-                // Crear mapas
-                const studentMap = {};
-                const reasonMap = {};
-                const userMap = {};
-
-                students?.forEach(student => {
-                    studentMap[student.id] = student;
-                });
-
-                reasonsResult.data?.forEach(reason => {
-                    reasonMap[reason.id] = reason;
-                });
-
-                usersResult.data?.forEach(user => {
-                    userMap[user.id] = user;
-                });
-
-                // Mostrar resultados con el nuevo diseño
-                const currentTime = getColombiaTime();
-                let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
-                    <p style="color: #2c3e50; font-size: 15px; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                </div>`;
-                
-                matchingAuth.forEach(auth => {
-                    const student = studentMap[auth.estudiante_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
-
-                    // Determinar el estado y color de la tarjeta
-                    let cardClass, titleText, footerHtml;
-                    
-                    if (auth.salida_efectiva) {
-                        cardClass = 'verified';  // Azul para ya confirmados
-                        titleText = '✅ SALIDA YA CONFIRMADA';
-                        footerHtml = `
-                            <div class="verification-card-footer">
-                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                ${auth.observaciones ? `
-                                    <div class="verification-card-obs">
-                                        <strong>📝 Observaciones:</strong><br>
-                                        ${sanitizeHtml(auth.observaciones)}
-                                    </div>
-                                ` : ''}
-                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
-                                    <p style="color: white; font-weight: bold; margin: 0;">
-                                        ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
-                                        <small>Vigilante: ${sanitizeHtml(currentUser.nombre)}</small>
-                                    </p>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        cardClass = 'authorized';  // Verde para pendientes
-                        titleText = '✅ AUTORIZADO PARA SALIR';
-                        footerHtml = `
-                            <div class="verification-card-footer">
-                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                ${auth.observaciones ? `
-                                    <div class="verification-card-obs">
-                                        <strong>📝 Observaciones:</strong><br>
-                                        ${sanitizeHtml(auth.observaciones)}
-                                    </div>
-                                ` : ''}
-                                <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
-                                    ✅ CONFIRMAR SALIDA
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    html += `
-                        <div class="verification-card ${cardClass}">
-                            <h3>${titleText}</h3>
-                            
-                            <div class="verification-card-content">
-                                <div class="verification-card-info">
-                                    <p>
-                                        <strong>👨‍🎓 Estudiante:</strong>
-                                        <span class="info-value">${student ? `${sanitizeHtml(student.nombre)} ${sanitizeHtml(student.apellidos)}` : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🎓 Grado:</strong>
-                                        <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span>
-                                    </p>
-                                </div>
-                                <div class="verification-card-info">
-                                    <p>
-                                        <strong>📝 Motivo de Salida:</strong>
-                                        <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🕐 Hora Autorizada:</strong>
-                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            ${footerHtml}
-                        </div>
-                    `;
-                });
-
-                resultDiv.innerHTML = html;
-                
-            } catch (error) {
-                console.error('Error general en búsqueda:', error);
-                showError('Error al buscar autorizaciones: ' + error.message);
-                resultDiv.innerHTML = `
-                    <div class="verification-card not-authorized">
-                        <h3>❌ ERROR</h3>
-                        <p>Error en la búsqueda: ${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
         async function confirmExit(authId) {
             try {
-                // Crear timestamp de salida efectiva en zona horaria de Colombia
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
                     timeZone: 'America/Bogota' 
                 });
@@ -2288,27 +2758,26 @@
 
                 if (error) throw error;
 
-                await logSecurityEvent('update', 'Salida confirmada', { authId, vigilanteId: currentUser.id }, true);
+                await logSecurityEvent('update', 'Salida confirmada', { 
+                    authId, 
+                    vigilanteId: currentUser.id 
+                }, true);
 
                 const colombiaTime = getColombiaTime();
                 showSuccess(`Salida confirmada exitosamente a las ${colombiaTime}`);
                 
-                // Actualizar visualmente la tarjeta que se acaba de confirmar
                 const confirmButton = document.querySelector(`button[onclick="confirmExit(${authId})"]`);
                 if (confirmButton) {
                     const card = confirmButton.closest('.verification-card');
                     if (card) {
-                        // Cambiar la clase de 'authorized' a 'verified' (azul)
                         card.classList.remove('authorized');
                         card.classList.add('verified');
                         
-                        // Actualizar el título
                         const titleElement = card.querySelector('h3');
                         if (titleElement) {
                             titleElement.textContent = '✅ SALIDA CONFIRMADA';
                         }
                         
-                        // Reemplazar el botón con mensaje de confirmación usando el nuevo diseño
                         const footerElement = confirmButton.closest('.verification-card-footer');
                         if (footerElement) {
                             const observationsHtml = footerElement.querySelector('.verification-card-obs')?.outerHTML || '';
@@ -2325,7 +2794,6 @@
                             `;
                         }
                         
-                        // Animar el cambio de color
                         card.style.transform = 'scale(1.02)';
                         setTimeout(() => {
                             card.style.transform = 'scale(1)';
@@ -2333,7 +2801,6 @@
                     }
                 }
                 
-                // Limpiar búsqueda si estaba activa
                 const searchInput = document.getElementById('studentSearch');
                 if (searchInput) {
                     searchInput.value = '';
@@ -2343,7 +2810,6 @@
                     searchResult.innerHTML = '';
                 }
                 
-                // Si estamos en la vista de pendientes, actualizar después de 2 segundos para mostrar el efecto visual
                 if (currentUser.rol.nombre === 'vigilante') {
                     setTimeout(async () => {
                         await loadPendingExits();
@@ -2351,36 +2817,227 @@
                 }
                 
             } catch (error) {
-                await logSecurityEvent('error', 'Error al confirmar salida', { error: error.message }, false);
+                await logSecurityEvent('error', 'Error al confirmar salida', { 
+                    authId,
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al confirmar la salida: ' + error.message);
             }
         }
 
-        // Funciones de administración
+        function toggleSearch() {
+            const searchSection = document.getElementById('searchSection');
+            const pendingSection = document.getElementById('pendingExitsSection');
+            
+            if (searchSection.style.display === 'none') {
+                searchSection.style.display = 'block';
+                pendingSection.style.display = 'none';
+            } else {
+                searchSection.style.display = 'none';
+                pendingSection.style.display = 'block';
+                document.getElementById('studentSearch').value = '';
+                document.getElementById('searchResult').innerHTML = '';
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE ADMINISTRACIÓN CON SEGURIDAD
+        // ========================================
+
         function showAdminSection(section) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (currentUser.rol.nombre !== 'administrador') {
+                showError('No tienes permisos para acceder a esta sección');
+                return;
+            }
+
             document.querySelectorAll('.admin-subsection').forEach(sub => {
                 sub.style.display = 'none';
             });
             document.getElementById(`admin${section.charAt(0).toUpperCase() + section.slice(1)}`).style.display = 'block';
             
-            // Si es la sección de seguridad, cargar los datos
-            if (section === 'security' && currentUser.rol.nombre === 'administrador') {
+            if (section === 'security') {
                 loadSecurityStats();
                 loadSecurityLogs();
             }
+            
+            renewSession();
         }
 
-        // Funciones de modales - MEJORADAS
+        async function loadSecurityStats() {
+            try {
+                if (!validateSession()) return;
+
+                const todayColombia = getColombiaDate();
+                
+                const { data: todayLogs, error: logsError } = await supabase
+                    .from('audit_logs')
+                    .select('*')
+                    .gte('timestamp', todayColombia + 'T00:00:00')
+                    .lte('timestamp', todayColombia + 'T23:59:59');
+
+                if (!logsError && todayLogs) {
+                    const loginCount = todayLogs.filter(log => log.tipo === 'login' && log.exitoso).length;
+                    const changeCount = todayLogs.filter(log => ['create', 'update', 'delete'].includes(log.tipo)).length;
+                    const failedCount = todayLogs.filter(log => !log.exitoso).length;
+                    
+                    document.getElementById('todayLogins').textContent = loginCount;
+                    document.getElementById('todayChanges').textContent = changeCount;
+                    document.getElementById('failedAttempts').textContent = failedCount;
+                }
+
+                const { data: activeUsers, error: usersError } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('activo', true);
+
+                if (!usersError && activeUsers) {
+                    document.getElementById('activeUsers').textContent = activeUsers.length;
+                }
+
+                const logUserSelect = document.getElementById('logUser');
+                if (activeUsers && logUserSelect) {
+                    logUserSelect.innerHTML = '<option value="">Todos</option>';
+                    activeUsers.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = sanitizeHtml(user.nombre);
+                        logUserSelect.appendChild(option);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error al cargar estadísticas de seguridad:', error);
+                await logSecurityEvent('error', 'Error al cargar estadísticas de seguridad', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        async function loadSecurityLogs() {
+            try {
+                if (!validateSession()) return;
+
+                const dateFrom = document.getElementById('logDateFrom').value;
+                const dateTo = document.getElementById('logDateTo').value;
+                const logType = document.getElementById('logType').value;
+                const logUser = document.getElementById('logUser').value;
+
+                let query = supabase
+                    .from('audit_logs')
+                    .select(`
+                        *,
+                        usuario:usuarios(nombre, email)
+                    `)
+                    .order('timestamp', { ascending: false })
+                    .limit(100);
+
+                if (dateFrom) {
+                    query = query.gte('timestamp', dateFrom + 'T00:00:00');
+                }
+                if (dateTo) {
+                    query = query.lte('timestamp', dateTo + 'T23:59:59');
+                }
+                if (logType) {
+                    query = query.eq('tipo', logType);
+                }
+                if (logUser) {
+                    query = query.eq('usuario_id', logUser);
+                }
+
+                const { data: logs, error } = await query;
+
+                if (error) {
+                    console.error('Error al cargar logs:', error);
+                    showError('Error al cargar los logs de seguridad');
+                    return;
+                }
+
+                const tbody = document.querySelector('#securityLogsTable tbody');
+                tbody.innerHTML = '';
+
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #666; padding: 20px;">
+                                No se encontraron logs para los filtros seleccionados
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                logs.forEach(log => {
+                    const row = tbody.insertRow();
+                    const typeClass = getLogTypeClass(log.tipo);
+                    let details = {};
+                    
+                    try {
+                        details = log.detalles ? JSON.parse(log.detalles) : {};
+                    } catch (e) {
+                        details = { error: 'Error al parsear detalles' };
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${formatDateTime(log.timestamp)}</td>
+                        <td>${log.usuario ? sanitizeHtml(log.usuario.nombre) : 'Sistema'}</td>
+                        <td><span class="log-type ${typeClass}">${sanitizeHtml(log.tipo)}</span></td>
+                        <td>${sanitizeHtml(log.accion)}</td>
+                        <td title="${sanitizeHtml(JSON.stringify(details))}">${sanitizeHtml(JSON.stringify(details).substring(0, 50))}...</td>
+                        <td>${sanitizeHtml(log.ip_address || 'N/A')}</td>
+                    `;
+                });
+
+                showSuccess(`Se cargaron ${logs.length} registros de logs`);
+                
+            } catch (error) {
+                console.error('Error general al cargar logs:', error);
+                await logSecurityEvent('error', 'Error al cargar logs de seguridad', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
+                showError('Error al cargar los logs de seguridad');
+            }
+        }
+
+        function getLogTypeClass(type) {
+            const classes = {
+                'login': 'login',
+                'logout': 'logout',
+                'create': 'create',
+                'update': 'update',
+                'delete': 'delete',
+                'error': 'error'
+            };
+            return classes[type] || '';
+        }
+
+        async function exportLogs() {
+            showSuccess('Función de exportación en desarrollo');
+        }
+
+        // ========================================
+        // FUNCIONES DE MODALES CON SEGURIDAD
+        // ========================================
+
         function openModal(modalId) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             document.getElementById(modalId).style.display = 'block';
             currentEditingId = null;
             
-            // Limpiar formularios
             if (modalId === 'studentModal') {
                 document.getElementById('studentForm').reset();
             } else if (modalId === 'userModal') {
                 document.getElementById('userForm').reset();
-                // Mostrar nota para nuevos usuarios
                 document.getElementById('passwordNote').textContent = '(obligatorio para nuevos usuarios)';
                 document.getElementById('userPassword').required = true;
                 document.getElementById('userPasswordStrength').style.display = 'none';
@@ -2389,6 +3046,8 @@
             } else if (modalId === 'gradeModal') {
                 document.getElementById('gradeForm').reset();
             }
+            
+            renewSession();
         }
 
         function closeModal(modalId) {
@@ -2396,34 +3055,41 @@
             currentEditingId = null;
         }
 
-        // Funciones CRUD con mejoras de seguridad
+        // ========================================
+        // FUNCIONES CRUD CON SEGURIDAD MEJORADA
+        // ========================================
+
         async function saveStudent(e) {
             e.preventDefault();
             
-            const name = sanitizeHtml(document.getElementById('studentName').value.trim());
-            const lastName = sanitizeHtml(document.getElementById('studentLastName').value.trim());
-            const documentValue = sanitizeHtml(document.getElementById('studentDocument').value.trim());
-            const gradeId = document.getElementById('studentGrade').value;
-
-            if (!name || !lastName || !gradeId) {
-                showError('Por favor, completa todos los campos obligatorios');
-                return;
-            }
-
-            // Validar formato de nombres
-            const namePattern = /^[A-Za-zÀ-ÿ\s]{2,50}$/;
-            if (!namePattern.test(name) || !namePattern.test(lastName)) {
-                showError('Los nombres solo deben contener letras y espacios');
-                return;
-            }
-
-            // Validar documento si se proporciona
-            if (documentValue && !/^[0-9]{6,20}$/.test(documentValue)) {
-                showError('El documento debe contener solo números (6-20 dígitos)');
-                return;
-            }
-
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('studentName').value.trim();
+                const lastName = document.getElementById('studentLastName').value.trim();
+                const documentValue = document.getElementById('studentDocument').value.trim();
+                const gradeId = document.getElementById('studentGrade').value;
+
+                // Validaciones de seguridad
+                if (!name || !lastName || !gradeId) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                if (!validateName(name) || !validateName(lastName)) {
+                    showError('Los nombres solo deben contener letras, espacios y acentos');
+                    return;
+                }
+
+                if (documentValue && !validateDocument(documentValue)) {
+                    showError('El documento debe contener solo números (6-20 dígitos)');
+                    return;
+                }
+
                 let result;
                 if (currentEditingId) {
                     result = await supabase
@@ -2436,7 +3102,11 @@
                         })
                         .eq('id', currentEditingId);
                         
-                    await logSecurityEvent('update', 'Estudiante actualizado', { studentId: currentEditingId }, true);
+                    await logSecurityEvent('update', 'Estudiante actualizado', { 
+                        studentId: currentEditingId,
+                        name: name.substring(0, 20) + '...',
+                        lastName: lastName.substring(0, 20) + '...'
+                    }, true);
                 } else {
                     result = await supabase
                         .from('estudiantes')
@@ -2448,7 +3118,11 @@
                             activo: true
                         }]);
                         
-                    await logSecurityEvent('create', 'Estudiante creado', { name, lastName, gradeId }, true);
+                    await logSecurityEvent('create', 'Estudiante creado', { 
+                        name: name.substring(0, 20) + '...',
+                        lastName: lastName.substring(0, 20) + '...',
+                        gradeId 
+                    }, true);
                 }
 
                 if (result.error) {
@@ -2462,7 +3136,9 @@
                 
             } catch (error) {
                 console.error('Error completo al guardar estudiante:', error);
-                await logSecurityEvent('error', 'Error al guardar estudiante', { error: error.message }, false);
+                await logSecurityEvent('error', 'Error al guardar estudiante', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al guardar el estudiante: ' + error.message);
             }
         }
@@ -2470,44 +3146,46 @@
         async function saveUser(e) {
             e.preventDefault();
             
-            const name = sanitizeHtml(document.getElementById('userName').value.trim());
-            const email = document.getElementById('userEmail').value.trim().toLowerCase();
-            const password = document.getElementById('userPassword').value;
-            const roleId = document.getElementById('userRole').value;
-
-            if (!name || !email || !roleId) {
-                showError('Por favor, completa todos los campos obligatorios');
-                return;
-            }
-
-            // Validar email
-            if (!validateEmail(email)) {
-                showError('Formato de email inválido');
-                return;
-            }
-
-            // Validar nombre
-            const namePattern = /^[A-Za-zÀ-ÿ\s]{2,50}$/;
-            if (!namePattern.test(name)) {
-                showError('El nombre solo debe contener letras y espacios');
-                return;
-            }
-
-            if (!currentEditingId && !password) {
-                showError('La contraseña es obligatoria para nuevos usuarios');
-                return;
-            }
-
-            // Validar contraseña para nuevos usuarios o si se está cambiando
-            if (password && !validatePassword(password)) {
-                showError('La contraseña debe tener entre 8 y 50 caracteres');
-                return;
-            }
-
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('userName').value.trim();
+                const email = document.getElementById('userEmail').value.trim().toLowerCase();
+                const password = document.getElementById('userPassword').value;
+                const roleId = document.getElementById('userRole').value;
+
+                // Validaciones de seguridad
+                if (!name || !email || !roleId) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                if (!validateEmail(email)) {
+                    showError('Formato de email inválido');
+                    return;
+                }
+
+                if (!validateName(name)) {
+                    showError('El nombre solo debe contener letras, espacios y acentos');
+                    return;
+                }
+
+                if (!currentEditingId && !password) {
+                    showError('La contraseña es obligatoria para nuevos usuarios');
+                    return;
+                }
+
+                if (password && !validatePassword(password)) {
+                    showError('La contraseña debe tener entre 8 y 50 caracteres');
+                    return;
+                }
+
                 let result;
                 if (currentEditingId) {
-                    // Al editar, solo actualizar contraseña si se proporcionó una nueva
                     const updateData = {
                         nombre: name,
                         email: email,
@@ -2515,8 +3193,7 @@
                     };
                     
                     if (password && password.trim() !== '') {
-                        // TODO: Implementar hash de contraseña
-                        updateData.password_hash = password;
+                        updateData.password_hash = encryptPassword(password);
                     }
 
                     result = await supabase
@@ -2524,20 +3201,26 @@
                         .update(updateData)
                         .eq('id', currentEditingId);
                         
-                    await logSecurityEvent('update', 'Usuario actualizado', { userId: currentEditingId, email }, true);
+                    await logSecurityEvent('update', 'Usuario actualizado', { 
+                        userId: currentEditingId, 
+                        email: email.substring(0, 20) + '...',
+                        passwordChanged: !!password
+                    }, true);
                 } else {
-                    // TODO: Implementar hash de contraseña
                     result = await supabase
                         .from('usuarios')
                         .insert([{
                             nombre: name,
                             email: email,
-                            password_hash: password,
+                            password_hash: encryptPassword(password),
                             rol_id: roleId,
                             activo: true
                         }]);
                         
-                    await logSecurityEvent('create', 'Usuario creado', { email, roleId }, true);
+                    await logSecurityEvent('create', 'Usuario creado', { 
+                        email: email.substring(0, 20) + '...',
+                        roleId 
+                    }, true);
                 }
 
                 if (result.error) {
@@ -2556,7 +3239,9 @@
                 
             } catch (error) {
                 console.error('Error completo al guardar usuario:', error);
-                await logSecurityEvent('error', 'Error al guardar usuario', { error: error.message }, false);
+                await logSecurityEvent('error', 'Error al guardar usuario', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al guardar el usuario: ' + error.message);
             }
         }
@@ -2564,20 +3249,31 @@
         async function saveReason(e) {
             e.preventDefault();
             
-            const name = sanitizeHtml(document.getElementById('reasonName').value.trim());
-            const description = sanitizeHtml(document.getElementById('reasonDescription').value.trim());
-
-            if (!name) {
-                showError('El nombre del motivo es obligatorio');
-                return;
-            }
-
-            if (name.length > 50) {
-                showError('El nombre del motivo no puede exceder 50 caracteres');
-                return;
-            }
-
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('reasonName').value.trim();
+                const description = document.getElementById('reasonDescription').value.trim();
+
+                if (!name) {
+                    showError('El nombre del motivo es obligatorio');
+                    return;
+                }
+
+                if (name.length > 50) {
+                    showError('El nombre del motivo no puede exceder 50 caracteres');
+                    return;
+                }
+
+                if (!validateText(name) || (description && !validateText(description))) {
+                    showError('El texto contiene caracteres no permitidos');
+                    return;
+                }
+
                 let result;
                 if (currentEditingId) {
                     result = await supabase
@@ -2588,7 +3284,10 @@
                         })
                         .eq('id', currentEditingId);
                         
-                    await logSecurityEvent('update', 'Motivo actualizado', { reasonId: currentEditingId }, true);
+                    await logSecurityEvent('update', 'Motivo actualizado', { 
+                        reasonId: currentEditingId,
+                        name: name.substring(0, 30) + '...'
+                    }, true);
                 } else {
                     result = await supabase
                         .from('motivos')
@@ -2598,7 +3297,9 @@
                             activo: true
                         }]);
                         
-                    await logSecurityEvent('create', 'Motivo creado', { name }, true);
+                    await logSecurityEvent('create', 'Motivo creado', { 
+                        name: name.substring(0, 30) + '...'
+                    }, true);
                 }
 
                 if (result.error) {
@@ -2612,7 +3313,9 @@
                 
             } catch (error) {
                 console.error('Error completo al guardar motivo:', error);
-                await logSecurityEvent('error', 'Error al guardar motivo', { error: error.message }, false);
+                await logSecurityEvent('error', 'Error al guardar motivo', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al guardar el motivo: ' + error.message);
             }
         }
@@ -2620,20 +3323,31 @@
         async function saveGrade(e) {
             e.preventDefault();
             
-            const name = sanitizeHtml(document.getElementById('gradeName').value.trim());
-            const level = document.getElementById('gradeLevel').value;
-
-            if (!name || !level) {
-                showError('Por favor, completa todos los campos obligatorios');
-                return;
-            }
-
-            if (name.length > 20) {
-                showError('El nombre del grado no puede exceder 20 caracteres');
-                return;
-            }
-
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('gradeName').value.trim();
+                const level = document.getElementById('gradeLevel').value;
+
+                if (!name || !level) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                if (name.length > 20) {
+                    showError('El nombre del grado no puede exceder 20 caracteres');
+                    return;
+                }
+
+                if (!validateText(name)) {
+                    showError('El nombre contiene caracteres no permitidos');
+                    return;
+                }
+
                 let result;
                 if (currentEditingId) {
                     result = await supabase
@@ -2644,7 +3358,11 @@
                         })
                         .eq('id', currentEditingId);
                         
-                    await logSecurityEvent('update', 'Grado actualizado', { gradeId: currentEditingId }, true);
+                    await logSecurityEvent('update', 'Grado actualizado', { 
+                        gradeId: currentEditingId,
+                        name: name,
+                        level: level
+                    }, true);
                 } else {
                     result = await supabase
                         .from('grados')
@@ -2654,7 +3372,10 @@
                             activo: true
                         }]);
                         
-                    await logSecurityEvent('create', 'Grado creado', { name, level }, true);
+                    await logSecurityEvent('create', 'Grado creado', { 
+                        name: name, 
+                        level: level 
+                    }, true);
                 }
 
                 if (result.error) {
@@ -2668,12 +3389,17 @@
                 
             } catch (error) {
                 console.error('Error completo al guardar grado:', error);
-                await logSecurityEvent('error', 'Error al guardar grado', { error: error.message }, false);
+                await logSecurityEvent('error', 'Error al guardar grado', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al guardar el grado: ' + error.message);
             }
         }
 
-        // Funciones de actualización de tablas
+        // ========================================
+        // FUNCIONES DE ACTUALIZACIÓN DE TABLAS (CON SANITIZACIÓN)
+        // ========================================
+
         function updateStudentsTable(students) {
             const tbody = document.querySelector('#studentsTable tbody');
             if (!tbody) return;
@@ -2752,12 +3478,20 @@
             });
         }
 
-        // Funciones de historial - MEJORADAS para zona horaria Colombia
+        // ========================================
+        // FUNCIONES DE HISTORIAL (CON MEJORAS DE SEGURIDAD)
+        // ========================================
+
         async function loadHistory(all = false) {
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 console.log('🔍 Cargando historial...');
                 
-                // Primero, intentar consulta simple sin JOINs para debug
                 let query = supabase
                     .from('autorizaciones_salida')
                     .select('*')
@@ -2769,7 +3503,6 @@
                         console.log('🗓️ Filtrando por fecha:', date);
                         query = query.eq('fecha_salida', date);
                     } else {
-                        // Si no hay fecha, mostrar solo los últimos 30 días desde hoy (Colombia)
                         const todayColombia = getColombiaDate();
                         const thirtyDaysAgo = new Date(todayColombia);
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -2804,58 +3537,52 @@
 
                 console.log('📊 Autorizaciones encontradas:', authorizations.length);
 
-                // Ahora obtener los datos relacionados (estudiantes, motivos, usuarios)
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
                 const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
 
                 console.log('👥 IDs únicos - Estudiantes:', studentIds.length, 'Motivos:', reasonIds.length, 'Usuarios:', userIds.length);
 
-                // Obtener estudiantes con sus grados
-                const { data: students, error: studentsError } = await supabase
-                    .from('estudiantes')
-                    .select(`
-                        id, nombre, apellidos,
-                        grado:grados(nombre)
-                    `)
-                    .in('id', studentIds);
+                const [studentsResult, reasonsResult, usersResult] = await Promise.all([
+                    supabase
+                        .from('estudiantes')
+                        .select(`
+                            id, nombre, apellidos,
+                            grado:grados(nombre)
+                        `)
+                        .in('id', studentIds),
+                    supabase
+                        .from('motivos')
+                        .select('id, nombre')
+                        .in('id', reasonIds),
+                    supabase
+                        .from('usuarios')
+                        .select('id, nombre')
+                        .in('id', userIds)
+                ]);
 
-                // Obtener motivos
-                const { data: reasons, error: reasonsError } = await supabase
-                    .from('motivos')
-                    .select('id, nombre')
-                    .in('id', reasonIds);
+                if (studentsResult.error) console.error('Error estudiantes:', studentsResult.error);
+                if (reasonsResult.error) console.error('Error motivos:', reasonsResult.error);
+                if (usersResult.error) console.error('Error usuarios:', usersResult.error);
 
-                // Obtener usuarios
-                const { data: users, error: usersError } = await supabase
-                    .from('usuarios')
-                    .select('id, nombre')
-                    .in('id', userIds);
-
-                if (studentsError) console.error('Error estudiantes:', studentsError);
-                if (reasonsError) console.error('Error motivos:', reasonsError);
-                if (usersError) console.error('Error usuarios:', usersError);
-
-                // Crear mapas para búsqueda rápida
                 const studentMap = {};
                 const reasonMap = {};
                 const userMap = {};
 
-                students?.forEach(student => {
+                studentsResult.data?.forEach(student => {
                     studentMap[student.id] = student;
                 });
 
-                reasons?.forEach(reason => {
+                reasonsResult.data?.forEach(reason => {
                     reasonMap[reason.id] = reason;
                 });
 
-                users?.forEach(user => {
+                usersResult.data?.forEach(user => {
                     userMap[user.id] = user;
                 });
 
                 console.log('📋 Mapas creados - Estudiantes:', Object.keys(studentMap).length, 'Motivos:', Object.keys(reasonMap).length, 'Usuarios:', Object.keys(userMap).length);
 
-                // Llenar la tabla
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
                 
@@ -2888,11 +3615,13 @@
                 
             } catch (error) {
                 console.error('❌ Error general en loadHistory:', error);
+                await logSecurityEvent('error', 'Error al cargar historial', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al cargar el historial: ' + error.message);
             }
         }
 
-        // Función de debug para historial - MEJORADA para Colombia
         async function debugHistory() {
             const debugDiv = document.getElementById('historyDebug');
             const debugContent = document.getElementById('historyDebugContent');
@@ -2901,71 +3630,47 @@
             debugContent.innerHTML = '🔄 Analizando datos del historial...';
             
             try {
+                if (!validateSession()) {
+                    debugContent.innerHTML = '❌ Sesión expirada';
+                    return;
+                }
+
                 console.log('🔧 Iniciando debug del historial...');
                 
                 const todayColombia = getColombiaDate();
                 const currentTime = getColombiaTime();
                 
-                // 1. Contar registros en autorizaciones_salida
-                const { data: totalAuth, error: errorAuth } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*');
-                
-                // 2. Contar estudiantes
-                const { data: totalStudents, error: errorStudents } = await supabase
-                    .from('estudiantes')
-                    .select('*');
-                
-                // 3. Contar usuarios
-                const { data: totalUsers, error: errorUsers } = await supabase
-                    .from('usuarios')
-                    .select('*');
-
-                // 4. Contar motivos
-                const { data: totalReasons, error: errorReasons } = await supabase
-                    .from('motivos')
-                    .select('*');
-
-                // 5. Contar grados
-                const { data: totalGrades, error: errorGrades } = await supabase
-                    .from('grados')
-                    .select('*');
-                
-                // 6. Verificar autorizaciones recientes
-                const { data: todayAuth, error: errorToday } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .eq('fecha_salida', todayColombia);
-
-                // 7. Verificar últimas 5 autorizaciones
-                const { data: lastAuth, error: errorLast } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .order('fecha_creacion', { ascending: false })
-                    .limit(5);
+                const [totalAuthResult, totalStudentsResult, totalUsersResult, totalReasonsResult, totalGradesResult, todayAuthResult, lastAuthResult] = await Promise.all([
+                    supabase.from('autorizaciones_salida').select('*'),
+                    supabase.from('estudiantes').select('*'),
+                    supabase.from('usuarios').select('*'),
+                    supabase.from('motivos').select('*'),
+                    supabase.from('grados').select('*'),
+                    supabase.from('autorizaciones_salida').select('*').eq('fecha_salida', todayColombia),
+                    supabase.from('autorizaciones_salida').select('*').order('fecha_creacion', { ascending: false }).limit(5)
+                ]);
                 
                 let html = '<ul style="text-align: left;">';
                 html += `<li><strong>🕐 Hora actual Colombia:</strong> ${formatDate(todayColombia)} ${currentTime} (UTC-5)</li>`;
-                html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuth?.length || 0} ${errorAuth ? '❌ Error: ' + errorAuth.message : '✅'}</li>`;
-                html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudents?.length || 0} ${errorStudents ? '❌ Error: ' + errorStudents.message : '✅'}</li>`;
-                html += `<li><strong>👥 Total usuarios:</strong> ${totalUsers?.length || 0} ${errorUsers ? '❌ Error: ' + errorUsers.message : '✅'}</li>`;
-                html += `<li><strong>📝 Total motivos:</strong> ${totalReasons?.length || 0} ${errorReasons ? '❌ Error: ' + errorReasons.message : '✅'}</li>`;
-                html += `<li><strong>🎓 Total grados:</strong> ${totalGrades?.length || 0} ${errorGrades ? '❌ Error: ' + errorGrades.message : '✅'}</li>`;
-                html += `<li><strong>📅 Autorizaciones hoy (${formatDate(todayColombia)}):</strong> ${todayAuth?.length || 0} ${errorToday ? '❌ Error: ' + errorToday.message : '✅'}</li>`;
-                html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuth?.length || 0} ${errorLast ? '❌ Error: ' + errorLast.message : '✅'}</li>`;
+                html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuthResult.data?.length || 0} ${totalAuthResult.error ? '❌ Error: ' + totalAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudentsResult.data?.length || 0} ${totalStudentsResult.error ? '❌ Error: ' + totalStudentsResult.error.message : '✅'}</li>`;
+                html += `<li><strong>👥 Total usuarios:</strong> ${totalUsersResult.data?.length || 0} ${totalUsersResult.error ? '❌ Error: ' + totalUsersResult.error.message : '✅'}</li>`;
+                html += `<li><strong>📝 Total motivos:</strong> ${totalReasonsResult.data?.length || 0} ${totalReasonsResult.error ? '❌ Error: ' + totalReasonsResult.error.message : '✅'}</li>`;
+                html += `<li><strong>🎓 Total grados:</strong> ${totalGradesResult.data?.length || 0} ${totalGradesResult.error ? '❌ Error: ' + totalGradesResult.error.message : '✅'}</li>`;
+                html += `<li><strong>📅 Autorizaciones hoy (${formatDate(todayColombia)}):</strong> ${todayAuthResult.data?.length || 0} ${todayAuthResult.error ? '❌ Error: ' + todayAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuthResult.data?.length || 0} ${lastAuthResult.error ? '❌ Error: ' + lastAuthResult.error.message : '✅'}</li>`;
                 
-                if (lastAuth && lastAuth.length > 0) {
+                if (lastAuthResult.data && lastAuthResult.data.length > 0) {
                     html += '<li><strong>📋 Detalles de últimas autorizaciones:</strong><br>';
-                    lastAuth.forEach((auth, index) => {
+                    lastAuthResult.data.forEach((auth, index) => {
                         const fechaCreacion = auth.fecha_creacion ? formatDateTime(auth.fecha_creacion) : 'N/A';
                         html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Estudiante ID: ${auth.estudiante_id}, Fecha salida: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}, Creada: ${fechaCreacion}<br>`;
                     });
                     html += '</li>';
                 }
 
-                // Verificar estructura de datos
-                if (totalAuth && totalAuth.length > 0) {
-                    const sampleAuth = totalAuth[0];
+                if (totalAuthResult.data && totalAuthResult.data.length > 0) {
+                    const sampleAuth = totalAuthResult.data[0];
                     html += '<li><strong>🔍 Estructura de autorización (muestra):</strong><br>';
                     html += `&nbsp;&nbsp;Columnas disponibles: ${Object.keys(sampleAuth).join(', ')}<br>`;
                     html += '</li>';
@@ -2979,11 +3684,24 @@
             } catch (error) {
                 console.error('❌ Error en debug:', error);
                 debugContent.innerHTML = `❌ Error en debug: ${error.message}`;
+                await logSecurityEvent('error', 'Error en debug de historial', { 
+                    error: error.message.substring(0, 200) 
+                }, false);
             }
         }
 
+        // ========================================
+        // FUNCIONES DE EDICIÓN Y ELIMINACIÓN (CON VALIDACIONES)
+        // ========================================
+
         async function editStudent(id) {
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 const { data: student, error } = await supabase
                     .from('estudiantes')
                     .select('*')
@@ -3001,11 +3719,21 @@
                 openModal('studentModal');
                 
             } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de estudiante', { 
+                    studentId: id,
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al cargar los datos del estudiante: ' + error.message);
             }
         }
 
         async function deleteStudent(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
                 try {
                     const { data, error } = await supabase
@@ -3020,15 +3748,23 @@
                     await loadStudents();
                     
                 } catch (error) {
-                    await logSecurityEvent('error', 'Error al eliminar estudiante', { error: error.message }, false);
+                    await logSecurityEvent('error', 'Error al eliminar estudiante', { 
+                        studentId: id,
+                        error: error.message.substring(0, 200) 
+                    }, false);
                     showError('Error al eliminar el estudiante: ' + error.message);
                 }
             }
         }
 
-        // Funciones similares para otros elementos...
         async function editUser(id) {
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 const { data: user, error } = await supabase
                     .from('usuarios')
                     .select('*')
@@ -3043,7 +3779,6 @@
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userRole').value = user.rol_id;
                 
-                // Actualizar nota y requerimiento de contraseña para edición
                 document.getElementById('passwordNote').textContent = '(dejar vacío para mantener actual)';
                 document.getElementById('userPassword').required = false;
                 document.getElementById('userPasswordStrength').style.display = 'none';
@@ -3051,11 +3786,21 @@
                 openModal('userModal');
                 
             } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de usuario', { 
+                    userId: id,
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al cargar los datos del usuario: ' + error.message);
             }
         }
 
         async function deleteUser(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             if (id === currentUser.id) {
                 showError('No puedes eliminar tu propio usuario');
                 return;
@@ -3075,7 +3820,10 @@
                     await loadUsers();
                     
                 } catch (error) {
-                    await logSecurityEvent('error', 'Error al eliminar usuario', { error: error.message }, false);
+                    await logSecurityEvent('error', 'Error al eliminar usuario', { 
+                        userId: id,
+                        error: error.message.substring(0, 200) 
+                    }, false);
                     showError('Error al eliminar el usuario: ' + error.message);
                 }
             }
@@ -3083,6 +3831,12 @@
 
         async function editReason(id) {
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 const { data: reason, error } = await supabase
                     .from('motivos')
                     .select('*')
@@ -3098,11 +3852,21 @@
                 openModal('reasonModal');
                 
             } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de motivo', { 
+                    reasonId: id,
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al cargar los datos del motivo: ' + error.message);
             }
         }
 
         async function deleteReason(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             if (confirm('¿Estás seguro de que quieres eliminar este motivo?')) {
                 try {
                     const { data, error } = await supabase
@@ -3117,7 +3881,10 @@
                     await loadReasons();
                     
                 } catch (error) {
-                    await logSecurityEvent('error', 'Error al eliminar motivo', { error: error.message }, false);
+                    await logSecurityEvent('error', 'Error al eliminar motivo', { 
+                        reasonId: id,
+                        error: error.message.substring(0, 200) 
+                    }, false);
                     showError('Error al eliminar el motivo: ' + error.message);
                 }
             }
@@ -3125,6 +3892,12 @@
 
         async function editGrade(id) {
             try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
                 const { data: grade, error } = await supabase
                     .from('grados')
                     .select('*')
@@ -3140,11 +3913,21 @@
                 openModal('gradeModal');
                 
             } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de grado', { 
+                    gradeId: id,
+                    error: error.message.substring(0, 200) 
+                }, false);
                 showError('Error al cargar los datos del grado: ' + error.message);
             }
         }
 
         async function deleteGrade(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
             if (confirm('¿Estás seguro de que quieres eliminar este grado?')) {
                 try {
                     const { data, error } = await supabase
@@ -3159,11 +3942,18 @@
                     await loadGrades();
                     
                 } catch (error) {
-                    await logSecurityEvent('error', 'Error al eliminar grado', { error: error.message }, false);
+                    await logSecurityEvent('error', 'Error al eliminar grado', { 
+                        gradeId: id,
+                        error: error.message.substring(0, 200) 
+                    }, false);
                     showError('Error al eliminar el grado: ' + error.message);
                 }
             }
         }
+
+        // ========================================
+        // EVENT LISTENERS Y CONFIGURACIÓN INICIAL
+        // ========================================
 
         // Cerrar modales al hacer clic fuera
         window.onclick = function(event) {
@@ -3175,43 +3965,163 @@
             });
         }
 
-        // Timeout de sesión
-        let sessionTimeout;
-        const SESSION_TIMEOUT = 1800000; // 30 minutos
-
-        function resetSessionTimeout() {
-            clearTimeout(sessionTimeout);
-            sessionTimeout = setTimeout(() => {
-                alert('Tu sesión ha expirado por inactividad');
-                logout();
-            }, SESSION_TIMEOUT);
-        }
-
-        // Resetear timeout en actividad del usuario
-        document.addEventListener('click', resetSessionTimeout);
-        document.addEventListener('keypress', resetSessionTimeout);
-
-        // Prevenir inyección de scripts en inputs
+        // Prevenir inyección de scripts en todos los inputs
         document.addEventListener('input', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                // Remover caracteres potencialmente peligrosos
-                const dangerousChars = /<|>|&|"|'/g;
-                if (dangerousChars.test(e.target.value)) {
-                    e.target.value = e.target.value.replace(dangerousChars, '');
+                const value = e.target.value;
+                
+                // Detectar y bloquear scripts maliciosos
+                const scriptPatterns = [
+                    /<script[^>]*>.*?<\/script>/gi,
+                    /javascript:/gi,
+                    /vbscript:/gi,
+                    /on\w+\s*=/gi,
+                    /<iframe[^>]*>.*?<\/iframe>/gi,
+                    /<object[^>]*>.*?<\/object>/gi,
+                    /<embed[^>]*>/gi
+                ];
+                
+                let hasScripts = false;
+                scriptPatterns.forEach(pattern => {
+                    if (pattern.test(value)) {
+                        hasScripts = true;
+                    }
+                });
+                
+                if (hasScripts) {
+                    e.target.value = value.replace(/[<>]/g, '');
+                    showError('Se detectaron caracteres potencialmente peligrosos y fueron removidos');
+                    
+                    // Log del intento de inyección
+                    logSecurityEvent('security', 'Intento de inyección de script detectado', {
+                        input: e.target.id || e.target.name || 'campo desconocido',
+                        value: value.substring(0, 100) + '...'
+                    }, false);
                 }
             }
         });
 
-        // Inicializar la aplicación
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Sistema iniciado');
-            updateConnectionStatus(false, 'Conectando...');
+        // Prevenir copiar/pegar código malicioso
+        document.addEventListener('paste', function(e) {
+            const pastedData = (e.clipboardData || window.clipboardData).getData('text');
             
-            // Esperar un momento para que Supabase termine de cargar
+            const scriptPatterns = [
+                /<script[^>]*>.*?<\/script>/gi,
+                /javascript:/gi,
+                /vbscript:/gi,
+                /on\w+\s*=/gi
+            ];
+            
+            let hasScripts = false;
+            scriptPatterns.forEach(pattern => {
+                if (pattern.test(pastedData)) {
+                    hasScripts = true;
+                }
+            });
+            
+            if (hasScripts) {
+                e.preventDefault();
+                showError('El contenido pegado contiene código potencialmente peligroso y fue bloqueado');
+                
+                logSecurityEvent('security', 'Intento de pegar contenido malicioso', {
+                    content: pastedData.substring(0, 100) + '...'
+                }, false);
+            }
+        });
+
+        // Configurar listeners de actividad para sesión
+        function setupActivityListeners() {
+            const events = ['click', 'keypress', 'mousemove', 'scroll', 'touchstart'];
+            events.forEach(event => {
+                document.addEventListener(event, () => {
+                    if (currentUser && validateSession()) {
+                        renewSession();
+                    }
+                }, { passive: true });
+            });
+        }
+
+        // Detectar intentos de manipulación del DOM
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            const scripts = node.querySelectorAll ? node.querySelectorAll('script') : [];
+                            if (scripts.length > 0) {
+                                console.warn('🚨 Intento de inyección de script detectado');
+                                scripts.forEach(script => script.remove());
+                                
+                                logSecurityEvent('security', 'Intento de inyección DOM detectado', {
+                                    element: node.tagName || 'unknown'
+                                }, false);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        // Inicializar la aplicación con todas las medidas de seguridad
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Sistema iniciado con medidas de seguridad avanzadas');
+            console.log('🔒 Medidas activas:');
+            console.log('  ✅ Headers de Seguridad CSP');
+            console.log('  ✅ Sanitización XSS');
+            console.log('  ✅ Rate Limiting');
+            console.log('  ✅ CAPTCHA Anti-Bot');
+            console.log('  ✅ Logs de Auditoría');
+            console.log('  ✅ Validación HTML');
+            console.log('  ✅ Sesiones Seguras');
+            console.log('  ✅ Cifrado de Datos');
+            
+            updateConnectionStatus(false, 'Conectando...');
+            updateSecurityIndicator('warning', 'Iniciando Sistema');
+            
+            // Configurar observador de DOM
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+            // Configurar listeners de actividad
+            setupActivityListeners();
+            
+            // Esperar un momento para que todas las librerías terminen de cargar
             setTimeout(() => {
                 initSupabase();
             }, 1000);
         });
+
+        // Limpiar recursos al cerrar la página
+        window.addEventListener('beforeunload', function() {
+            if (currentUser) {
+                logSecurityEvent('logout', 'Cierre de página', { 
+                    userId: currentUser.id 
+                }, true);
+            }
+            
+            // Limpiar datos sensibles
+            currentUser = null;
+            sessionToken = null;
+            sessionStartTime = null;
+        });
+
+        // Detectar cambios de visibilidad de la página (seguridad adicional)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden' && currentUser) {
+                // La página se oculta, pausar actividad sensible
+                console.log('📱 Página oculta, pausando actividad');
+            } else if (document.visibilityState === 'visible' && currentUser) {
+                // La página vuelve a ser visible, verificar sesión
+                console.log('📱 Página visible, verificando sesión');
+                if (!validateSession()) {
+                    showError('Sesión expirada por inactividad');
+                    logout();
+                }
+            }
+        });
+
     </script>
 </body>
 </html>
