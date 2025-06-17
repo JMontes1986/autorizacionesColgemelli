@@ -14,7 +14,9 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Sistema de Salidas - Colegio Gemelli</title>
 <!-- Supabase CDN para GitHub -->
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- hCaptcha -->
+<script src="https://hcaptcha.com/1/api.js" async defer></script>
 <!-- CryptoJS para cifrado -->
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 <!-- Chart.js versión estable -->
@@ -2126,7 +2128,7 @@
   <label for="uploadStudentPhoto">Subir Foto:</label>
   <input type="file" id="uploadStudentPhoto" accept="image/jpeg,image/png,image/gif" onchange="handleImageUpload(event)" />
   <img id="studentPhotoPreview" src="https://via.placeholder.com/120" alt="Foto del estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;">
-  <input type="hidden" id="studentPhotoURL" />
+  <input type="hidden" id="studentPhotoBase64" />
   <small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
 </div>
 
@@ -7068,7 +7070,7 @@
   function handleImageUpload(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('studentPhotoPreview');
-    const base64Input = document.getElementById('studentPhotoURL');
+    const base64Input = document.getElementById('studentPhotoBase64');
     if (!file) return;
 
     if (!file.type.match(/^image\/(jpeg|png|gif)$/)) {
@@ -7105,7 +7107,44 @@
 </script>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = createClient(
+    'https://YOUR_PROJECT.supabase.co',
+    'YOUR_ANON_KEY'
+  );
 
+  document.getElementById('studentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('studentName').value;
+    const lastName = document.getElementById('studentLastName').value;
+    const documentId = document.getElementById('studentDocument').value;
+    const grade = document.getElementById('studentGrade').value;
+    const photoBase64 = document.getElementById('studentPhotoBase64').value;
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .insert([
+        {
+          nombre: name,
+          apellido: lastName,
+          documento: documentId,
+          grado: grade,
+          foto_base64: photoBase64
+        }
+      ]);
+
+    if (error) {
+      console.error('Error al guardar:', error);
+      alert("❌ Error al guardar estudiante.");
+    } else {
+      console.log('Estudiante guardado:', data);
+      alert("✅ Estudiante guardado correctamente.");
+      document.getElementById('studentForm').reset();
+      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
+    }
+  });
+</script>
 
 
 <script>
@@ -7125,41 +7164,6 @@
         img.src = data[0].foto_base64 || "https://via.placeholder.com/120";
       }
     });
-  });
-</script>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabase = createClient('https://mbosvnmhnbrslfwlfcxu.supabase.co', 'b2492d7cbbbf22854205609ca01f16f2');
-
-  document.getElementById('studentForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const name = document.getElementById('studentName').value;
-    const lastName = document.getElementById('studentLastName').value;
-    const documentId = document.getElementById('studentDocument').value;
-    const grade = document.getElementById('studentGrade').value;
-    const photoUrl = document.getElementById('studentPhotoURL').value;
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .insert([ {
-        nombre: name,
-        apellido: lastName,
-        documento: documentId,
-        grado: grade,
-        foto_url: photoUrl
-      } ]);
-
-    if (error) {
-      console.error('Error al guardar:', error);
-      alert("❌ Error al guardar estudiante.");
-    } else {
-      alert("✅ Estudiante guardado correctamente.");
-      document.getElementById('studentForm').reset();
-      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
-    }
   });
 </script>
 
