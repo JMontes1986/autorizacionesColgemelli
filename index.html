@@ -7076,5 +7076,20 @@
   });
 </script>
 
+
+<script>
+  function loadStudentData(student) {
+    // Esto se llamará al hacer clic en editar estudiante
+    document.getElementById('studentName').value = student.name || '';
+    document.getElementById('studentLastName').value = student.lastName || '';
+    document.getElementById('studentDocument').value = student.document || '';
+    document.getElementById('studentGrade').value = student.grade || '';
+    document.getElementById('studentPhoto').src = student.photo || 'https://via.placeholder.com/150';
+  }
+
+  // Simular evento de clic en editar (ejemplo)
+  // loadStudentData({ name: "Juan", lastName: "Pérez", document: "123456", grade: "10", photo: "https://example.com/foto.jpg" });
+</script>
+
 </body>
 </html>
