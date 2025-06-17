@@ -1752,10 +1752,7 @@
 <option value="">Seleccionar grado primero...</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -1778,10 +1775,7 @@
 <option value="">Primero selecciona un grado...</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -1799,10 +1793,7 @@
 <option value="">Seleccionar motivo...</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -2005,10 +1996,7 @@
 <option value="error">Error</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -2026,10 +2014,7 @@
 <option value="">Todos</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -2225,10 +2210,7 @@
 <option value="">Seleccionar grado...</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -2269,10 +2251,7 @@
 <option value="">Seleccionar rol...</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -2324,10 +2303,7 @@
 <option value="Bachillerato">Bachillerato</option>
 </select>
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
-    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
-</div>
+
 
 
 
@@ -7366,6 +7342,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 <script>
   async function cargarVerificaciones() {
     const contenedor = document.getElementById("verificaciones");
@@ -7405,39 +7390,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
-</script>
-
-
-
-
-
-<script>
-  document.getElementById('studentSelect')?.addEventListener('change', async function () {
-    const selectedText = this.options[this.selectedIndex].text;
-    const docMatch = selectedText.match(/Doc:\s*(\d+)/);
-    const studentId = docMatch ? docMatch[1] : null;
-
-    if (!studentId) {
-      console.warn("No se encontró el documento del estudiante en el texto seleccionado.");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .select('foto_url')
-      .eq('documento', studentId)
-      .single();
-
-    const img = document.getElementById('authStudentPhoto');
-    if (img) {
-      if (error || !data?.foto_url) {
-        console.warn("No se encontró la foto:", error?.message);
-        img.src = "https://via.placeholder.com/120";
-      } else {
-        img.src = data.foto_url;
-      }
-    }
-  });
 </script>
 
 </body>
