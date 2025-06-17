@@ -1755,14 +1755,6 @@
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
 <select disabled="" id="studentSelect" required="">
-
-<div class="form-group">
-  <label for="studentPhoto">Foto del Estudiante:</label>
-  <div style="text-align: center; margin-top: 10px;">
-    <img id="studentPhoto" src="https://via.placeholder.com/150" alt="Foto del estudiante" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; border: 2px solid #ddd;">
-  </div>
-</div>
-
 <option value="">Primero selecciona un grado...</option>
 </select>
 </div>
@@ -2113,6 +2105,14 @@
 <h2>Agregar/Editar Estudiante</h2>
 <form id="studentForm">
 <div class="form-group">
+  <label for="uploadStudentPhoto">Subir Foto:</label>
+  <input type="file" id="uploadStudentPhoto" accept="image/jpeg,image/png,image/gif" onchange="handleImageUpload(event)" />
+  <img id="studentPhotoPreview" src="https://via.placeholder.com/120" alt="Foto del estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;">
+  <input type="hidden" id="studentPhotoBase64" />
+  <small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
+</div>
+
+<div class="form-group">
 <label>Nombre: *</label>
 <input id="studentName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
 </div>
@@ -2124,12 +2124,6 @@
 <label>Documento:</label>
 <input id="studentDocument" type="text" maxlength="20" pattern="[0-9]{6,20}" oninput="validateDocumentInput(this)"/>
 </div>
-
-<div class="form-group">
-  <label for="uploadStudentPhoto">Subir Foto del Estudiante:</label>
-  <input type="file" id="uploadStudentPhoto" accept="image/*" onchange="previewPhoto(event)"/>
-</div>
-
 <div class="form-group">
 <label>Grado: *</label>
 <select id="studentGrade" required="">
@@ -7053,42 +7047,43 @@
     </script>
 
 <script>
-  function previewPhoto(event) {
-    const imgElement = document.getElementById('studentPhoto');
+  function handleImageUpload(event) {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        imgElement.src = e.target.result;
-      }
-      reader.readAsDataURL(file);
+    const preview = document.getElementById('studentPhotoPreview');
+    const base64Input = document.getElementById('studentPhotoBase64');
+    if (!file) return;
+
+    if (!file.type.match(/^image\/(jpeg|png|gif)$/)) {
+      alert("Formato no válido. Solo JPG, PNG o GIF.");
+      event.target.value = '';
+      return;
     }
-  }
 
-  document.getElementById('studentSelect').addEventListener('change', function() {
-    const selectedStudent = this.value;
-    const photoMap = {
-      "123": "https://example.com/fotos/123.jpg",
-      "456": "https://example.com/fotos/456.jpg"
+    if (file.size > 2 * 1024 * 1024) {
+      alert("La imagen debe ser menor a 2MB.");
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 400;
+        const scale = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const resizedBase64 = canvas.toDataURL(file.type);
+        preview.src = resizedBase64;
+        base64Input.value = resizedBase64;
+      };
+      img.src = e.target.result;
     };
-    const imgElement = document.getElementById('studentPhoto');
-    imgElement.src = photoMap[selectedStudent] || "https://via.placeholder.com/150";
-  });
-</script>
-
-
-<script>
-  function loadStudentData(student) {
-    // Esto se llamará al hacer clic en editar estudiante
-    document.getElementById('studentName').value = student.name || '';
-    document.getElementById('studentLastName').value = student.lastName || '';
-    document.getElementById('studentDocument').value = student.document || '';
-    document.getElementById('studentGrade').value = student.grade || '';
-    document.getElementById('studentPhoto').src = student.photo || 'https://via.placeholder.com/150';
+    reader.readAsDataURL(file);
   }
-
-  // Simular evento de clic en editar (ejemplo)
-  // loadStudentData({ name: "Juan", lastName: "Pérez", document: "123456", grade: "10", photo: "https://example.com/foto.jpg" });
 </script>
 
 </body>
