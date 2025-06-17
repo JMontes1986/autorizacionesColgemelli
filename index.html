@@ -1755,6 +1755,14 @@
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
 <select disabled="" id="studentSelect" required="">
+
+<div class="form-group">
+  <label for="studentPhoto">Foto del Estudiante:</label>
+  <div style="text-align: center; margin-top: 10px;">
+    <img id="studentPhoto" src="https://via.placeholder.com/150" alt="Foto del estudiante" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; border: 2px solid #ddd;">
+  </div>
+</div>
+
 <option value="">Primero selecciona un grado...</option>
 </select>
 </div>
@@ -7037,5 +7045,19 @@
         });
 
     </script>
+
+<script>
+  document.getElementById('studentSelect').addEventListener('change', function() {
+    const selectedStudent = this.value;
+    const photoMap = {
+      "1": "https://via.placeholder.com/150/007bff/ffffff?text=Estudiante+1",
+      "2": "https://via.placeholder.com/150/28a745/ffffff?text=Estudiante+2",
+      "3": "https://via.placeholder.com/150/ffc107/ffffff?text=Estudiante+3"
+    };
+    const imgElement = document.getElementById('studentPhoto');
+    imgElement.src = photoMap[selectedStudent] || "https://via.placeholder.com/150";
+  });
+</script>
+
 </body>
 </html>
