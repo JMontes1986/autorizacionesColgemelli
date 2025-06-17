@@ -7359,5 +7359,35 @@
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
 
+
+<script>
+  document.getElementById('studentSelect')?.addEventListener('change', async function () {
+    const selectedText = this.options[this.selectedIndex].text;
+    const docMatch = selectedText.match(/Doc:\s*(\d+)/);
+    const studentId = docMatch ? docMatch[1] : null;
+
+    if (!studentId) {
+      console.warn("No se encontró el documento del estudiante en el texto seleccionado.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .select('foto_url')
+      .eq('documento', studentId)
+      .single();
+
+    const img = document.getElementById('authStudentPhoto');
+    if (img) {
+      if (error || !data?.foto_url) {
+        console.warn("No se encontró la foto:", error?.message);
+        img.src = "https://via.placeholder.com/120";
+      } else {
+        img.src = data.foto_url;
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
