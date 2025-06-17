@@ -7086,5 +7086,45 @@
   }
 </script>
 
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = createClient(
+    'https://YOUR_PROJECT.supabase.co',
+    'YOUR_ANON_KEY'
+  );
+
+  document.getElementById('studentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('studentName').value;
+    const lastName = document.getElementById('studentLastName').value;
+    const documentId = document.getElementById('studentDocument').value;
+    const grade = document.getElementById('studentGrade').value;
+    const photoBase64 = document.getElementById('studentPhotoBase64').value;
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .insert([
+        {
+          nombre: name,
+          apellido: lastName,
+          documento: documentId,
+          grado: grade,
+          foto_base64: photoBase64
+        }
+      ]);
+
+    if (error) {
+      console.error('Error al guardar:', error);
+      alert("❌ Error al guardar estudiante.");
+    } else {
+      console.log('Estudiante guardado:', data);
+      alert("✅ Estudiante guardado correctamente.");
+      document.getElementById('studentForm').reset();
+      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
+    }
+  });
+</script>
+
 </body>
 </html>
