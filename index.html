@@ -1693,6 +1693,12 @@
     </style>
 </head>
 <body>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = createClient('https://mbosvnmhnbrslfwlfcxu.supabase.co', 'b2492d7cbbbf22854205609ca01f16f2');
+</script>
+
 <div class="container">
 <div class="header">
 <h1>🏫 Colegio Gemelli</h1>
@@ -7129,68 +7135,7 @@
 </script>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabase = createClient('https://mbosvnmhnbrslfwlfcxu.supabase.co', 'b2492d7cbbbf22854205609ca01f16f2');
 
-  async function uploadImageToStorage(file) {
-    const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-    const {"data", "error"} = await supabase.storage
-      .from('autorizaciones')
-      .upload('fotos/' + fileName, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-
-    if (error) {
-      console.error("Error subiendo imagen:", error);
-      return null;
-    }
-
-    const { data: urlData } = supabase
-      .storage
-      .from('autorizaciones')
-      .getPublicUrl('fotos/' + fileName);
-
-    return urlData.publicUrl;
-  }
-
-  document.getElementById('studentForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const fileInput = document.getElementById('uploadStudentPhoto');
-    const file = fileInput.files[0];
-    let photoUrl = "";
-
-    if (file) {
-      photoUrl = await uploadImageToStorage(file);
-    }
-
-    const name = document.getElementById('studentName').value;
-    const lastName = document.getElementById('studentLastName').value;
-    const documentId = document.getElementById('studentDocument').value;
-    const grade = document.getElementById('studentGrade').value;
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .insert([ {
-        nombre: name,
-        apellido: lastName,
-        documento: documentId,
-        grado: grade,
-        foto_url: photoUrl
-      } ]);
-
-    if (error) {
-      console.error('Error al guardar:', error);
-      alert("❌ Error al guardar estudiante.");
-    } else {
-      alert("✅ Estudiante guardado correctamente.");
-      document.getElementById('studentForm').reset();
-      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
-    }
-  });
-</script>
 
 </body>
 </html>
