@@ -7351,45 +7351,70 @@
 
 
 
+
+
+
 <script>
-  async function cargarVerificaciones() {
-    const contenedor = document.getElementById("verificaciones");
-    contenedor.innerHTML = "";
+  async function loadPendingExits() {
+    const lista = document.getElementById("pendingExitsList");
+    lista.innerHTML = "";
 
-    const { data: salidas, error: errorSalidas } = await supabase
+    const { data: autorizaciones, error } = await supabase
       .from("autorizaciones")
-      .select("documento, motivo, hora");
+      .select("*")
+      .eq("estado", "pendiente");
 
-    if (errorSalidas) {
-      console.error("Error cargando salidas:", errorSalidas.message);
+    if (error) {
+      lista.innerHTML = "<p>Error cargando datos</p>";
       return;
     }
 
-    for (const salida of salidas) {
-      const { data: estudiante, error: errorEst } = await supabase
+    for (const salida of autorizaciones) {
+      const { data: estudiante } = await supabase
         .from("estudiantes")
-        .select("nombre, grado, foto_url")
+        .select("nombre, apellidos, grado, foto_url")
         .eq("documento", salida.documento)
         .single();
 
       const div = document.createElement("div");
-      div.className = "verificacion-card";
-      div.style = "border:1px solid #ddd; padding:10px; border-radius:10px; margin:10px 0; text-align:center;";
+      div.className = "verification-card";
+      div.style = "display: flex; align-items: center; background: #2ecc71; padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;";
 
-      div.innerHTML = `
-        <img src="${estudiante?.foto_url || 'https://via.placeholder.com/120'}"
-          alt="Foto estudiante"
-          style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
-        <h3>${estudiante?.nombre || 'Estudiante'}</h3>
-        <p><strong>Grado:</strong> ${estudiante?.grado || '--'}</p>
-        <p><strong>Motivo:</strong> ${salida?.motivo || '--'}</p>
-        <p><strong>Hora:</strong> ${salida?.hora || '--:--'}</p>
+      const img = document.createElement("img");
+      img.src = estudiante?.foto_url || "https://via.placeholder.com/120";
+      img.alt = "Foto estudiante";
+      img.style = "width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid white; margin-right: 20px;";
+
+      const content = document.createElement("div");
+      content.innerHTML = `
+        <h3 style="margin: 0;">📛 ${estudiante?.nombre || ""} ${estudiante?.apellidos || ""}</h3>
+        <p>🎓 Grado: ${estudiante?.grado || "--"}</p>
+        <p>📋 Motivo de Salida: ${salida?.motivo || "--"}</p>
+        <p>⏰ Hora Autorizada: ${salida?.hora || "--"}</p>
+        <p>🛡 Autorizado por: ${salida?.autorizado_por || "--"}</p>
+        <p>📝 Observaciones: ${salida?.observaciones || "--"}</p>
+        <button class="btn btn-success" onclick="confirmarSalida(${salida.id})">✅ Confirmar Salida</button>
       `;
-      contenedor.appendChild(div);
+
+      div.appendChild(img);
+      div.appendChild(content);
+      lista.appendChild(div);
     }
   }
 
-  document.addEventListener('DOMContentLoaded', cargarVerificaciones);
+  async function confirmarSalida(id) {
+    const { error } = await supabase
+      .from("autorizaciones")
+      .update({ estado: "confirmada" })
+      .eq("id", id);
+
+    if (error) {
+      alert("❌ Error confirmando la salida");
+    } else {
+      alert("✅ Salida confirmada correctamente");
+      loadPendingExits();
+    }
+  }
 </script>
 
 </body>
