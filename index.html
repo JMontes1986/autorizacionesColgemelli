@@ -7233,5 +7233,27 @@
   });
 </script>
 
+
+<script>
+  // Mostrar foto del estudiante seleccionado en Autorizar Salida
+  document.getElementById('studentSelect')?.addEventListener('change', async function () {
+    const studentId = this.value;
+    if (!studentId) return;
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .select('foto_url')
+      .eq('documento', studentId)
+      .single();
+
+    if (error) {
+      console.error("No se pudo cargar la foto:", error.message);
+      document.getElementById('authStudentPhoto').src = "https://via.placeholder.com/120";
+    } else {
+      document.getElementById('authStudentPhoto').src = data?.foto_url || "https://via.placeholder.com/120";
+    }
+  });
+</script>
+
 </body>
 </html>
