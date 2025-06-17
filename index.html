@@ -7490,5 +7490,110 @@
   });
 </script>
 
+
+<style>
+  #iaButton {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    font-size: 22px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 9999;
+  }
+  #iaPanel {
+    position: fixed;
+    bottom: 100px;
+    right: 25px;
+    width: 360px;
+    max-height: 500px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #6c5ce7;
+    border-radius: 10px;
+    padding: 15px;
+    display: none;
+    z-index: 9999;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+</style>
+
+<button id="iaButton" title="IA" onclick="toggleIAPanel()">🤖</button>
+<div id="iaPanel">
+  <h3>📊 Análisis Inteligente</h3>
+  <button onclick="generarReporteIA()">⚖️ Analizar</button>
+  <div id="iaOutput" style="margin-top: 10px; font-size: 13px; white-space: pre-wrap;"></div>
+</div>
+
+<script>
+  function toggleIAPanel() {
+    const panel = document.getElementById("iaPanel");
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+  }
+
+  async function generarReporteIA() {
+    const apiKey = config.OPENAI_KEY;
+    const endpoint = "https://api.openai.com/v1/chat/completions";
+
+    const salidaData = await supabase
+      .from("autorizaciones_salida")
+      .select("documento, motivo, hora, fecha, autorizada")
+      .order("fecha", { ascending: false });
+
+    const estudiantes = await supabase
+      .from("estudiantes")
+      .select("documento, nombre, apellidos, grado");
+
+    const datos = { salidas: salidaData.data, estudiantes: estudiantes.data };
+
+    const prompt = `Eres un analista escolar. Analiza los siguientes datos de salidas de estudiantes:\n\n${JSON.stringify(datos)}\n\nExtrae:\n- Patrones por grado, motivo, y hora\n- Tendencias de salud (más de 3 por enfermedad en 90 días)\n- Recomendaciones para la institución\n- Formato en markdown`;
+
+    const respuesta = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": \`Bearer \${apiKey}\`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    const json = await respuesta.json();
+    document.getElementById("iaOutput").textContent = json.choices?.[0]?.message?.content || "Error al generar reporte.";
+  }
+
+  // Mostrar IA flotante solo si hay sesión activa
+  document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem("session")) {
+      document.getElementById("iaButton").style.display = "block";
+    } else {
+      document.getElementById("iaButton").style.display = "none";
+    }
+  });
+</script>
+
+
+<script>
+  async function verificarSesionYActivarIA() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const iaBtn = document.getElementById("iaButton");
+    if (session) {
+      iaBtn.style.display = "block";
+    } else {
+      iaBtn.style.display = "none";
+    }
+  }
+  document.addEventListener("DOMContentLoaded", verificarSesionYActivarIA);
+</script>
+
 </body>
 </html>
