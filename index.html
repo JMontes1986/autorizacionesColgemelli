@@ -1755,6 +1755,11 @@
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
 <select disabled="" id="studentSelect" required="">
+
+<div id="authStudentImage" style="text-align:center; margin:10px 0;">
+  <img src="https://via.placeholder.com/120" id="authStudentPhoto" alt="Foto Estudiante" style="width:120px;height:120px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
+</div>
+
 <option value="">Primero selecciona un grado...</option>
 </select>
 </div>
@@ -1810,6 +1815,21 @@
 <div id="pendingExitsSection">
 <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
 <div id="pendingExitsList">
+
+<!-- Ejemplo de tarjeta con foto -->
+<div class="verification-card">
+  <img src="https://via.placeholder.com/120" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
+  <h3>Nombre Estudiante</h3>
+  <div class="verification-card-content">
+    <div class="verification-card-info">
+      <p><strong>Grado:</strong> 10</p>
+      <p><strong>Motivo:</strong> Cita médica</p>
+      <p><strong>Hora:</strong> 10:30 am</p>
+    </div>
+  </div>
+  <button class="btn btn-success">✅ Confirmar Salida</button>
+</div>
+
 <div class="card" style="text-align: center; padding: 30px;">
 <p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
 </div>
@@ -7123,6 +7143,27 @@
       document.getElementById('studentForm').reset();
       document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
     }
+  });
+</script>
+
+
+<script>
+  document.getElementById('studentSelect').addEventListener('change', function () {
+    const selected = this.value;
+    fetch('https://YOUR_PROJECT.supabase.co/rest/v1/estudiantes?documento=eq.' + selected, {
+      headers: {
+        'apikey': 'YOUR_ANON_KEY',
+        'Authorization': 'Bearer YOUR_ANON_KEY',
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.length > 0) {
+        const img = document.getElementById('authStudentPhoto');
+        img.src = data[0].foto_base64 || "https://via.placeholder.com/120";
+      }
+    });
   });
 </script>
 
