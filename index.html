@@ -7362,7 +7362,7 @@
     const { data: autorizaciones, error } = await supabase
       .from("autorizaciones_salida")
       .select("*")
-      .eq("estado", "pendiente");
+      .eq("autorizada", false);
 
     if (error) {
       lista.innerHTML = "<p>Error cargando datos</p>";
