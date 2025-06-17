@@ -1751,6 +1751,12 @@
 <select id="gradeSelect" onchange="loadStudentsByGrade()" required="">
 <option value="">Seleccionar grado primero...</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
@@ -1762,12 +1768,24 @@
 
 <option value="">Primero selecciona un grado...</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <div class="form-group">
 <label for="reasonSelect">3. Motivo: *</label>
 <select id="reasonSelect" required="">
 <option value="">Seleccionar motivo...</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <div class="form-group">
 <label for="exitDate">4. Fecha de Salida: *</label>
@@ -1959,12 +1977,24 @@
 <option value="delete">Eliminación</option>
 <option value="error">Error</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <div class="form-group">
 <label for="logUser">Usuario:</label>
 <select id="logUser">
 <option value="">Todos</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 </div>
 <button class="btn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
@@ -2149,6 +2179,12 @@
 <select id="studentGrade" required="">
 <option value="">Seleccionar grado...</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
@@ -2178,6 +2214,12 @@
 <select id="userRole" required="">
 <option value="">Seleccionar rol...</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('userModal')" type="button">Cancelar</button>
@@ -2218,6 +2260,12 @@
 <option value="Primaria">Primaria</option>
 <option value="Bachillerato">Bachillerato</option>
 </select>
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
+    style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
@@ -7235,7 +7283,6 @@
 
 
 <script>
-  // Mostrar foto del estudiante seleccionado en Autorizar Salida
   document.getElementById('studentSelect')?.addEventListener('change', async function () {
     const studentId = this.value;
     if (!studentId) return;
@@ -7246,11 +7293,11 @@
       .eq('documento', studentId)
       .single();
 
-    if (error) {
-      console.error("No se pudo cargar la foto:", error.message);
+    if (error || !data?.foto_url) {
+      console.error("No se pudo cargar la foto:", error?.message);
       document.getElementById('authStudentPhoto').src = "https://via.placeholder.com/120";
     } else {
-      document.getElementById('authStudentPhoto').src = data?.foto_url || "https://via.placeholder.com/120";
+      document.getElementById('authStudentPhoto').src = data.foto_url;
     }
   });
 </script>
