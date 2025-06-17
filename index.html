@@ -1758,9 +1758,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <div class="form-group">
@@ -1780,9 +1781,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <div class="form-group">
@@ -1797,9 +1799,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <div class="form-group">
@@ -1999,9 +2002,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <div class="form-group">
@@ -2016,9 +2020,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 </div>
@@ -2211,9 +2216,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
@@ -2251,9 +2257,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
@@ -2302,9 +2309,10 @@
 </div>
 
 
-<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
-  
-</div>
+
+
+
+
 
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
@@ -7325,26 +7333,7 @@
 
 
 
-<script>
-  document.getElementById('studentSelect')?.addEventListener('change', async function () {
-    const studentId = this.value;
-    if (!studentId) return;
 
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .select('foto_url')
-      .eq('documento', studentId)
-      .single();
-
-    const img = document.getElementById('authStudentPhoto');
-    if (error || !data?.foto_url) {
-      console.error("No se pudo cargar la foto:", error?.message);
-      img.src = "https://via.placeholder.com/120";
-    } else {
-      img.src = data.foto_url;
-    }
-  });
-</script>
 
 
 <script>
@@ -7385,6 +7374,28 @@
   }
 
   window.addEventListener('DOMContentLoaded', cargarVerificaciones);
+</script>
+
+
+<script>
+  document.getElementById('studentSelect')?.addEventListener('change', async function () {
+    const studentId = this.value;
+    if (!studentId) return;
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .select('foto_url')
+      .eq('documento', studentId)
+      .single();
+
+    const img = document.getElementById('authStudentPhoto');
+    if (error || !data?.foto_url) {
+      console.warn("No se encontró foto:", error?.message);
+      img.src = "https://via.placeholder.com/120";
+    } else {
+      img.src = data.foto_url;
+    }
+  });
 </script>
 
 </body>
