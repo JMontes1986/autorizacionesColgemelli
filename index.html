@@ -2124,6 +2124,12 @@
 <label>Documento:</label>
 <input id="studentDocument" type="text" maxlength="20" pattern="[0-9]{6,20}" oninput="validateDocumentInput(this)"/>
 </div>
+
+<div class="form-group">
+  <label for="uploadStudentPhoto">Subir Foto del Estudiante:</label>
+  <input type="file" id="uploadStudentPhoto" accept="image/*" onchange="previewPhoto(event)"/>
+</div>
+
 <div class="form-group">
 <label>Grado: *</label>
 <select id="studentGrade" required="">
@@ -7047,12 +7053,23 @@
     </script>
 
 <script>
+  function previewPhoto(event) {
+    const imgElement = document.getElementById('studentPhoto');
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imgElement.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    }
+  }
+
   document.getElementById('studentSelect').addEventListener('change', function() {
     const selectedStudent = this.value;
     const photoMap = {
-      "1": "https://via.placeholder.com/150/007bff/ffffff?text=Estudiante+1",
-      "2": "https://via.placeholder.com/150/28a745/ffffff?text=Estudiante+2",
-      "3": "https://via.placeholder.com/150/ffc107/ffffff?text=Estudiante+3"
+      "123": "https://example.com/fotos/123.jpg",
+      "456": "https://example.com/fotos/456.jpg"
     };
     const imgElement = document.getElementById('studentPhoto');
     imgElement.src = photoMap[selectedStudent] || "https://via.placeholder.com/150";
