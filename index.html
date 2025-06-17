@@ -7360,7 +7360,7 @@
     lista.innerHTML = "";
 
     const { data: autorizaciones, error } = await supabase
-      .from("autorizaciones")
+      .from("autorizaciones_salida")
       .select("*")
       .eq("estado", "pendiente");
 
@@ -7404,7 +7404,7 @@
 
   async function confirmarSalida(id) {
     const { error } = await supabase
-      .from("autorizaciones")
+      .from("autorizaciones_salida")
       .update({ estado: "confirmada" })
       .eq("id", id);
 
