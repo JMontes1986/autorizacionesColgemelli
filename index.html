@@ -1757,13 +1757,18 @@
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
 </div>
 
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
+</div>
+
 </div>
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
 <select disabled="" id="studentSelect" required="">
 
 <div id="authStudentImage" style="text-align:center; margin:10px 0;">
-  <img src="https://via.placeholder.com/120" id="authStudentPhoto" alt="Foto Estudiante" style="width:120px;height:120px;border-radius:50%;border:2px solid #ccc;object-fit:cover;">
+  
 </div>
 
 <option value="">Primero selecciona un grado...</option>
@@ -1772,6 +1777,11 @@
 <div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
   <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
 </div>
 
 </div>
@@ -1784,6 +1794,11 @@
 <div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
   <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
 </div>
 
 </div>
@@ -1983,6 +1998,11 @@
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
 </div>
 
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
+</div>
+
 </div>
 <div class="form-group">
 <label for="logUser">Usuario:</label>
@@ -1993,6 +2013,11 @@
 <div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
   <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
 </div>
 
 </div>
@@ -2185,6 +2210,11 @@
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
 </div>
 
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
+</div>
+
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
@@ -2218,6 +2248,11 @@
 <div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
   <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
 </div>
 
 </div>
@@ -2264,6 +2299,11 @@
 <div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
   <img id="authStudentPhoto" src="https://via.placeholder.com/120" alt="Foto del estudiante"
     style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #ccc;">
+</div>
+
+
+<div id="authStudentFotoWrapper" style="text-align:center; margin-top:15px;">
+  
 </div>
 
 </div>
@@ -7304,6 +7344,47 @@
       img.src = data.foto_url;
     }
   });
+</script>
+
+
+<script>
+  async function cargarVerificaciones() {
+    const contenedor = document.getElementById("verificaciones");
+    contenedor.innerHTML = "";
+
+    const { data: salidas, error: errorSalidas } = await supabase
+      .from("autorizaciones")
+      .select("documento, motivo, hora");
+
+    if (errorSalidas) {
+      console.error("Error cargando salidas:", errorSalidas.message);
+      return;
+    }
+
+    for (const salida of salidas) {
+      const { data: estudiante, error: errorEst } = await supabase
+        .from("estudiantes")
+        .select("nombre, grado, foto_url")
+        .eq("documento", salida.documento)
+        .single();
+
+      const div = document.createElement("div");
+      div.className = "verificacion-card";
+      div.style = "border:1px solid #ddd; padding:10px; border-radius:10px; margin:10px 0; text-align:center;";
+
+      div.innerHTML = `
+        <img src="${estudiante?.foto_url || 'https://via.placeholder.com/120'}"
+          style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
+        <h3>${estudiante?.nombre || 'Estudiante'}</h3>
+        <p><strong>Grado:</strong> ${estudiante?.grado || '--'}</p>
+        <p><strong>Motivo:</strong> ${salida?.motivo || '--'}</p>
+        <p><strong>Hora:</strong> ${salida?.hora || '--:--'}</p>
+      `;
+      contenedor.appendChild(div);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
 
 </body>
