@@ -7351,7 +7351,46 @@
 
 
 
+<script>
+  async function cargarVerificaciones() {
+    const contenedor = document.getElementById("verificaciones");
+    contenedor.innerHTML = "";
 
+    const { data: salidas, error: errorSalidas } = await supabase
+      .from("autorizaciones")
+      .select("documento, motivo, hora");
+
+    if (errorSalidas) {
+      console.error("Error cargando salidas:", errorSalidas.message);
+      return;
+    }
+
+    for (const salida of salidas) {
+      const { data: estudiante, error: errorEst } = await supabase
+        .from("estudiantes")
+        .select("nombre, grado, foto_url")
+        .eq("documento", salida.documento)
+        .single();
+
+      const div = document.createElement("div");
+      div.className = "verificacion-card";
+      div.style = "border:1px solid #ddd; padding:10px; border-radius:10px; margin:10px 0; text-align:center;";
+
+      div.innerHTML = `
+        <img src="${estudiante?.foto_url || 'https://via.placeholder.com/120'}"
+          alt="Foto estudiante"
+          style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
+        <h3>${estudiante?.nombre || 'Estudiante'}</h3>
+        <p><strong>Grado:</strong> ${estudiante?.grado || '--'}</p>
+        <p><strong>Motivo:</strong> ${salida?.motivo || '--'}</p>
+        <p><strong>Hora:</strong> ${salida?.hora || '--:--'}</p>
+      `;
+      contenedor.appendChild(div);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', cargarVerificaciones);
+</script>
 
 
 <script>
@@ -7365,6 +7404,7 @@
       .eq("autorizada", false);
 
     if (error) {
+      console.error("Error cargando datos", error.message);
       lista.innerHTML = "<p>Error cargando datos</p>";
       return;
     }
@@ -7378,7 +7418,7 @@
 
       const div = document.createElement("div");
       div.className = "verification-card";
-      div.style = "display: flex; align-items: center; background: #2ecc71; padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;";
+      div.style = "display: flex; align-items: center; background: #27ae60; padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;";
 
       const img = document.createElement("img");
       img.src = estudiante?.foto_url || "https://via.placeholder.com/120";
@@ -7405,7 +7445,7 @@
   async function confirmarSalida(id) {
     const { error } = await supabase
       .from("autorizaciones_salida")
-      .update({ estado: "confirmada" })
+      .update({ autorizada: true })
       .eq("id", id);
 
     if (error) {
@@ -7415,6 +7455,8 @@
       loadPendingExits();
     }
   }
+
+  document.addEventListener('DOMContentLoaded', loadPendingExits);
 </script>
 
 </body>
