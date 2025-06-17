@@ -7282,6 +7282,9 @@
 </script>
 
 
+
+
+
 <script>
   document.getElementById('studentSelect')?.addEventListener('change', async function () {
     const studentId = this.value;
@@ -7293,11 +7296,12 @@
       .eq('documento', studentId)
       .single();
 
+    const img = document.getElementById('authStudentPhoto');
     if (error || !data?.foto_url) {
       console.error("No se pudo cargar la foto:", error?.message);
-      document.getElementById('authStudentPhoto').src = "https://via.placeholder.com/120";
+      img.src = "https://via.placeholder.com/120";
     } else {
-      document.getElementById('authStudentPhoto').src = data.foto_url;
+      img.src = data.foto_url;
     }
   });
 </script>
