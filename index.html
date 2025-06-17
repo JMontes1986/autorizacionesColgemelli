@@ -7336,6 +7336,31 @@
 
 
 
+
+
+
+<script>
+  document.getElementById('studentSelect')?.addEventListener('change', async function () {
+    const studentId = this.value;
+    if (!studentId) return;
+
+    const { data, error } = await supabase
+      .from('estudiantes')
+      .select('foto_url')
+      .eq('documento', studentId)
+      .single();
+
+    const img = document.getElementById('authStudentPhoto');
+    if (error || !data?.foto_url) {
+      console.warn("No se encontró foto:", error?.message);
+      img.src = "https://via.placeholder.com/120";
+    } else {
+      img.src = data.foto_url;
+    }
+  });
+</script>
+
+
 <script>
   async function cargarVerificaciones() {
     const contenedor = document.getElementById("verificaciones");
@@ -7363,6 +7388,7 @@
 
       div.innerHTML = `
         <img src="${estudiante?.foto_url || 'https://via.placeholder.com/120'}"
+          alt="Foto estudiante"
           style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
         <h3>${estudiante?.nombre || 'Estudiante'}</h3>
         <p><strong>Grado:</strong> ${estudiante?.grado || '--'}</p>
@@ -7373,29 +7399,7 @@
     }
   }
 
-  window.addEventListener('DOMContentLoaded', cargarVerificaciones);
-</script>
-
-
-<script>
-  document.getElementById('studentSelect')?.addEventListener('change', async function () {
-    const studentId = this.value;
-    if (!studentId) return;
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .select('foto_url')
-      .eq('documento', studentId)
-      .single();
-
-    const img = document.getElementById('authStudentPhoto');
-    if (error || !data?.foto_url) {
-      console.warn("No se encontró foto:", error?.message);
-      img.src = "https://via.placeholder.com/120";
-    } else {
-      img.src = data.foto_url;
-    }
-  });
+  document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
 
 </body>
