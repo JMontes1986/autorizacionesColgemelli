@@ -2320,6 +2320,14 @@
 </form>
 </div>
 </div>
+
+<script>
+  // Configuración de API protegida
+  const config = {
+    OPENAI_KEY: atob("c2stcHJvai1yeWQ1NWZ5Sno5SV9jUzZKOFp3X3Zicm1TWFRvdnlQWHExbEVsaWFLeDJVdGJ3U0Nld1JmNjFrQ2FJbXNGajJmY3BCeTh6ZndIVDNCbGJrRkpiN3VUYUdXRjA1cjhETnhRb0I4ME1TR2dzbTBLbE14WDdXWHhwMnlldzcyWUxkS2hBeDVES2dJMDh4ZXpndldFSDdMWEhWSUE="); // Base64 encoded
+  }
+</script>
+
 <script>
         // ========================================
         // VERIFICACIÓN Y CARGA DE CHART.JS
@@ -7390,6 +7398,50 @@
   }
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
+</script>
+
+
+<!-- Sección IA -->
+<section id="ia">
+  <h2>🧠 Análisis con Inteligencia Artificial</h2>
+  <button onclick="generarReporteIA()">⚖️ Generar Análisis</button>
+  <div id="iaOutput" style="background: #f4f4f4; padding: 15px; border-radius: 5px; white-space: pre-wrap; margin-top: 15px;"></div>
+</section>
+
+<script>
+  async function generarReporteIA() {
+    const apiKey = config.OPENAI_KEY;
+    const endpoint = "https://api.openai.com/v1/chat/completions";
+
+    const salidaData = await supabase
+      .from("autorizaciones_salida")
+      .select("documento, motivo, hora, fecha, autorizada")
+      .order("fecha", { ascending: false });
+
+    const estudiantes = await supabase
+      .from("estudiantes")
+      .select("documento, nombre, apellidos, grado");
+
+    const datos = { salidas: salidaData.data, estudiantes: estudiantes.data };
+
+    const prompt = `Eres un analista escolar. Analiza los siguientes datos de salidas de estudiantes:\n\n${JSON.stringify(datos)}\n\nExtrae:\n- Patrones por grado, motivo, y hora\n- Tendencias de salud (más de 3 por enfermedad en 90 días)\n- Recomendaciones para la institución\n- Formato en markdown`;
+
+    const respuesta = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": \`Bearer \${apiKey}\`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    const json = await respuesta.json();
+    document.getElementById("iaOutput").textContent = json.choices?.[0]?.message?.content || "Error al generar reporte.";
+  }
 </script>
 
 </body>
