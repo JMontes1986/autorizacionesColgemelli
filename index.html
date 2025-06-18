@@ -5597,7 +5597,7 @@
                 const [studentsResult, reasonsResult, usersResult] = await Promise.all([
                     supabase
                         .from('estudiantes')
-                        .select('id, nombre, apellidos, grado:grados(nombre)')
+                        .select('id, nombre, apellidos, grado:grados(nombre), foto_url')
                         .in('id', studentIds),
                     supabase
                         .from('motivos')
