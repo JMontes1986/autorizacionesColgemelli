@@ -1982,19 +1982,7 @@
 <h2>📊 Dashboard de Salidas</h2>
 <div class="dashboard-container">
 <!-- Filtros de Fecha para Dashboard Histórico -->
-<div class="dashboard-card">
-<h3>📆 Filtro de Fechas Históricas</h3>
-<div style="display: flex; gap: 10px; flex-wrap: wrap;">
-<label>Desde: <input id="fechaDesde" type="date"/></label>
-<label>Hasta: <input id="fechaHasta" type="date"/></label>
-<button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
-</div>
-</div>
 <!-- Nuevos Gráficos Históricos -->
-
-
-
-
 <!-- Estadísticas Generales -->
 <div class="dashboard-card">
 <h3>📈 Estadísticas de Hoy</h3>
@@ -2076,10 +2064,6 @@
 </div>
 </div>
 <!-- Nuevos Gráficos Históricos -->
-
-
-
-
 <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
@@ -7337,10 +7321,45 @@ const timelineHistoricoChart = new Chart(document.getElementById('timelineHistor
   data: { labels: [], datasets: [{ label: 'Salidas', data: [], borderColor: '#34495e', tension: 0.3 }] }
 });
 </script>
-<div id="historicalWrapper" style="display:none;"><div class="dashboard-card"><h3>📊 Estado Histórico</h3><div class="chart-container"><canvas id="estadoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>🎓 Salidas por Grado Histórico</h3><div class="chart-container"><canvas id="gradoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📝 Motivos de Salida Histórico</h3><div class="chart-container"><canvas id="motivoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📈 Timeline Histórico</h3><div class="chart-container"><canvas id="timelineHistoricoChart"></canvas></div></div></div>
+<div id="historicalWrapper" style="display:none;"><div class="dashboard-card">
+<h3>📆 Filtro de Fechas Históricas</h3>
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<label>Desde: <input id="fechaDesde" type="date"/></label>
+<label>Hasta: <input id="fechaHasta" type="date"/></label>
+<button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
+</div>
+</div><div class="dashboard-card"><h3>📊 Estado Histórico</h3><div class="chart-container"><canvas id="estadoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>🎓 Salidas por Grado Histórico</h3><div class="chart-container"><canvas id="gradoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📝 Motivos de Salida Histórico</h3><div class="chart-container"><canvas id="motivoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📈 Timeline Histórico</h3><div class="chart-container"><canvas id="timelineHistoricoChart"></canvas></div></div></div>
 <script>
 document.querySelector('#fechaDesde').addEventListener('change', function() {
   document.getElementById('historicalWrapper').style.display = 'block';
+});
+</script>
+<script>
+function checkMostrarHistorico() {
+  const desde = document.getElementById('fechaDesde').value;
+  const hasta = document.getElementById('fechaHasta').value;
+  if (desde && hasta) {
+    document.getElementById('historicalWrapper').style.display = 'block';
+  }
+}
+document.getElementById('fechaDesde').addEventListener('change', checkMostrarHistorico);
+document.getElementById('fechaHasta').addEventListener('change', checkMostrarHistorico);
+</script>
+
+<script>
+function actualizarVisibilidadHistorico() {
+  const seccionDashboard = document.getElementById('dashboardSectionDiv');
+  const wrapperHistorico = document.getElementById('historicalWrapper');
+  if (!seccionDashboard.classList.contains('active')) {
+    wrapperHistorico.style.display = 'none';
+  }
+}
+
+// Interceptar todos los clics en los botones de navegación
+document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setTimeout(actualizarVisibilidadHistorico, 100); // espera pequeña para que cambie la clase
+  });
 });
 </script>
 
