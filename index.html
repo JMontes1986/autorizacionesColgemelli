@@ -1657,6 +1657,14 @@
             width: 100%;
         }
 
+        .show-password {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
         /* Estilos para CAPTCHA */
         .captcha-container {
             margin: 15px 0;
@@ -1751,6 +1759,7 @@
 <label for="password">Contraseña:</label>
 <input autocomplete="current-password" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
+<label class="show-password"><input type="checkbox" onclick="togglePasswordVisibility('password', this)"> Mostrar contraseña</label>
 </div>
 <!-- CAPTCHA -->
 <div class="captcha-container">
@@ -2182,6 +2191,7 @@
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
 <input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
+<label class="show-password"><input type="checkbox" onclick="togglePasswordVisibility('userPassword', this)"> Mostrar contraseña</label>
 </div>
 <div class="form-group">
 <label>Rol: *</label>
@@ -4175,6 +4185,13 @@
             }
         }
 
+        function togglePasswordVisibility(id, checkbox) {
+            const input = document.getElementById(id);
+            if (input) {
+                input.type = checkbox.checked ? 'text' : 'password';
+            }
+        }
+        
         // ========================================
         // FUNCIONES DE TOKENS Y SESIONES SEGURAS
         // ========================================
