@@ -2188,7 +2188,6 @@
   <label for="uploadStudentPhoto">Subir Foto:</label>
   <input type="file" id="uploadStudentPhoto" accept="image/jpeg,image/png,image/gif" onchange="handleImageUpload(event)" />
   <img id="studentPhotoPreview" src="https://via.placeholder.com/120" alt="Foto del estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;">
-  <input type="hidden" id="studentPhotoBase64" />
   <small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
 </div>
 
@@ -6033,6 +6032,27 @@
         // FUNCIONES CRUD CON SEGURIDAD MEJORADA
         // ========================================
 
+         async function uploadImageToStorage(file) {
+            const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+            const { data, error } = await supabase.storage
+                .from('autorizaciones')
+                .upload('fotos/' + fileName, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+            if (error) {
+                console.error('Error al subir imagen:', error.message);
+                showError('Error subiendo imagen');
+                return null;
+            }
+
+            const { data: urlData } = supabase
+                .storage
+                .from('autorizaciones')
+                .getPublicUrl('fotos/' + fileName);
+            return urlData.publicUrl;
+        }
+
         async function saveStudent(e) {
             e.preventDefault();
             
@@ -6047,6 +6067,12 @@
                 const lastName = document.getElementById('studentLastName').value.trim();
                 const documentValue = document.getElementById('studentDocument').value.trim();
                 const gradeId = document.getElementById('studentGrade').value;
+                const file = document.getElementById('uploadStudentPhoto').files[0];
+                let photoUrl = null;
+                if (file) {
+                    photoUrl = await uploadImageToStorage(file);
+                    if (!photoUrl) return;
+                }
 
                 // Validaciones de seguridad
                 if (!name || !lastName || !gradeId) {
@@ -6066,32 +6092,34 @@
 
                 let result;
                 if (currentEditingId) {
+                    const updateData = {
+                        nombre: name,
+                        apellidos: lastName,
+                        documento: documentValue || null,
+                        grado_id: gradeId
+                    };
+                    if (photoUrl) updateData.foto_url = photoUrl;
                     result = await supabase
                         .from('estudiantes')
-                        .update({
-                            nombre: name,
-                            apellidos: lastName,
-                            documento: documentValue || null,
-                            grado_id: gradeId
-                        })
+                        .update(updateData)
                         .eq('id', currentEditingId);
-                        
                     await logSecurityEvent('update', 'Estudiante actualizado', { 
                         studentId: currentEditingId,
                         name: name.substring(0, 20) + '...',
                         lastName: lastName.substring(0, 20) + '...'
                     }, true);
                 } else {
+                    const insertData = {
+                        nombre: name,
+                        apellidos: lastName,
+                        documento: documentValue || null,
+                        grado_id: gradeId,
+                        activo: true
+                    };
+                    if (photoUrl) insertData.foto_url = photoUrl;
                     result = await supabase
                         .from('estudiantes')
-                        .insert([{
-                            nombre: name,
-                            apellidos: lastName,
-                            documento: documentValue || null,
-                            grado_id: gradeId,
-                            activo: true
-                        }]);
-                        
+                        .insert([insertData]);
                     await logSecurityEvent('create', 'Estudiante creado', { 
                         name: name.substring(0, 20) + '...',
                         lastName: lastName.substring(0, 20) + '...',
@@ -7167,7 +7195,6 @@
   function handleImageUpload(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('studentPhotoPreview');
-    const base64Input = document.getElementById('studentPhotoBase64');
     if (!file) return;
 
     if (!file.type.match(/^image\/(jpeg|png|gif)$/)) {
@@ -7182,175 +7209,9 @@
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const maxWidth = 400;
-        const scale = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const resizedBase64 = canvas.toDataURL(file.type);
-        preview.src = resizedBase64;
-        base64Input.value = resizedBase64;
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    preview.src = URL.createObjectURL(file);
   }
 </script>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabase = createClient(
-    'https://YOUR_PROJECT.supabase.co',
-    'YOUR_ANON_KEY'
-  );
-
-  document.getElementById('studentForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const name = document.getElementById('studentName').value;
-    const lastName = document.getElementById('studentLastName').value;
-    const documentId = document.getElementById('studentDocument').value;
-    const grade = document.getElementById('studentGrade').value;
-    const photoBase64 = document.getElementById('studentPhotoBase64').value;
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .insert([
-        {
-          nombre: name,
-          apellido: lastName,
-          documento: documentId,
-          grado: grade,
-          foto_base64: photoBase64
-        }
-      ]);
-
-    if (error) {
-      console.error('Error al guardar:', error);
-      alert("❌ Error al guardar estudiante.");
-    } else {
-      console.log('Estudiante guardado:', data);
-      alert("✅ Estudiante guardado correctamente.");
-      document.getElementById('studentForm').reset();
-      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
-    }
-  });
-</script>
-
-
-<script>
-  document.getElementById('studentSelect').addEventListener('change', function () {
-    const selected = this.value;
-    fetch('https://YOUR_PROJECT.supabase.co/rest/v1/estudiantes?documento=eq.' + selected, {
-      headers: {
-        'apikey': 'YOUR_ANON_KEY',
-        'Authorization': 'Bearer YOUR_ANON_KEY',
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.length > 0) {
-        const img = document.getElementById('authStudentPhoto');
-        img.src = data[0].foto_base64 || "https://via.placeholder.com/120";
-      }
-    });
-  });
-</script>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabase = createClient(
-    'https://mbosvnmhnbrslfwlfcxu.supabase.co',
-    'b2492d7cbbbf22854205609ca01f16f2'
-  );
-
-  async function uploadImageToStorage(file) {
-    const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-    const { data, error } = await supabase.storage
-      .from('autorizaciones')
-      .upload('fotos/' + fileName, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-    if (error) {
-      console.error("Error al subir imagen:", error.message);
-      alert("❌ Error subiendo imagen");
-      return null;
-    }
-
-    const { data: urlData } = supabase
-      .storage
-      .from('autorizaciones')
-      .getPublicUrl('fotos/' + fileName);
-    return urlData.publicUrl;
-  }
-
-  document.getElementById('studentForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const file = document.getElementById('uploadStudentPhoto').files[0];
-    let photoUrl = "";
-
-    if (file) {
-      photoUrl = await uploadImageToStorage(file);
-      if (!photoUrl) return;
-    }
-
-    const name = document.getElementById('studentName').value;
-    const lastName = document.getElementById('studentLastName').value;
-    const documentId = document.getElementById('studentDocument').value;
-    const grade = document.getElementById('studentGrade').value;
-
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .insert([ {
-        nombre: name,
-        apellido: lastName,
-        documento: documentId,
-        grado: grade,
-        foto_url: photoUrl
-      } ]);
-
-    if (error) {
-      console.error('Error al guardar estudiante:', error.message);
-      alert("❌ Error al guardar estudiante.");
-    } else {
-      alert("✅ Estudiante guardado correctamente.");
-      document.getElementById('studentForm').reset();
-      document.getElementById('studentPhotoPreview').src = "https://via.placeholder.com/120";
-    }
-  });
-</script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <script>
   async function cargarVerificaciones() {
