@@ -7402,5 +7402,68 @@ const timelineHistoricoChart = new Chart(document.getElementById('timelineHistor
 });
 </script>
 
+
+<script>
+async function cargarDatosHistoricos() {
+  const desde = document.getElementById('fechaDesde').value;
+  const hasta = document.getElementById('fechaHasta').value;
+
+  const { data, error } = await supabase
+    .from('autorizaciones_salida')
+    .select('*')
+    .gte('fecha_salida', desde)
+    .lte('fecha_salida', hasta);
+
+  if (error) {
+    alert('Error al cargar datos históricos: ' + error.message);
+    return;
+  }
+
+  const porEstado = {}, porGrado = {}, porMotivo = {}, porFecha = {};
+
+  data.forEach(row => {
+    const estado = row.autorizada ? 'Confirmada' : 'Pendiente';
+    porEstado[estado] = (porEstado[estado] || 0) + 1;
+
+    // Relaciones: Aquí asumimos que ya tienes funciones para obtener grado y motivo por id si las necesitas
+    const grado = row.grado || 'Sin grado'; // Puedes reemplazar esto si haces un join
+    const motivo = row.motivo_id || 'Motivo ' + row.motivo_id;
+
+    porGrado[grado] = (porGrado[grado] || 0) + 1;
+    porMotivo[motivo] = (porMotivo[motivo] || 0) + 1;
+
+    porFecha[row.fecha_salida] = (porFecha[row.fecha_salida] || 0) + 1;
+  });
+
+  actualizarGrafico(estadoHistoricoChart, Object.keys(porEstado), Object.values(porEstado));
+  actualizarGrafico(gradoHistoricoChart, Object.keys(porGrado), Object.values(porGrado));
+  actualizarGrafico(motivoHistoricoChart, Object.keys(porMotivo), Object.values(porMotivo));
+  actualizarGrafico(timelineHistoricoChart, Object.keys(porFecha), Object.values(porFecha));
+}
+
+function actualizarGrafico(chart, labels, data) {
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = data;
+  chart.update();
+}
+
+const estadoHistoricoChart = new Chart(document.getElementById('estadoHistoricoChart'), {
+  type: 'pie',
+  data: { labels: [], datasets: [{ label: 'Estado', data: [], backgroundColor: ['#3498db','#f1c40f','#e74c3c'] }] }
+});
+const gradoHistoricoChart = new Chart(document.getElementById('gradoHistoricoChart'), {
+  type: 'bar',
+  data: { labels: [], datasets: [{ label: 'Grado', data: [], backgroundColor: '#8e44ad' }] }
+});
+const motivoHistoricoChart = new Chart(document.getElementById('motivoHistoricoChart'), {
+  type: 'doughnut',
+  data: { labels: [], datasets: [{ label: 'Motivos', data: [], backgroundColor: ['#2ecc71','#9b59b6','#e67e22','#1abc9c'] }] }
+});
+const timelineHistoricoChart = new Chart(document.getElementById('timelineHistoricoChart'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ label: 'Salidas', data: [], borderColor: '#34495e', tension: 0.3 }] }
+});
+</script>
+
 </body>
 </html>
