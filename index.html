@@ -5,18 +5,18 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- HEADERS DE SEGURIDAD MEJORADOS -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;">
-<meta http-equiv="X-Frame-Options" content="DENY">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-XSS-Protection" content="1; mode=block">
-<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
-<meta name="robots" content="noindex, nofollow">
+<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;" http-equiv="Content-Security-Policy"/>
+<meta content="DENY" http-equiv="X-Frame-Options"/>
+<meta content="nosniff" http-equiv="X-Content-Type-Options"/>
+<meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
+<meta content="strict-origin-when-cross-origin" http-equiv="Referrer-Policy"/>
+<meta content="geolocation=(), microphone=(), camera=()" http-equiv="Permissions-Policy"/>
+<meta content="noindex, nofollow" name="robots"/>
 <title>Sistema de Salidas - Colegio Gemelli</title>
 <!-- Supabase CDN para GitHub -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- hCaptcha -->
-<script src="https://hcaptcha.com/1/api.js" async defer></script>
+<script async="" defer="" src="https://hcaptcha.com/1/api.js"></script>
 <!-- CryptoJS para cifrado -->
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 <!-- Chart.js versión estable -->
@@ -1710,28 +1710,26 @@
 <div class="rate-limit-warning" id="rateLimitWarning">
 ⚠️ Demasiados intentos. Por favor espera antes de intentar de nuevo.
 </div>
-
 <!-- Security Indicator -->
 <div class="security-indicator secure" id="securityIndicator">
 🔒 Conexión Segura
 </div>
-
 <!-- Login Form -->
 <div class="login-form" id="loginSection">
 <div class="form-group">
 <label for="email">Email:</label>
-<input id="email" placeholder="sistemas@colgemelli.edu.co" type="email" maxlength="100" autocomplete="username" oninput="validateEmailInput(this)"/>
+<input autocomplete="username" id="email" maxlength="100" oninput="validateEmailInput(this)" placeholder="sistemas@colgemelli.edu.co" type="email"/>
 </div>
 <div class="form-group">
 <label for="password">Contraseña:</label>
-<input id="password" placeholder="••••••••" type="password" maxlength="50" autocomplete="current-password" oninput="validatePasswordInput(this)"/>
+<input autocomplete="current-password" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
 </div>
 <!-- CAPTCHA -->
 <div class="captcha-container">
 <div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001"></div>
 </div>
-<button class="btn" onclick="login()" id="loginBtn" style="width: 100%;">Iniciar Sesión</button>
+<button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
 <div class="alert alert-error" id="loginError" style="display: none; margin-top: 15px;"></div>
 <div class="alert alert-success" id="loginInfo" style="display: none; margin-top: 15px;"></div>
@@ -1751,59 +1749,20 @@
 <select id="gradeSelect" onchange="loadStudentsByGrade()" required="">
 <option value="">Seleccionar grado primero...</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <div class="form-group">
 <label for="studentSelect">2. Seleccionar Estudiante: *</label>
 <select disabled="" id="studentSelect" required="">
-
 <div id="authStudentImage" style="text-align:center; margin:10px 0;">
-  
 </div>
-
 <option value="">Primero selecciona un grado...</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <div class="form-group">
 <label for="reasonSelect">3. Motivo: *</label>
 <select id="reasonSelect" required="">
 <option value="">Seleccionar motivo...</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <div class="form-group">
 <label for="exitDate">4. Fecha de Salida: *</label>
@@ -1816,7 +1775,7 @@
 </div>
 <div class="form-group">
 <label for="observations">Observaciones adicionales:</label>
-<textarea id="observations" placeholder="Observaciones opcionales sobre la salida..." rows="3" maxlength="500" oninput="validateTextInput(this)"></textarea>
+<textarea id="observations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
 </div>
 <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
 </form>
@@ -1829,14 +1788,12 @@
 <button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
 <button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
 </div>
-
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
 <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 Búsqueda Manual de Estudiante</h3>
-<input class="search-box" id="studentSearch" placeholder="Buscar estudiante específico por nombre..." type="text" maxlength="100" oninput="validateSearchInput(this)"/>
+<input class="search-box" id="studentSearch" maxlength="100" oninput="validateSearchInput(this)" placeholder="Buscar estudiante específico por nombre..." type="text"/>
 <div id="searchResult"></div>
 </div>
-
 <!-- Sección de salidas confirmadas por el vigilante (inicialmente oculta) -->
 <div id="myConfirmedSection" style="display: none; margin-top: 20px;">
 <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">✅ Salidas Confirmadas por Mí Hoy</h3>
@@ -1846,26 +1803,23 @@
 </div>
 </div>
 </div>
-
 <!-- Lista de estudiantes con salidas pendientes -->
 <div id="pendingExitsSection">
 <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
 <div id="pendingExitsList">
-
 <!-- Ejemplo de tarjeta con foto -->
 <div class="verification-card">
-  <img src="https://via.placeholder.com/120" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
-  <h3>Nombre Estudiante</h3>
-  <div class="verification-card-content">
-    <div class="verification-card-info">
-      <p><strong>Grado:</strong> 10</p>
-      <p><strong>Motivo:</strong> Cita médica</p>
-      <p><strong>Hora:</strong> 10:30 am</p>
-    </div>
-  </div>
-  <button class="btn btn-success">✅ Confirmar Salida</button>
+<img alt="Foto estudiante" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;"/>
+<h3>Nombre Estudiante</h3>
+<div class="verification-card-content">
+<div class="verification-card-info">
+<p><strong>Grado:</strong> 10</p>
+<p><strong>Motivo:</strong> Cita médica</p>
+<p><strong>Hora:</strong> 10:30 am</p>
 </div>
-
+</div>
+<button class="btn btn-success">✅ Confirmar Salida</button>
+</div>
 <div class="card" style="text-align: center; padding: 30px;">
 <p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
 </div>
@@ -1978,11 +1932,11 @@
 <div class="grid">
 <div class="form-group">
 <label for="logDateFrom">Fecha Desde:</label>
-<input type="date" id="logDateFrom" />
+<input id="logDateFrom" type="date"/>
 </div>
 <div class="form-group">
 <label for="logDateTo">Fecha Hasta:</label>
-<input type="date" id="logDateTo" />
+<input id="logDateTo" type="date"/>
 </div>
 <div class="form-group">
 <label for="logType">Tipo de Acción:</label>
@@ -1995,36 +1949,12 @@
 <option value="delete">Eliminación</option>
 <option value="error">Error</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <div class="form-group">
 <label for="logUser">Usuario:</label>
 <select id="logUser">
 <option value="">Todos</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 </div>
 <button class="btn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
@@ -2053,19 +1983,17 @@
 <div class="dashboard-container">
 <!-- Filtros de Fecha para Dashboard Histórico -->
 <div class="dashboard-card">
-  <h3>📆 Filtro de Fechas Históricas</h3>
-  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-    <label>Desde: <input type="date" id="fechaDesde" /></label>
-    <label>Hasta: <input type="date" id="fechaHasta" /></label>
-    <button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
-  </div>
+<h3>📆 Filtro de Fechas Históricas</h3>
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<label>Desde: <input id="fechaDesde" type="date"/></label>
+<label>Hasta: <input id="fechaHasta" type="date"/></label>
+<button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
 </div>
-
+</div>
 <!-- Nuevos Gráficos Históricos -->
-<div class="dashboard-card"><h3>📊 Estado Histórico</h3><div class="chart-container"><canvas id="estadoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>🎓 Salidas por Grado Histórico</h3><div class="chart-container"><canvas id="gradoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>📝 Motivos de Salida Histórico</h3><div class="chart-container"><canvas id="motivoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>📈 Timeline Histórico</h3><div class="chart-container"><canvas id="timelineHistoricoChart"></canvas></div></div>
+
+
+
 
 <!-- Estadísticas Generales -->
 <div class="dashboard-card">
@@ -2089,7 +2017,6 @@
 </div>
 </div>
 </div>
-
 <!-- Gráfico de Estado de Salidas -->
 <div class="dashboard-card">
 <h3>🟢🔵 Estado de Salidas</h3>
@@ -2101,7 +2028,6 @@
 </div>
 </div>
 </div>
-
 <!-- Gráfico por Grados -->
 <div class="dashboard-card">
 <h3>🎓 Salidas por Grado</h3>
@@ -2112,7 +2038,6 @@
 </div>
 </div>
 </div>
-
 <!-- Actividad Reciente -->
 <div class="dashboard-card">
 <h3>⏰ Actividad Reciente</h3>
@@ -2120,7 +2045,6 @@
 <p style="text-align: center; color: #666; padding: 20px;">Cargando actividad reciente...</p>
 </div>
 </div>
-
 <!-- Gráfico de Motivos -->
 <div class="dashboard-card">
 <h3>📝 Motivos de Salida</h3>
@@ -2131,7 +2055,6 @@
 </div>
 </div>
 </div>
-
 <!-- Timeline de Salidas -->
 <div class="dashboard-card">
 <h3>⏱️ Timeline de Salidas Hoy</h3>
@@ -2143,23 +2066,20 @@
 </div>
 </div>
 </div>
-
-        
 <!-- Filtros de Fecha para Dashboard Histórico -->
 <div class="dashboard-card">
-  <h3>📆 Filtro de Fechas Históricas</h3>
-  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-    <label>Desde: <input type="date" id="fechaDesde" /></label>
-    <label>Hasta: <input type="date" id="fechaHasta" /></label>
-    <button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
-  </div>
+<h3>📆 Filtro de Fechas Históricas</h3>
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<label>Desde: <input id="fechaDesde" type="date"/></label>
+<label>Hasta: <input id="fechaHasta" type="date"/></label>
+<button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
 </div>
-
+</div>
 <!-- Nuevos Gráficos Históricos -->
-<div class="dashboard-card"><h3>📊 Estado Histórico</h3><div class="chart-container"><canvas id="estadoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>🎓 Salidas por Grado Histórico</h3><div class="chart-container"><canvas id="gradoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>📝 Motivos de Salida Histórico</h3><div class="chart-container"><canvas id="motivoHistoricoChart"></canvas></div></div>
-<div class="dashboard-card"><h3>📈 Timeline Histórico</h3><div class="chart-container"><canvas id="timelineHistoricoChart"></canvas></div></div>
+
+
+
+
 <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
@@ -2167,12 +2087,10 @@
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 </div>
-
 <div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
 <p style="margin: 0; color: #666;"><strong>Estado Chart.js:</strong> <span id="chartjsStatusText">Verificando...</span></p>
 </div>
 </div>
-
 <!-- Sección de Historial -->
 <div class="section" id="historySectionDiv">
 <h2>📋 Historial de Autorizaciones</h2>
@@ -2216,41 +2134,28 @@
 <h2>Agregar/Editar Estudiante</h2>
 <form id="studentForm">
 <div class="form-group">
-  <label for="uploadStudentPhoto">Subir Foto:</label>
-  <input type="file" id="uploadStudentPhoto" accept="image/jpeg,image/png,image/gif" onchange="handleImageUpload(event)" />
-  <img id="studentPhotoPreview" src="https://via.placeholder.com/120" alt="Foto del estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;">
-  <small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
+<label for="uploadStudentPhoto">Subir Foto:</label>
+<input accept="image/jpeg,image/png,image/gif" id="uploadStudentPhoto" onchange="handleImageUpload(event)" type="file"/>
+<img alt="Foto del estudiante" id="studentPhotoPreview" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;"/>
+<small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
 </div>
-
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="studentName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
+<input id="studentName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Apellidos: *</label>
-<input id="studentLastName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
+<input id="studentLastName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Documento:</label>
-<input id="studentDocument" type="text" maxlength="20" pattern="[0-9]{6,20}" oninput="validateDocumentInput(this)"/>
+<input id="studentDocument" maxlength="20" oninput="validateDocumentInput(this)" pattern="[0-9]{6,20}" type="text"/>
 </div>
 <div class="form-group">
 <label>Grado: *</label>
 <select id="studentGrade" required="">
 <option value="">Seleccionar grado...</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
@@ -2264,15 +2169,15 @@
 <form id="userForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="userName" required="" type="text" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" oninput="validateNameInput(this)"/>
+<input id="userName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Email: *</label>
-<input id="userEmail" required="" type="email" maxlength="100" oninput="validateEmailInput(this)"/>
+<input id="userEmail" maxlength="100" oninput="validateEmailInput(this)" required="" type="email"/>
 </div>
 <div class="form-group">
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
-<input id="userPassword" type="password" maxlength="50" onkeyup="checkPasswordStrength()" oninput="validatePasswordInput(this)"/>
+<input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
 </div>
 <div class="form-group">
@@ -2280,18 +2185,6 @@
 <select id="userRole" required="">
 <option value="">Seleccionar rol...</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('userModal')" type="button">Cancelar</button>
@@ -2305,11 +2198,11 @@
 <form id="reasonForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="reasonName" required="" type="text" maxlength="50" oninput="validateTextInput(this)"/>
+<input id="reasonName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Descripción:</label>
-<textarea id="reasonDescription" rows="3" maxlength="200" oninput="validateTextInput(this)"></textarea>
+<textarea id="reasonDescription" maxlength="200" oninput="validateTextInput(this)" rows="3"></textarea>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('reasonModal')" type="button">Cancelar</button>
@@ -2323,7 +2216,7 @@
 <form id="gradeForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="gradeName" required="" type="text" maxlength="20" oninput="validateTextInput(this)"/>
+<input id="gradeName" maxlength="20" oninput="validateTextInput(this)" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Nivel: *</label>
@@ -2332,18 +2225,6 @@
 <option value="Primaria">Primaria</option>
 <option value="Bachillerato">Bachillerato</option>
 </select>
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
@@ -7226,7 +7107,6 @@
         });
 
     </script>
-
 <script>
   function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -7248,7 +7128,6 @@
     preview.src = URL.createObjectURL(file);
   }
 </script>
-
 <script>
   async function cargarVerificaciones() {
     const contenedor = document.getElementById("verificaciones");
@@ -7289,15 +7168,13 @@
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
-
-
 <script>
 async function cargarDatosHistoricos() {
   const desde = document.getElementById('fechaDesde').value;
   const hasta = document.getElementById('fechaHasta').value;
 
   const { data, error } = await supabase
-    .from('from_salidas')
+    .from('autorizaciones_salida')
     .select('*')
     .gte('fecha_salida', desde)
     .lte('fecha_salida', hasta);
@@ -7345,15 +7222,13 @@ const timelineHistoricoChart = new Chart(document.getElementById('timelineHistor
   data: { labels: [], datasets: [{ label: 'Salidas', data: [], borderColor: '#34495e', tension: 0.3 }] }
 });
 </script>
-
-
 <script>
 async function cargarDatosHistoricos() {
   const desde = document.getElementById('fechaDesde').value;
   const hasta = document.getElementById('fechaHasta').value;
 
   const { data, error } = await supabase
-    .from('from_salidas')
+    .from('autorizaciones_salida')
     .select('*')
     .gte('fecha_salida', desde)
     .lte('fecha_salida', hasta);
@@ -7401,8 +7276,6 @@ const timelineHistoricoChart = new Chart(document.getElementById('timelineHistor
   data: { labels: [], datasets: [{ label: 'Salidas', data: [], borderColor: '#34495e', tension: 0.3 }] }
 });
 </script>
-
-
 <script>
 async function cargarDatosHistoricos() {
   const desde = document.getElementById('fechaDesde').value;
@@ -7462,6 +7335,12 @@ const motivoHistoricoChart = new Chart(document.getElementById('motivoHistoricoC
 const timelineHistoricoChart = new Chart(document.getElementById('timelineHistoricoChart'), {
   type: 'line',
   data: { labels: [], datasets: [{ label: 'Salidas', data: [], borderColor: '#34495e', tension: 0.3 }] }
+});
+</script>
+<div id="historicalWrapper" style="display:none;"><div class="dashboard-card"><h3>📊 Estado Histórico</h3><div class="chart-container"><canvas id="estadoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>🎓 Salidas por Grado Histórico</h3><div class="chart-container"><canvas id="gradoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📝 Motivos de Salida Histórico</h3><div class="chart-container"><canvas id="motivoHistoricoChart"></canvas></div></div><div class="dashboard-card"><h3>📈 Timeline Histórico</h3><div class="chart-container"><canvas id="timelineHistoricoChart"></canvas></div></div></div>
+<script>
+document.querySelector('#fechaDesde').addEventListener('change', function() {
+  document.getElementById('historicalWrapper').style.display = 'block';
 });
 </script>
 
