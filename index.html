@@ -53,6 +53,16 @@
             padding: 20px;
             text-align: center;
             position: relative;
+            display: flex;            /* align logo + text in one row */
+            align-items: center;
+            justify-content: center;
+            gap: 10px;                /* space between logo and text */
+}
+
+.header .logo {
+    height: 35px;             /* small logo */
+    width: auto;
+
         }
 
         .header h1 {
@@ -1732,6 +1742,8 @@
 <body>
 <div class="container">
 <div class="header">
+    <img src="https://colgemelli-my.sharepoint.com/:i:/g/personal/sistemas_colgemelli_edu_co/EQLRa_X_Yw5Ci-X1NKiZGoYBsDlFg4ZJ51fyeA464aAStw?e=4dBzBo"
+         alt="Logo Colegio Gemelli" class="logo">
 <h1> Colegio Gemelli</h1>
 <div class="subtitle">Sistema de Control de Salidas  - @j.montes86</div>
 <div class="connection-status" id="connectionStatus">
