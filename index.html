@@ -1495,6 +1495,24 @@
             }
         }
 
+        .verification-card.authorized-enfermeria {
+            border-left-color: #FF8552;
+            background: linear-gradient(135deg, #FF8552, #e06b3c);
+            color: white;
+        }
+
+        .verification-card.authorized-convivencia {
+            border-left-color: #E9D758;
+            background: linear-gradient(135deg, #E9D758, #d3c049);
+            color: #333;
+        }
+
+        .verification-card.authorized-formativa {
+            border-left-color: #E6E6E6;
+            background: linear-gradient(135deg, #E6E6E6, #bfbfbf);
+            color: #333;
+        }
+
         .verification-card.authorized {
             border-left-color: #2ecc71;
             background: linear-gradient(135deg, #2ecc71, #27ae60);
@@ -3243,7 +3261,7 @@
                         .in('id', reasonIds),
                     supabase
                         .from('usuarios')
-                        .select('id, nombre')
+                        .select('id, nombre, email')
                         .in('id', userIds)
                 ]);
 
@@ -5329,7 +5347,7 @@
 
                 const [reasonsResult, usersResult] = await Promise.all([
                     supabase.from('motivos').select('id, nombre').in('id', reasonIds),
-                    supabase.from('usuarios').select('id, nombre').in('id', userIds)
+                    supabase.from('usuarios').select('id, nombre, email').in('id', userIds)
                 ]);
 
                 const studentMap = {};
@@ -5382,6 +5400,14 @@
                         `;
                     } else {
                         cardClass = 'authorized';
+                        const authEmail = (user?.email || '').toLowerCase();
+                        if (authEmail === 'enfermeria@colgemelli.edu.co') {
+                            cardClass = 'authorized-enfermeria';
+                        } else if (authEmail === 'convivencia@colgemelli.edu.co') {
+                            cardClass = 'authorized-convivencia';
+                        } else if (authEmail === 'gformativa@colgemelli.edu.co') {
+                            cardClass = 'authorized-formativa';
+                        }
                         titleText = '✅ AUTORIZADO PARA SALIR';
                         footerHtml = `
                             <div class="verification-card-footer">
@@ -5538,8 +5564,18 @@
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
 
+                     let cardClass = 'authorized';
+                    const authEmail = (user?.email || '').toLowerCase();
+                    if (authEmail === 'enfermeria@colgemelli.edu.co') {
+                        cardClass = 'authorized-enfermeria';
+                    } else if (authEmail === 'convivencia@colgemelli.edu.co') {
+                        cardClass = 'authorized-convivencia';
+                    } else if (authEmail === 'gformativa@colgemelli.edu.co') {
+                        cardClass = 'authorized-formativa';
+                    }
+
                     html += `
-                        <div class="verification-card authorized">
+                        <div class="verification-card ${cardClass}">
                             <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
                             <img src="${student?.foto_url || 'https://via.placeholder.com/120'}" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
                             
