@@ -2057,7 +2057,7 @@
 <!-- Filtros de Fecha para Dashboard Histórico -->
 <div class="dashboard-card">
 <h3>📆 Filtro de Fechas Históricas</h3>
-<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<div style="display: flex; flex-direction: column; gap: 10px; flex-wrap: wrap;">
 <label>Desde: <input id="fechaDesde" type="date"/></label>
 <label>Hasta: <input id="fechaHasta" type="date"/></label>
 <button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
@@ -7345,7 +7345,6 @@ function checkMostrarHistorico() {
 document.getElementById('fechaDesde').addEventListener('change', checkMostrarHistorico);
 document.getElementById('fechaHasta').addEventListener('change', checkMostrarHistorico);
 </script>
-
 <script>
 function actualizarVisibilidadHistorico() {
   const seccionDashboard = document.getElementById('dashboardSectionDiv');
@@ -7362,6 +7361,5 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
   });
 });
 </script>
-
 </body>
 </html>
