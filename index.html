@@ -2064,14 +2064,7 @@
 </div>
 </div>
 <!-- Filtros de Fecha para Dashboard Histórico -->
-<div class="dashboard-card">
-<h3>📆 Filtro de Fechas Históricas</h3>
-<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%;">
-<label>Desde: <input id="fechaDesde" type="date"/></label>
-<label>Hasta: <input id="fechaHasta" type="date"/></label>
-<button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
-</div>
-</div>
+
 <!-- Nuevos Gráficos Históricos -->
 <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
@@ -7161,10 +7154,6 @@
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
-
-
-
-
 <script>
 document.querySelector('#fechaDesde').addEventListener('change', function() {
   document.getElementById('historicalWrapper').style.display = 'flex';
@@ -7197,6 +7186,5 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
   });
 });
 </script>
-
 </body>
 </html>
