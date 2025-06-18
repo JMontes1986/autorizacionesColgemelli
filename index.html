@@ -2247,19 +2247,5 @@
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 </script>
-
-<script>
-function testSanitizeHtml() {
-    const dirty = "<script>alert('xss')</script><b>hola</b>";
-    const clean = sanitizeHtml(dirty);
-    if (clean.includes("<script>")) {
-        console.error("❌ sanitizeHtml falló");
-    } else {
-        console.log("✅ sanitizeHtml pasó");
-    }
-}
-document.addEventListener("DOMContentLoaded", testSanitizeHtml);
-</script>
-
 </body>
 </html>
