@@ -14,7 +14,7 @@
 <meta content="noindex, nofollow" name="robots"/>
 <title>Sistema de Salidas - Colegio Gemelli</title>
 <!-- Supabase CDN para GitHub -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <!-- hCaptcha -->
 <script async="" defer="" src="https://hcaptcha.com/1/api.js"></script>
 <!-- CryptoJS para cifrado -->
@@ -7056,11 +7056,9 @@
             
             window.addEventListener('orientationchange', handleOrientationChange);
             
-            // Esperar un momento para que todas las librerías terminen de cargar
-            setTimeout(() => {
-                console.log('🔗 Iniciando conexión a Supabase...');
-                initSupabase();
-            }, 1000);
+            // Iniciar conexión a Supabase en cuanto las librerías estén listas
+            console.log('🔗 Iniciando conexión a Supabase...');
+            initSupabase();
         });
 
         // Limpiar recursos al cerrar la página
