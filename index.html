@@ -2134,7 +2134,6 @@
 <button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
-<button class="btn" onclick="forceReloadCharts()" style="font-size: 12px; background: #e67e22;">🔄 Recargar Gráficos</button>
 </div>
 
 <div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
@@ -3696,6 +3695,10 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        function showDetailedView() {
+            window.open('diagnostico.html', '_blank');
         }
 
         async function forceReloadCharts() {
