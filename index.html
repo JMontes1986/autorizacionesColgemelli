@@ -3339,7 +3339,7 @@
                 const [studentsResult, reasonsResult, usersResult] = await Promise.all([
                     supabase
                         .from('estudiantes')
-                        .select('id, nombre, apellidos, grado:grados(nombre)')
+                        .select('id, nombre, apellidos, grado:grados(nombre), foto_url')
                         .in('id', studentIds),
                     supabase
                         .from('motivos')
@@ -5639,6 +5639,7 @@
                     html += `
                         <div class="verification-card authorized">
                             <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
+                            <img src="${student?.foto_url || 'https://via.placeholder.com/120'}" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
                             
                             <div class="verification-card-content">
                                 <div class="verification-card-info">
@@ -7223,7 +7224,7 @@
       .insert([
         {
           nombre: name,
-          apellidos: lastName,
+          apellido: lastName,
           documento: documentId,
           grado: grade,
           foto_base64: photoBase64
@@ -7312,7 +7313,7 @@
       .from('estudiantes')
       .insert([ {
         nombre: name,
-        apellidos: lastName,
+        apellido: lastName,
         documento: documentId,
         grado: grade,
         foto_url: photoUrl
@@ -7328,6 +7329,28 @@
     }
   });
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <script>
   async function cargarVerificaciones() {
