@@ -1747,7 +1747,7 @@
 <div class="dashboard" id="dashboard">
 <div class="nav-buttons" id="navButtons">
 <!-- Botones se cargarán dinámicamente según el rol -->
-</div>
+<button class="btn btn-primary" id="btnControlSalidas">📋 Control de Salidas</button></div>
 <!-- Sección para Autorizar Salidas -->
 <div class="section" id="authorizeSectionDiv">
 <h2>✅ Autorizar Salida de Estudiante</h2>
@@ -7183,7 +7183,6 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
   });
 });
 </script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const user = localStorage.getItem('correo');
@@ -7210,6 +7209,46 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   } else {
     if (btnVerificar) btnVerificar.style.display = 'none';
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const user = localStorage.getItem('correo');
+  const btnVerificar = document.getElementById('btnVerificarSalida');
+  const btnControl = document.getElementById('btnControlSalidas');
+  const seccionVerificar = document.getElementById('verificarSectionDiv');
+  const seccionControl = document.getElementById('controlSectionDiv');
+
+  const permitidos = [
+    'convivencia@colgemelli.edu.co',
+    'vigilancia@colgemelli.edu.co',
+    'sistemas@colgemelli.edu.co'
+  ];
+
+  if (permitidos.includes(user)) {
+    if (btnVerificar) btnVerificar.style.display = 'inline-block';
+
+    if (user === 'convivencia@colgemelli.edu.co') {
+      if (btnControl) btnControl.style.display = 'inline-block';
+      const observer1 = new MutationObserver(() => {
+        document.querySelectorAll('.btn-autorizacion').forEach(btn => btn.style.display = 'none');
+      });
+      if (seccionVerificar) {
+        observer1.observe(seccionVerificar, { childList: true, subtree: true });
+      }
+      const observer2 = new MutationObserver(() => {
+        document.querySelectorAll('.btn-editar, .btn-eliminar').forEach(btn => btn.style.display = 'none');
+      });
+      if (seccionControl) {
+        observer2.observe(seccionControl, { childList: true, subtree: true });
+      }
+    } else {
+      if (btnControl) btnControl.style.display = 'inline-block';
+    }
+  } else {
+    if (btnVerificar) btnVerificar.style.display = 'none';
+    if (btnControl) btnControl.style.display = 'none';
   }
 });
 </script>
