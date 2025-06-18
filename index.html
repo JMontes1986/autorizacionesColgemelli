@@ -2057,7 +2057,7 @@
 <!-- Filtros de Fecha para Dashboard Histórico -->
 <div class="dashboard-card">
 <h3>📆 Filtro de Fechas Históricas</h3>
-<div style="display: flex; flex-direction: column; gap: 10px; flex-wrap: wrap;">
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; width: 100%;">
 <label>Desde: <input id="fechaDesde" type="date"/></label>
 <label>Hasta: <input id="fechaHasta" type="date"/></label>
 <button class="btn btn-success" onclick="cargarDatosHistoricos()">🔍 Filtrar</button>
@@ -7361,5 +7361,53 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
   });
 });
 </script>
+
+<script>
+function mostrarMensajeSinDatos(chart, contenedorId, mensaje) {
+  const ctx = document.getElementById(contenedorId);
+  if (ctx && chart.data.labels.length === 0) {
+    ctx.parentElement.innerHTML = '<div style="padding: 20px; color: #666; text-align: center;">' + mensaje + '</div>';
+  }
+}
+
+async function cargarDatosHistoricos() {
+  const desde = document.getElementById('fechaDesde').value;
+  const hasta = document.getElementById('fechaHasta').value;
+
+  const { data, error } = await supabase
+    .from('autorizaciones_salida')
+    .select('*')
+    .gte('fecha_salida', desde)
+    .lte('fecha_salida', hasta);
+
+  if (error) {
+    alert('Error al cargar datos históricos: ' + error.message);
+    return;
+  }
+
+  const porEstado = {}, porGrado = {}, porMotivo = {}, porFecha = {};
+
+  data.forEach(row => {
+    const estado = row.autorizada ? 'Confirmada' : 'Pendiente';
+    porEstado[estado] = (porEstado[estado] || 0) + 1;
+    const grado = row.grado || 'Sin grado';
+    const motivo = row.motivo_id ? 'Motivo ' + row.motivo_id : 'Sin motivo';
+    porGrado[grado] = (porGrado[grado] || 0) + 1;
+    porMotivo[motivo] = (porMotivo[motivo] || 0) + 1;
+    porFecha[row.fecha_salida] = (porFecha[row.fecha_salida] || 0) + 1;
+  });
+
+  actualizarGrafico(estadoHistoricoChart, Object.keys(porEstado), Object.values(porEstado));
+  actualizarGrafico(gradoHistoricoChart, Object.keys(porGrado), Object.values(porGrado));
+  actualizarGrafico(motivoHistoricoChart, Object.keys(porMotivo), Object.values(porMotivo));
+  actualizarGrafico(timelineHistoricoChart, Object.keys(porFecha), Object.values(porFecha));
+
+  mostrarMensajeSinDatos(estadoHistoricoChart, "estadoHistoricoChart", "📭 No hay salidas en este rango.");
+  mostrarMensajeSinDatos(gradoHistoricoChart, "gradoHistoricoChart", "📭 No hay registros por grado.");
+  mostrarMensajeSinDatos(motivoHistoricoChart, "motivoHistoricoChart", "📭 No hay motivos registrados.");
+  mostrarMensajeSinDatos(timelineHistoricoChart, "timelineHistoricoChart", "📭 No hay datos para el timeline.");
+}
+</script>
+
 </body>
 </html>
