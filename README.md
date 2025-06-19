@@ -146,8 +146,3 @@ flowchart TD
 ## 10. Contacto y Soporte
 
 Para soporte técnico o solicitudes de mejora, contactar al equipo de desarrollo de TI del Colegio Gemelli.
-
----
-
-Este manual sirve como referencia para usuarios técnicos y funcionales que deseen comprender, mantener o escalar la aplicación.
-
