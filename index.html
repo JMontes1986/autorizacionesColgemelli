@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- HEADERS DE SEGURIDAD MEJORADOS -->
-<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;" http-equiv="Content-Security-Policy"/>
+<meta content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://hcaptcha.com; style-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: https://*.sharepoint.com https://*.1drv.ms; connect-src https://*.supabase.co https://hcaptcha.com; frame-src https://hcaptcha.com;" http-equiv="Content-Security-Policy"/>
 <meta content="DENY" http-equiv="X-Frame-Options"/>
 <meta content="nosniff" http-equiv="X-Content-Type-Options"/>
 <meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
@@ -1813,8 +1813,8 @@
 </div>
 <div class="form-group">
 <label for="exitDate">4. Fecha de Salida: *</label>
-<input id="exitDate" required="" type="date">
-</input></div>
+<input id="exitDate" required="" type="date"/>
+</div>
 <div class="form-group">
 <label for="exitTime">5. Hora de Salida: *</label>
 <input id="exitTime" required="" type="time"/>
@@ -1856,7 +1856,7 @@
 <div id="pendingExitsList">
 <!-- Ejemplo de tarjeta con foto -->
 <div class="verification-card">
-<img alt="Foto estudiante" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
+<img alt="Foto estudiante" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;"/>
 <h3>Nombre Estudiante</h3>
 <div class="verification-card-content">
 <div class="verification-card-info">
@@ -1866,7 +1866,7 @@
 </div>
 </div>
 <button class="btn btn-success">✅ Confirmar Salida</button>
-</img></div>
+</div>
 <div class="card" style="text-align: center; padding: 30px;">
 <p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
 </div>
@@ -2222,8 +2222,8 @@
 <form id="reasonForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="reasonName" maxlength="50" oninput="validateTextInput(this)" required="" type="text">
-</input></div>
+<input id="reasonName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
 <div class="form-group">
 <label>Descripción:</label>
 <textarea id="reasonDescription" maxlength="200" oninput="validateTextInput(this)" rows="3"></textarea>
