@@ -8,6 +8,16 @@ Se permite `blob:` en `default-src` y `connect-src` para habilitar descargas de 
 generadas con `URL.createObjectURL()`.
 Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar fotos almacenadas en OneDrive.
 
+# autorizacionesColgemelli
+Sistema de control de salidas estudiantiles - Colegio Gemelli
+
+## Seguridad
+
+La política de seguridad se definió con el encabezado estándar `Content-Security-Policy`.
+Se permite `blob:` en `default-src` y `connect-src` para habilitar descargas de CSV
+generadas con `URL.createObjectURL()`.
+Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar fotos almacenadas en OneDrive.
+
 # Manual de Usuario y Referencia Técnica: Sistema Web de Autorización de Salidas - Colegio Gemelli
 
 ## 1. Descripción General
@@ -54,8 +64,8 @@ autorizacionesColgemelli/
 ### 4.2 Configuración de Supabase
 
 ```js
-const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
-const SUPABASE_ANON_KEY = '...';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
         persistSession: false,
