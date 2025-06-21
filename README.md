@@ -156,3 +156,28 @@ flowchart TD
 ## 10. Contacto y Soporte
 
 Para soporte técnico o solicitudes de mejora, contactar al equipo de desarrollo de TI del Colegio Gemelli.
+
+## 11. Políticas de Supabase y RLS
+
+Para impedir que la clave pública anónima acceda a tablas sensibles, habilita Row Level Security (RLS) y define políticas que solo permitan operaciones a usuarios autenticados.
+
+1. Activa RLS en `usuarios`:
+   ```sql
+   alter table public.usuarios enable row level security;
+   ```
+2. Otorga permisos solo a roles autenticados (cualquier rol distinto de `anon`):
+   ```sql
+   create policy "usuarios_read_authenticated" on public.usuarios
+     for select
+     using (auth.role() <> 'anon');
+
+   create policy "usuarios_write_authenticated" on public.usuarios
+     for insert, update
+     with check (auth.role() <> 'anon');
+
+   create policy "usuarios_delete_authenticated" on public.usuarios
+     for delete
+     using (auth.role() <> 'anon');
+   ```
+
+El archivo [`supabase/policies.sql`](supabase/policies.sql) contiene estas instrucciones para aplicarlas desde la CLI o la consola SQL de Supabase.
