@@ -90,7 +90,7 @@ supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 ### 4.5 Seguridad
 
 - Sanitización de HTML para evitar XSS.
-- Rate limiting por cliente.
+- Rate limiting centralizado en Supabase mediante la tabla `login_attempts`.
 - Encabezados CSP definidos en el HTML.
 
 ---
