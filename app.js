@@ -1626,12 +1626,14 @@
         }
         
         // Configuración de Supabase
-        const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
+        // Las credenciales se obtienen desde variables de entorno
+        const SUPABASE_URL = window.env.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.env.SUPABASE_ANON_KEY;
         const STORAGE_BUCKET = 'autorizaciones';
 
         // Configuración de cifrado
-        const ENCRYPTION_KEY = 'GemellisecureSystem2024@#$%^&*()';
+       // Llave de cifrado tomada de variables de entorno
+        const ENCRYPTION_KEY = window.env.ENCRYPTION_KEY;
         
         let supabase;
         let currentUser = null;
