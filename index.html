@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- HEADERS DE SEGURIDAD MEJORADOS -->
-<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;" http-equiv="Content-Security-Policy"/>
+<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://YOUR_SUPABASE_URL https://hcaptcha.com https://*.hcaptcha.com https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://YOUR_SUPABASE_URL https://hcaptcha.com https://*.hcaptcha.com;" http-equiv="Content-Security-Policy"/>
 <meta content="DENY" http-equiv="X-Frame-Options"/>
 <meta content="nosniff" http-equiv="X-Content-Type-Options"/>
 <meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
@@ -1742,7 +1742,7 @@
 <body>
 <div class="container">
 <div class="header">
-<img alt="Logo Colegio Gemelli" class="logo" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg"/>
+<img alt="Logo Colegio Gemelli" class="logo" src="path/to/logo.png"/>
 <h1> Colegio Gemelli Control de Salidas</h1>
 <div class="subtitle">@j.montes86</div>
 <div class="connection-status" id="connectionStatus">
@@ -3884,9 +3884,9 @@
         }
         
         // Configuración de Supabase
-        const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
-        const STORAGE_BUCKET = 'autorizaciones';
+        // Las credenciales se obtienen desde variables de entorno
+        const SUPABASE_URL = window.env.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.env.SUPABASE_ANON_KEY;
         
         let supabase;
         let currentUser = null;
