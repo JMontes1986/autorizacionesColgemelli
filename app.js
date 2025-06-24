@@ -1,4 +1,4 @@
-// ========================================
+        // ========================================
         // VERIFICACIÓN Y CARGA DE CHART.JS
         // ========================================
 
@@ -1629,9 +1629,6 @@
         const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
         const STORAGE_BUCKET = 'autorizaciones';
-
-        // Configuración de cifrado
-        const ENCRYPTION_KEY = 'GemellisecureSystem2024@#$%^&*()';
         
         let supabase;
         let currentUser = null;
@@ -4896,6 +4893,8 @@
             }
         });
 
+    </script>
+<script>
   function handleImageUpload(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('studentPhotoPreview');
@@ -4915,6 +4914,8 @@
 
     preview.src = URL.createObjectURL(file);
   }
+</script>
+<script>
   async function cargarVerificaciones() {
     const contenedor = document.getElementById("verificaciones");
     contenedor.innerHTML = "";
@@ -4953,9 +4954,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
+</script>
+<script>
 document.querySelector('#fechaDesde').addEventListener('change', function() {
   document.getElementById('historicalWrapper').style.display = 'flex';
 });
+</script>
+<script>
 function checkMostrarHistorico() {
   const desde = document.getElementById('fechaDesde').value;
   const hasta = document.getElementById('fechaHasta').value;
@@ -4965,6 +4970,8 @@ function checkMostrarHistorico() {
 }
 document.getElementById('fechaDesde').addEventListener('change', checkMostrarHistorico);
 document.getElementById('fechaHasta').addEventListener('change', checkMostrarHistorico);
+</script>
+<script>
 function actualizarVisibilidadHistorico() {
   const seccionDashboard = document.getElementById('dashboardSectionDiv');
   const wrapperHistorico = document.getElementById('historicalWrapper');
@@ -4979,6 +4986,8 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
     setTimeout(actualizarVisibilidadHistorico, 100); // espera pequeña para que cambie la clase
   });
 });
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
   const user = localStorage.getItem('correo');
   const btnVerificar = document.getElementById('btnVerificarSalida');
@@ -5006,6 +5015,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnVerificar) btnVerificar.style.display = 'none';
   }
 });
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
   const user = localStorage.getItem('correo');
   const btnVerificar = document.getElementById('btnVerificarSalida');
@@ -5044,295 +5055,20 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnControl) btnControl.style.display = 'none';
   }
 });
-        // Verificar si Supabase está disponible y cargar alternativa si no
-        if (typeof window.supabase === 'undefined') {
-            console.log('⚠️ Supabase no cargó desde CDN principal, intentando alternativa...');
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js';
-            script.onload = function() {
-                console.log('✅ Supabase cargado desde CDN alternativa');
-                initApp();
-            };
-            script.onerror = function() {
-                console.error('❌ Error cargando Supabase desde todas las fuentes');
-                document.getElementById('connectionStatus').innerHTML = '❌ Error: No se pudo cargar la librería de Supabase';
-            };
-            document.head.appendChild(script);
-        } else {
-            console.log('✅ Supabase cargado correctamente');
-            initApp();
-        }
-        // Configuración de Supabase
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const fechaSalida = document.getElementById("fechaSalida");
+  if (fechaSalida) {
+    fechaSalida.addEventListener("change", function () {
+      const selected = new Date(this.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-        // Función para escribir en el log
-        function log(message, type = 'info') {
-            const logArea = document.getElementById('logArea');
-            const timestamp = new Date().toLocaleTimeString();
-            const colors = {
-                'success': '#00ff00',
-                'error': '#ff0000',
-                'warning': '#ffaa00',
-                'info': '#00aaff'
-            };
-            
-            logArea.innerHTML += `<span style="color: ${colors[type]}">[${timestamp}] ${message}</span>\n`;
-            logArea.scrollTop = logArea.scrollHeight;
-        }
-
-        function clearLog() {
-            document.getElementById('logArea').innerHTML = 'Log limpiado...\n';
-        }
-
-        function updateStatus(message, type) {
-            const statusDiv = document.getElementById('connectionStatus');
-            statusDiv.className = `status ${type}`;
-            statusDiv.innerHTML = message;
-        }
-
-        // Paso 1: Verificar configuración
-        function step1() {
-            log('=== PASO 1: Verificando URLs de Supabase ===');
-            log(`URL: ${SUPABASE_URL}`);
-            log(`API Key length: ${SUPABASE_ANON_KEY.length} caracteres`);
-            log(`API Key empieza con: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
-            
-            if (SUPABASE_URL.includes('supabase.co') && SUPABASE_ANON_KEY.length > 100) {
-                log('✅ URLs parecen correctas', 'success');
-                updateStatus('✅ URLs verificadas', 'success');
-            } else {
-                log('❌ URLs parecen incorrectas', 'error');
-                updateStatus('❌ Error en URLs', 'error');
-            }
-        }
-
-        // Paso 2: Probar conexión básica
-        async function step2() {
-            log('=== PASO 2: Probando conexión básica ===');
-            
-            // Verificar si Supabase está disponible
-            log(`window.supabase existe: ${typeof window.supabase !== 'undefined'}`);
-            log(`Objeto window.supabase: ${window.supabase ? 'SÍ' : 'NO'}`);
-            
-            if (typeof window.supabase === 'undefined') {
-                log('❌ window.supabase no está definido', 'error');
-                log('💡 Intentando cargar manualmente...', 'warning');
-                
-                // Intentar cargar manualmente
-                try {
-                    const script = document.createElement('script');
-                    script.src = 'https://unpkg.com/@supabase/supabase-js@2';
-                    document.head.appendChild(script);
-                    
-                    await new Promise((resolve, reject) => {
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        setTimeout(reject, 5000); // timeout de 5 segundos
-                    });
-                    
-                    log('✅ Librería cargada manualmente', 'success');
-                } catch (error) {
-                    log('❌ No se pudo cargar la librería manualmente', 'error');
-                    updateStatus('❌ Error cargando librería Supabase', 'error');
-                    return;
-                }
-            }
-            
-            try {
-                // Verificar que createClient existe
-                if (typeof window.supabase.createClient !== 'function') {
-                    log('❌ createClient no es una función', 'error');
-                    log(`Tipo de createClient: ${typeof window.supabase.createClient}`, 'error');
-                    updateStatus('❌ Error en librería Supabase', 'error');
-                    return;
-                }
-                
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                log('✅ Cliente Supabase creado', 'success');
-                
-                // Probar una consulta muy simple
-                const { data, error } = await supabase
-                    .from('roles')
-                    .select('count');
-                
-                if (error) {
-                    log(`❌ Error en consulta: ${error.message}`, 'error');
-                    log(`Código de error: ${error.code}`, 'error');
-                    log(`Detalles: ${JSON.stringify(error, null, 2)}`, 'error');
-                    updateStatus('❌ Error de conexión a BD', 'error');
-                } else {
-                    log('✅ Conexión establecida correctamente', 'success');
-                    updateStatus('✅ Conectado a Supabase', 'success');
-                }
-                
-            } catch (error) {
-                log(`❌ Error de conexión: ${error.message}`, 'error');
-                log(`Stack trace: ${error.stack}`, 'error');
-                updateStatus('❌ Error de conexión', 'error');
-            }
-        }
-
-        // Paso 3: Verificar tablas
-        async function step3() {
-            log('=== PASO 3: Verificando tablas ===');
-            
-            const tables = ['roles', 'usuarios', 'grados', 'estudiantes', 'motivos', 'autorizaciones_salida'];
-            
-            for (const table of tables) {
-                try {
-                    const { data, error } = await supabase
-                        .from(table)
-                        .select('*')
-                        .limit(1);
-                    
-                    if (error) {
-                        log(`❌ Tabla '${table}': ${error.message}`, 'error');
-                    } else {
-                        log(`✅ Tabla '${table}': OK`, 'success');
-                    }
-                } catch (error) {
-                    log(`❌ Error al verificar tabla '${table}': ${error.message}`, 'error');
-                }
-            }
-        }
-
-        // Paso 4: Verificar usuarios
-        async function step4() {
-            log('=== PASO 4: Verificando usuarios ===');
-            
-            try {
-                const { data: users, error } = await supabase
-                    .from('usuarios')
-                    .select('id, nombre, email, rol_id, activo');
-                
-                if (error) {
-                    log(`❌ Error al buscar usuarios: ${error.message}`, 'error');
-                } else {
-                    log(`✅ Usuarios encontrados: ${users.length}`, 'success');
-                    users.forEach(user => {
-                        log(`   - ${user.nombre} (${user.email}) - Rol: ${user.rol_id} - Activo: ${user.activo}`, 'info');
-                    });
-                }
-            } catch (error) {
-                log(`❌ Error al verificar usuarios: ${error.message}`, 'error');
-            }
-        }
-
-        // Paso 5: Probar login específico
-        async function step5() {
-            log('=== PASO 5: Probando login específico ===');
-            
-            try {
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('email', 'sistemas@colgemelli.edu.co')
-                    .single();
-                
-                if (error) {
-                    log(`❌ Error al buscar usuario: ${error.message}`, 'error');
-                    if (error.code === 'PGRST116') {
-                        log('   💡 Este error significa que no se encontró el usuario', 'warning');
-                    }
-                } else {
-                    log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
-                    log(`   Email: ${user.email}`, 'info');
-                    log(`   Password hash: ${user.password_hash}`, 'info');
-                    log(`   Rol ID: ${user.rol_id}`, 'info');
-                    log(`   Activo: ${user.activo}`, 'info');
-                }
-            } catch (error) {
-                log(`❌ Error en paso 5: ${error.message}`, 'error');
-            }
-        }
-
-        // Función de login de prueba
-        async function testLogin() {
-            const email = document.getElementById('testEmail').value;
-            const password = document.getElementById('testPassword').value;
-            
-            log('=== PRUEBA DE LOGIN ===');
-            log(`Intentando login con: ${email}`);
-            
-            try {
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .eq('email', email)
-                    .eq('activo', true)
-                    .single();
-
-                if (error) {
-                    log(`❌ Error en login: ${error.message}`, 'error');
-                    log(`Código: ${error.code}`, 'error');
-                } else if (!user) {
-                    log('❌ Usuario no encontrado', 'error');
-                } else {
-                    log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
-                    
-                    if (user.password_hash === password) {
-                        log('✅ Contraseña correcta', 'success');
-                        log(`✅ LOGIN EXITOSO! Rol: ${user.rol.nombre}`, 'success');
-                        updateStatus('✅ Login exitoso', 'success');
-                    } else {
-                        log(`❌ Contraseña incorrecta`, 'error');
-                        log(`   Esperada: '${password}'`, 'error');
-                        log(`   En BD: '${user.password_hash}'`, 'error');
-                    }
-                }
-            } catch (error) {
-                log(`❌ Error general en login: ${error.message}`, 'error');
-            }
-        }
-
-        // Ejecutar diagnóstico automático al cargar
-        function initApp() {
-            log('🚀 Sistema de diagnóstico iniciado');
-            
-            // Información del sistema
-            document.getElementById('systemInfo').innerHTML = `
-                <div class="info status">
-                    <strong>Navegador:</strong> ${navigator.userAgent}<br>
-                    <strong>URL actual:</strong> ${window.location.href}<br>
-                    <strong>Fecha/Hora:</strong> ${new Date().toLocaleString()}<br>
-                    <strong>Supabase URL:</strong> ${SUPABASE_URL}<br>
-                    <strong>Supabase disponible:</strong> ${typeof window.supabase !== 'undefined' ? 'SÍ' : 'NO'}
-                </div>
-            `;
-            
-            // Ejecutar pasos automáticamente solo si Supabase está disponible
-            if (typeof window.supabase !== 'undefined') {
-                setTimeout(() => step1(), 1000);
-                setTimeout(() => step2(), 2000);
-                setTimeout(() => step3(), 4000);
-                setTimeout(() => step4(), 6000);
-            } else {
-                log('❌ Supabase no está disponible, no se pueden ejecutar los pasos automáticos', 'error');
-                updateStatus('❌ Librería Supabase no disponible', 'error');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Esperar un momento para que las librerías se carguen
-            setTimeout(() => {
-                if (typeof window.supabase !== 'undefined') {
-                    initApp();
-                } else {
-                    // Intentar cargar una vez más
-                    log('⚠️ Intentando cargar Supabase nuevamente...', 'warning');
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.skypack.dev/@supabase/supabase-js@2';
-                    script.onload = () => {
-                        log('✅ Supabase cargado desde Skypack', 'success');
-                        initApp();
-                    };
-                    script.onerror = () => {
-                        log('❌ Error cargando desde todas las fuentes', 'error');
-                        updateStatus('❌ No se pudo cargar Supabase', 'error');
-                    };
-                    document.head.appendChild(script);
-                }
-            }, 1000);
-        });
+      if (selected < today) {
+        alert("La fecha de salida no puede ser en el pasado");
+        this.value = "";
+      }
+    });
+  }
+});
