@@ -91,11 +91,16 @@
             padding: 30px;
         }
 
-        .login-form {
+.login-form {
             max-width: 400px;
             margin: 0 auto;
         }
 
+         .login-messages {
+            min-height: 50px;
+        }
+
+        
         .form-group {
             margin-bottom: 20px;
         }
