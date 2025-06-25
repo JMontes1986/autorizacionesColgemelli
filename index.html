@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- HEADERS DE SEGURIDAD MEJORADOS -->
-<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co https://hcaptcha.com https://*.hcaptcha.com;" http-equiv="Content-Security-Policy"/>
+<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; frame-src 'none'; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co;" http-equiv="Content-Security-Policy"/>
 <meta content="DENY" http-equiv="X-Frame-Options"/>
 <meta content="nosniff" http-equiv="X-Content-Type-Options"/>
 <meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
@@ -15,8 +15,6 @@
 <title>Sistema de Salidas - Colegio Gemelli</title>
 <!-- Supabase CDN para GitHub -->
 <script defer="" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- hCaptcha -->
-<script async="" defer="" src="https://hcaptcha.com/1/api.js"></script>
 <!-- CryptoJS para cifrado -->
 <script defer src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 <!-- Chart.js versión estable -->
@@ -59,9 +57,10 @@
 </div>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
 </div>
-<!-- CAPTCHA -->
+<!-- Desafío Aritmético -->
 <div class="captcha-container">
-<div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001"></div>
+<label id="captchaQuestion">Pregunta</label>
+<input id="captchaAnswer" type="number" inputmode="numeric" placeholder="Respuesta" />
 </div>
 <button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
