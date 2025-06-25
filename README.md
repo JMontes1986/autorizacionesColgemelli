@@ -40,7 +40,7 @@ El archivo `styles.css` contiene la hoja de estilos que define la apariencia de 
 - **HTML, CSS y JavaScript** para la interfaz y lógica.
 - **Supabase** como backend (Base de datos, autenticación y almacenamiento).
 - **Chart.js** para visualización de datos.
-- **hCaptcha** como protección antispam.
+- **Desafío aritmético** para evitar bots.
 - **CryptoJS** para manejo de contraseñas.
 
 ## Variables de Entorno Requeridas
@@ -74,7 +74,7 @@ Para preparar el entorno local sigue los pasos:
 ### 4.1 Inicio de Sesión
 
 - Ubicado en el elemento `#loginSection`.
-- Utiliza hCaptcha y validaciones básicas.
+- Presenta un pequeño desafío aritmético y validaciones básicas.
 - Llama a la función `login()` para validar credenciales con Supabase.
 - Registra eventos en `audit_logs` con `logSecurityEvent()`.
 
@@ -144,7 +144,7 @@ Cada función emplea llamadas a Supabase y muestra resultados en un log visible.
 
 - **Supabase**: Provee almacenamiento, autenticación y consultas.
 - **Chart.js**: Visualiza gráficos. Compatible con fallback si no se carga correctamente.
-- **Autenticación y Seguridad**: Protegida por hCaptcha y CryptoJS.
+- **Autenticación y Seguridad**: Protegida por un desafío aritmético y CryptoJS.
 - **Auditoría**: Registro de eventos importantes como inicios de sesión o fallos.
 
 ---
@@ -153,8 +153,8 @@ Cada función emplea llamadas a Supabase y muestra resultados en un log visible.
 
 ```mermaid
 flowchart TD
-    A[Usuario abre app] --> B[Ingresa login + hCaptcha]
-    B --> C[Validación de datos + hCaptcha]
+    A[Usuario abre app] --> B[Ingresa login + desafío]
+    B --> C[Validación de datos y desafío]
     C -->|Correcto| D[Autenticación con Supabase]
     D -->|Éxito| E[Mostrar Dashboard]
     D -->|Fallo| F[Mostrar Error + Registro en audit_logs]
