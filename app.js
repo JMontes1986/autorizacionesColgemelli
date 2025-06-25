@@ -1943,10 +1943,16 @@
             }
         }
 
-        function togglePasswordVisibility(id, checkbox) {
+        function togglePasswordVisibility(id, el) {
             const input = document.getElementById(id);
             if (input) {
-                input.type = checkbox.checked ? 'text' : 'password';
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    el.classList.add('visible');
+                } else {
+                    input.type = 'password';
+                    el.classList.remove('visible');
+                }
             }
         }
 
@@ -5126,10 +5132,11 @@ function attachEventHandlers() {
   const passwordInput = document.getElementById('password');
   if (passwordInput) passwordInput.addEventListener('input', () => validatePasswordInput(passwordInput));
 
-  document.querySelectorAll('.show-password input').forEach(chk => {
-    const pwdInput = chk.closest('.form-group').querySelector('input[type="password"]');
+  document.querySelectorAll('.toggle-password').forEach(icon => {
+    const formGroup = icon.closest('.form-group');
+    const pwdInput = formGroup ? formGroup.querySelector('input[type="password"], input[type="text"]') : null;
     if (pwdInput) {
-      chk.addEventListener('click', () => togglePasswordVisibility(pwdInput.id, chk));
+      icon.addEventListener('click', () => togglePasswordVisibility(pwdInput.id, icon));
     }
   });
 
