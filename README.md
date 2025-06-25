@@ -169,7 +169,7 @@ flowchart TD
 - Aprender sobre **DOM** y **manipulación segura de HTML**.
 - Consultar documentación oficial de Chart.js y Supabase.
 - Usar `diagnostico.html` ante cualquier error o desconexión inesperada.
-
+- Revisa `docs/CLS_NOTES.md` para ubicar funciones que modifican el DOM y pueden afectar el **Cumulative Layout Shift**.
 ---
 
 ## 9. Consideraciones de Seguridad Adicional
@@ -240,7 +240,10 @@ Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas
    <img class="logo" src="https://<tuinstancia>.supabase.co/storage/v1/object/sign/...">
    ```
 3. **Verificar conectividad**
-   Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza los botones numerados para comprobar las URLs, las tablas y el inicio de sesión. Los resultados de cada paso se muestran en el área de log.
+Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza los botones numerados para comprobar las URLs, las tablas y el inicio de sesión. Los resultados de cada paso se muestran en el área de log.
+
+## 14. Consideraciones de CLS
+Consulta [docs/CLS_NOTES.md](docs/CLS_NOTES.md) para conocer las funciones que generan cambios de layout y cómo mitigarlos.
 
 ## Información de Versión
 La versión actual de la aplicación es **V.1** (compilación 1). Puedes ver estos datos en el pie de página (`footer`) de [index.html](index.html).
