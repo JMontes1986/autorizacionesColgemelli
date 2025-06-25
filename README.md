@@ -27,10 +27,12 @@ Las funcionalidades incluyen autenticación, panel de control, autorizaciones, a
 autorizacionesColgemelli/
 ├─ index.html         # Aplicación principal
 ├─ diagnostico.html   # Herramientas de diagnóstico
+├─ styles.css         # Estilos principales del sistema
 └─ README.md          # Documentación breve
 ```
 
----
+El archivo `styles.css` contiene la hoja de estilos que define la apariencia de la aplicación. En `index.html` se incluye mediante la etiqueta `<link rel="preload" href="styles.css" as="style" onload="this.rel='stylesheet'">` y un bloque `<noscript>` para asegurar que el CSS se cargue incluso si JavaScriptno está disponible. Mantén este archivo junto al HTML para que la interfaz se muestre correctamente.
+
 
 ## 3. Tecnologías Utilizadas
 
