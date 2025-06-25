@@ -47,8 +47,24 @@ Antes de construir o desplegar la aplicación se deben definir las siguientes va
 - `SUPABASE_URL` – URL de tu instancia de Supabase.
 - `SUPABASE_ANON_KEY` – clave anónima pública del proyecto.
 
-Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución. Puedes generar dicho archivo ejecutando `./build.sh`.
+Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución.
 
+Para preparar el entorno local sigue los pasos:
+
+1. Exporta las variables en tu terminal:
+
+   ```bash
+   export SUPABASE_URL="<tu-url>"
+   export SUPABASE_ANON_KEY="<tu-anon-key>"
+   ```
+
+2. Ejecuta el script de construcción que generará `env.js`:
+
+   ```bash
+   ./build.sh
+   ```
+
+3. Asegúrate de que el archivo `env.js` se haya creado en la raíz del proyecto antes de abrir `index.html` en tu navegador.
 
 ## 4. index.html: Descripción Funcional
 
