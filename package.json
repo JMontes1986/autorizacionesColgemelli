@@ -1,0 +1,13 @@
+{
+  "name": "autorizacionescolgemelli",
+  "version": "1.0.0",
+  "description": "Sistema de control de salidas estudiantiles - Colegio Gemelli",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"No tests\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
