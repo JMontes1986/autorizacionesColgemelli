@@ -53,9 +53,11 @@
 </div>
 <div class="form-group">
 <label for="password">Contraseña:</label>
+<div class="input-with-icon">
 <input autocomplete="current-password" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
+<span class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</span>
+</div>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
-<label class="show-password"><input onclick="togglePasswordVisibility('password', this)" type="checkbox"/> Mostrar contraseña</label>
 </div>
 <!-- CAPTCHA -->
 <div class="captcha-container">
@@ -485,9 +487,11 @@
 </div>
 <div class="form-group">
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
+<div class="input-with-icon">
 <input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
+<span class="toggle-password" onclick="togglePasswordVisibility('userPassword', this)">👁️</span>
+</div>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
-<label class="show-password"><input onclick="togglePasswordVisibility('userPassword', this)" type="checkbox"/> Mostrar contraseña</label>
 </div>
 <div class="form-group">
 <label>Rol: *</label>
