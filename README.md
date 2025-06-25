@@ -222,9 +222,19 @@ Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas
 
 1. **Generar `env.js`**
    Ejecuta `./build.sh` con las variables `SUPABASE_URL` y `SUPABASE_ANON_KEY` exportadas. El script genera un archivo `env.js` que debe ubicarse junto a `index.html` y `diagnostico.html` para que ambas páginas carguen las credenciales de Supabase correctamente.
+2. **Actualizar URLs con tu dominio de Supabase**
+   `index.html` contiene el dominio `mbosvnmhnbrslfwlfcxu.supabase.co` en dos ubicaciones:
+   - la meta etiqueta `Content-Security-Policy` (alrededor de la linea 8)
+   - la etiqueta `<img>` del logo (alrededor de la linea 127)
 
-2. **Actualizar Content-Security-Policy**
-   El archivo `index.html` define una política CSP que sólo permite conectarse a `mbosvnmhnbrslfwlfcxu.supabase.co`. Si tu proyecto usa otra instancia, modifica el dominio en la meta etiqueta `Content-Security-Policy` para evitar bloqueos de conexión.
+   Reemplaza ese dominio por el de tu instancia de Supabase. Por ejemplo:
 
+   ```html
+   <!-- CSP -->
+   <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://cdn.jsdelivr.net https://<tuinstancia>.supabase.co ...">
+
+   <!-- Logo -->
+   <img class="logo" src="https://<tuinstancia>.supabase.co/storage/v1/object/sign/...">
+   ```
 3. **Verificar conectividad**
    Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza los botones numerados para comprobar las URLs, las tablas y el inicio de sesión. Los resultados de cada paso se muestran en el área de log.
