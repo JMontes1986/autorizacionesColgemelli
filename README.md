@@ -179,3 +179,14 @@ Para impedir que la clave pública anónima acceda a tablas sensibles, habilita 
    ```
 
 El archivo [`supabase/policies.sql`](supabase/policies.sql) contiene estas instrucciones para aplicarlas desde la CLI o la consola SQL de Supabase.
+
+
+## 12. Ejecutar pruebas
+
+Para correr las pruebas del proyecto utiliza el siguiente comando:
+
+```bash
+npm test
+```
+
+Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas configuradas.
