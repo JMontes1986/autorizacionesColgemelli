@@ -1626,8 +1626,16 @@
         }
         
         // Configuración de Supabase
-        const SUPABASE_URL = process.env.SUPABASE_URL;
-        const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+        let envExists = false;
+        if (typeof window !== 'undefined' && window.process && window.process.env) {
+            envExists = true;
+        } else {
+            updateConnectionStatus(false, 'Configuración no encontrada');
+            console.error('❌ process.env no disponible. Configuración no encontrada');
+        }
+
+        const SUPABASE_URL = envExists ? window.process.env.SUPABASE_URL : '';
+        const SUPABASE_ANON_KEY = envExists ? window.process.env.SUPABASE_ANON_KEY : '';
         const STORAGE_BUCKET = 'autorizaciones';
         
         let supabase;
