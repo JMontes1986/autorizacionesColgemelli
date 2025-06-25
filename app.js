@@ -2632,7 +2632,12 @@
                 
                 cargarVerificaciones();
 
-                if (currentUser && (currentUser.rol.nombre === 'vigilante' || currentUser.email === 'vigilancia@colgemelli.edu.co')) {
+                const permitidos = [
+                    'convivencia@colgemelli.edu.co',
+                    'vigilancia@colgemelli.edu.co',
+                    'sistemas@colgemelli.edu.co'
+                ];
+                if (currentUser && (currentUser.rol.nombre === 'vigilante' || permitidos.includes(currentUser.email))) {
                     loadPendingExits();
                 }
             } else if (sectionId === 'dashboardSectionDiv') {
