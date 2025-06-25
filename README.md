@@ -216,3 +216,14 @@ npm test
 ```
 
 Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas configuradas.
+
+## 13. Solución de problemas
+
+1. **Generar `env.js`**
+   Ejecuta `./build.sh` con las variables `SUPABASE_URL` y `SUPABASE_ANON_KEY` exportadas. El script genera un archivo `env.js` que debe ubicarse junto a `index.html` y `diagnostico.html` para que ambas páginas carguen las credenciales de Supabase correctamente.
+
+2. **Actualizar Content-Security-Policy**
+   El archivo `index.html` define una política CSP que sólo permite conectarse a `mbosvnmhnbrslfwlfcxu.supabase.co`. Si tu proyecto usa otra instancia, modifica el dominio en la meta etiqueta `Content-Security-Policy` para evitar bloqueos de conexión.
+
+3. **Verificar conectividad**
+   Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza los botones numerados para comprobar las URLs, las tablas y el inicio de sesión. Los resultados de cada paso se muestran en el área de log.
