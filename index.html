@@ -131,7 +131,7 @@
 <span id="connectionIcon">🔴</span>
 <span id="connectionText">Verificando conexión...</span>
 </div>
-<button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+<button class="logout-btn">Cerrar Sesión</button>
 </div>
 <div class="content">
 <!-- Rate Limit Warning -->
@@ -146,20 +146,20 @@
 <div class="login-form" id="loginSection">
 <div class="form-group">
 <label for="email">Email:</label>
-<input autocomplete="username" id="email" maxlength="100" oninput="validateEmailInput(this)" pattern="^[a-zA-Z0-9._%+-]+@colgemelli.edu.co$" placeholder="sistemas@colgemelli.edu.co" required="True" title="Debe ser un correo institucional válido" type="email"/>
+<input autocomplete="username" id="email" maxlength="100" pattern="^[a-zA-Z0-9._%+-]+@colgemelli.edu.co$" placeholder="sistemas@colgemelli.edu.co" required="True" title="Debe ser un correo institucional válido" type="email"/>
 </div>
 <div class="form-group">
 <label for="password">Contraseña:</label>
-<input autocomplete="current-password" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
+<input autocomplete="current-password" id="password" maxlength="50" placeholder="••••••••" type="password"/>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
-<label class="show-password"><input onclick="togglePasswordVisibility('password', this)" type="checkbox"/> Mostrar contraseña</label>
+<label class="show-password"><input type="checkbox"/> Mostrar contraseña</label>
 </div>
 <!-- CAPTCHA -->
 <div class="captcha-container">
 <div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001"></div>
 </div>
-<button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
-<button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
+<button class="btn" id="loginBtn" style="width: 100%;">Iniciar Sesión</button>
+<button id="testConnectionBtn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
 <div class="alert alert-error" id="loginError" style="display: none; margin-top: 15px;"></div>
 <div class="alert alert-success" id="loginInfo" style="display: none; margin-top: 15px;"></div>
 </div>
@@ -175,7 +175,7 @@
 <div class="grid">
 <div class="form-group">
 <label for="gradeSelect">1. Seleccionar Grado: *</label>
-<select id="gradeSelect" onchange="loadStudentsByGrade()" required="">
+<select id="gradeSelect" required="">
 <option value="">Seleccionar grado primero...</option>
 </select>
 </div>
@@ -204,7 +204,7 @@
 </div>
 <div class="form-group">
 <label for="observations">Observaciones adicionales:</label>
-<textarea id="observations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
+<textarea id="observations" maxlength="500" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
 </div>
 <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
 </form>
@@ -213,14 +213,14 @@
 <div class="section" id="verifySectionDiv">
 <h2>🔍 Control de Salidas - Vigilancia</h2>
 <div class="nav-buttons">
-<button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
-<button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
-<button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
+<button id="loadPendingBtn" class="btn btn-success">🔄 Actualizar Lista</button>
+<button id="toggleSearchBtn" class="btn btn-secondary">🔍 Buscar Estudiante</button>
+<button id="showMyConfirmedBtn" class="btn btn-warning">👁️ Ver Mis Confirmaciones</button>
 </div>
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
 <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 Búsqueda Manual de Estudiante</h3>
-<input class="search-box" id="studentSearch" maxlength="100" oninput="validateSearchInput(this)" placeholder="Buscar estudiante específico por nombre..." type="text"/>
+<input class="search-box" id="studentSearch" maxlength="100" placeholder="Buscar estudiante específico por nombre..." type="text"/>
 <div id="searchResult"></div>
 </div>
 <!-- Sección de salidas confirmadas por el vigilante (inicialmente oculta) -->
@@ -259,15 +259,15 @@
 <div class="section" id="adminSectionDiv">
 <h2>⚙️ Panel de Administración</h2>
 <div class="nav-buttons">
-<button class="btn" onclick="showAdminSection('students')">Gestionar Estudiantes</button>
-<button class="btn" onclick="showAdminSection('users')">Gestionar Usuarios</button>
-<button class="btn" onclick="showAdminSection('reasons')">Gestionar Motivos</button>
-<button class="btn" onclick="showAdminSection('grades')">Gestionar Grados</button>
-<button class="btn btn-warning" onclick="showAdminSection('security')">🔒 Seguridad y Logs</button>
+<button id="btnAdminStudents" class="btn">Gestionar Estudiantes</button>
+<button id="btnAdminUsers" class="btn">Gestionar Usuarios</button>
+<button id="btnAdminReasons" class="btn">Gestionar Motivos</button>
+<button id="btnAdminGrades" class="btn">Gestionar Grados</button>
+<button id="btnAdminSecurity" class="btn btn-warning">🔒 Seguridad y Logs</button>
 </div>
 <div class="admin-subsection" id="adminStudents" style="display: none;">
 <h3>👨‍🎓 Gestión de Estudiantes</h3>
-<button class="btn btn-success" onclick="openModal('studentModal')">Agregar Estudiante</button>
+<button id="addStudentBtn" class="btn btn-success">Agregar Estudiante</button>
 <div class="table-wrapper">
 <table class="table" id="studentsTable">
 <thead>
@@ -285,7 +285,7 @@
 </div>
 <div class="admin-subsection" id="adminUsers" style="display: none;">
 <h3>👥 Gestión de Usuarios</h3>
-<button class="btn btn-success" onclick="openModal('userModal')">Agregar Usuario</button>
+<button id="addUserBtn" class="btn btn-success">Agregar Usuario</button>
 <div class="table-wrapper">
 <table class="table" id="usersTable">
 <thead>
@@ -303,7 +303,7 @@
 </div>
 <div class="admin-subsection" id="adminReasons" style="display: none;">
 <h3>📝 Gestión de Motivos</h3>
-<button class="btn btn-success" onclick="openModal('reasonModal')">Agregar Motivo</button>
+<button id="addReasonBtn" class="btn btn-success">Agregar Motivo</button>
 <div class="table-wrapper">
 <table class="table" id="reasonsTable">
 <thead>
@@ -320,7 +320,7 @@
 </div>
 <div class="admin-subsection" id="adminGrades" style="display: none;">
 <h3>🎓 Gestión de Grados</h3>
-<button class="btn btn-success" onclick="openModal('gradeModal')">Agregar Grado</button>
+<button id="addGradeBtn" class="btn btn-success">Agregar Grado</button>
 <div class="table-wrapper">
 <table class="table" id="gradesTable">
 <thead>
@@ -386,8 +386,8 @@
 </select>
 </div>
 </div>
-<button class="btn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
-<button class="btn btn-secondary" onclick="exportLogs()">📥 Exportar Logs</button>
+<button id="loadLogsBtn" class="btn">🔍 Buscar Logs</button>
+<button id="exportLogsBtn" class="btn btn-secondary">📥 Exportar Logs</button>
 </div>
 <div class="table-wrapper">
 <table class="table" id="securityLogsTable">
@@ -487,10 +487,10 @@
 <!-- Nuevos Gráficos Históricos -->
 <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
-<button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
-<button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
-<button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
-<button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
+<button id="refreshDashboardBtn" class="btn btn-success">🔄 Actualizar Dashboard</button>
+<button id="exportDashboardBtn" class="btn btn-secondary">📥 Exportar Datos</button>
+<button id="showDetailedViewBtn" class="btn">📋 Vista Detallada</button>
+<button id="debugDashboardBtn" class="btn btn-warning" style="font-size: 12px;">🔧 Debug</button>
 </div>
 <div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
 <p style="margin: 0; color: #666;"><strong>Estado Chart.js:</strong> <span id="chartjsStatusText">Verificando...</span></p>
@@ -500,10 +500,10 @@
 <div class="section" id="historySectionDiv">
 <h2>📋 Historial de Autorizaciones</h2>
 <div class="form-group">
-<input id="historyDate" onchange="loadHistory()" type="date"/>
-<button class="btn" onclick="loadHistory()">Filtrar por Fecha</button>
-<button class="btn btn-secondary" onclick="loadHistory(true)">Ver Todo el Historial</button>
-<button class="btn" onclick="debugHistory()" style="background: #e67e22;">🔍 Debug Historial</button>
+<input id="historyDate" type="date"/>
+<button id="filterHistoryBtn" class="btn">Filtrar por Fecha</button>
+<button id="viewAllHistoryBtn" class="btn btn-secondary">Ver Todo el Historial</button>
+<button id="debugHistoryBtn" class="btn" style="background: #e67e22;">🔍 Debug Historial</button>
 </div>
 <div id="historyDebug" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
 <h4>🔧 Información de Debug:</h4>
@@ -535,26 +535,26 @@
 <!-- Modals -->
 <div class="modal" id="studentModal">
 <div class="modal-content">
-<span class="close" onclick="closeModal('studentModal')">×</span>
+<span class="close">×</span>
 <h2>Agregar/Editar Estudiante</h2>
 <form id="studentForm">
 <div class="form-group">
 <label for="uploadStudentPhoto">Subir Foto:</label>
-<input accept="image/jpeg,image/png,image/gif" id="uploadStudentPhoto" onchange="handleImageUpload(event)" type="file"/>
+<input accept="image/jpeg,image/png,image/gif" id="uploadStudentPhoto" type="file"/>
 <img alt="Foto del estudiante" id="studentPhotoPreview" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;"/>
 <small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
 </div>
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="studentName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+<input id="studentName" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Apellidos: *</label>
-<input id="studentLastName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+<input id="studentLastName" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Documento:</label>
-<input id="studentDocument" maxlength="20" oninput="validateDocumentInput(this)" pattern="[0-9]{6,20}" type="text"/>
+<input id="studentDocument" maxlength="20" pattern="[0-9]{6,20}" type="text"/>
 </div>
 <div class="form-group">
 <label>Grado: *</label>
@@ -563,28 +563,28 @@
 </select>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
-<button class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
+<button id="cancelStudentModal" class="btn btn-secondary" type="button">Cancelar</button>
 </form>
 </div>
 </div>
 <div class="modal" id="userModal">
 <div class="modal-content">
-<span class="close" onclick="closeModal('userModal')">×</span>
+<span class="close">×</span>
 <h2>Agregar/Editar Usuario</h2>
 <form id="userForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="userName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+<input id="userName" maxlength="50" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Email: *</label>
-<input id="userEmail" maxlength="100" oninput="validateEmailInput(this)" required="" type="email"/>
+<input id="userEmail" maxlength="100" required="" type="email"/>
 </div>
 <div class="form-group">
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
-<input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
+<input id="userPassword" maxlength="50" type="password"/>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
-<label class="show-password"><input onclick="togglePasswordVisibility('userPassword', this)" type="checkbox"/> Mostrar contraseña</label>
+<label class="show-password"><input type="checkbox"/> Mostrar contraseña</label>
 </div>
 <div class="form-group">
 <label>Rol: *</label>
@@ -593,36 +593,36 @@
 </select>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
-<button class="btn btn-secondary" onclick="closeModal('userModal')" type="button">Cancelar</button>
+<button id="cancelUserModal" class="btn btn-secondary" type="button">Cancelar</button>
 </form>
 </div>
 </div>
 <div class="modal" id="reasonModal">
 <div class="modal-content">
-<span class="close" onclick="closeModal('reasonModal')">×</span>
+<span class="close">×</span>
 <h2>Agregar/Editar Motivo</h2>
 <form id="reasonForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="reasonName" maxlength="50" oninput="validateTextInput(this)" required="" type="text">
+<input id="reasonName" maxlength="50" required="" type="text">
 </input></div>
 <div class="form-group">
 <label>Descripción:</label>
-<textarea id="reasonDescription" maxlength="200" oninput="validateTextInput(this)" rows="3"></textarea>
+<textarea id="reasonDescription" maxlength="200" rows="3"></textarea>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
-<button class="btn btn-secondary" onclick="closeModal('reasonModal')" type="button">Cancelar</button>
+<button id="cancelReasonModal" class="btn btn-secondary" type="button">Cancelar</button>
 </form>
 </div>
 </div>
 <div class="modal" id="gradeModal">
 <div class="modal-content">
-<span class="close" onclick="closeModal('gradeModal')">×</span>
+<span class="close">×</span>
 <h2>Agregar/Editar Grado</h2>
 <form id="gradeForm">
 <div class="form-group">
 <label>Nombre: *</label>
-<input id="gradeName" maxlength="20" oninput="validateTextInput(this)" required="" type="text"/>
+<input id="gradeName" maxlength="20" required="" type="text"/>
 </div>
 <div class="form-group">
 <label>Nivel: *</label>
@@ -633,7 +633,7 @@
 </select>
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
-<button class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
+<button id="cancelGradeModal" class="btn btn-secondary" type="button">Cancelar</button>
 </form>
 </div>
 </div>
