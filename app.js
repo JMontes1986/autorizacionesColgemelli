@@ -2462,20 +2462,24 @@
 
         function showError(message) {
             const errorDiv = document.getElementById('loginError');
+            const infoDiv = document.getElementById('loginInfo');
             errorDiv.textContent = sanitizeHtml(message);
-            errorDiv.style.display = 'block';
+            if (infoDiv) infoDiv.style.visibility = 'hidden';
+            errorDiv.style.visibility = 'visible';
             setTimeout(() => {
-                errorDiv.style.display = 'none';
+                errorDiv.style.visibility = 'hidden';
             }, 5000);
         }
 
         function showSuccess(message) {
             const infoDiv = document.getElementById('loginInfo');
+            const errorDiv = document.getElementById('loginError');
             if (infoDiv) {
                 infoDiv.textContent = sanitizeHtml(message);
-                infoDiv.style.display = 'block';
+                 if (errorDiv) errorDiv.style.visibility = 'hidden';
+                infoDiv.style.visibility = 'visible';
                 setTimeout(() => {
-                    infoDiv.style.display = 'none';
+                    infoDiv.style.visibility = 'hidden';
                 }, 5000);
             } else {
                 alert('✅ ' + sanitizeHtml(message));
