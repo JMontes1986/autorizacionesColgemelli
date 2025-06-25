@@ -5072,3 +5072,97 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+function attachEventHandlers() {
+  const clickHandlers = [
+    ['.logout-btn', logout],
+    ['#loginBtn', login],
+    ['#testConnectionBtn', testConnection],
+    ['#loadPendingBtn', loadPendingExits],
+    ['#toggleSearchBtn', toggleSearch],
+    ['#showMyConfirmedBtn', showMyConfirmedExits],
+    ['#btnAdminStudents', () => showAdminSection('students')],
+    ['#btnAdminUsers', () => showAdminSection('users')],
+    ['#btnAdminReasons', () => showAdminSection('reasons')],
+    ['#btnAdminGrades', () => showAdminSection('grades')],
+    ['#btnAdminSecurity', () => showAdminSection('security')],
+    ['#addStudentBtn', () => openModal('studentModal')],
+    ['#addUserBtn', () => openModal('userModal')],
+    ['#addReasonBtn', () => openModal('reasonModal')],
+    ['#addGradeBtn', () => openModal('gradeModal')],
+    ['#cancelStudentModal', (e) => { e.preventDefault(); closeModal('studentModal'); }],
+    ['#cancelUserModal', (e) => { e.preventDefault(); closeModal('userModal'); }],
+    ['#cancelReasonModal', (e) => { e.preventDefault(); closeModal('reasonModal'); }],
+    ['#cancelGradeModal', (e) => { e.preventDefault(); closeModal('gradeModal'); }],
+    ['#filterHistoryBtn', () => loadHistory()],
+    ['#viewAllHistoryBtn', () => loadHistory(true)],
+    ['#debugHistoryBtn', debugHistory],
+    ['#refreshDashboardBtn', refreshDashboard],
+    ['#exportDashboardBtn', exportDashboardData],
+    ['#showDetailedViewBtn', showDetailedView],
+    ['#debugDashboardBtn', debugDashboard],
+    ['#loadLogsBtn', loadSecurityLogs],
+    ['#exportLogsBtn', exportLogs]
+  ];
+  clickHandlers.forEach(([sel, handler]) => {
+    const el = document.querySelector(sel);
+    if (el) el.addEventListener('click', handler);
+  });
+
+  document.querySelectorAll('.modal .close').forEach(span => {
+    const modalId = span.closest('.modal').id;
+    span.addEventListener('click', () => closeModal(modalId));
+  });
+
+  const emailInput = document.getElementById('email');
+  if (emailInput) emailInput.addEventListener('input', () => validateEmailInput(emailInput));
+  const passwordInput = document.getElementById('password');
+  if (passwordInput) passwordInput.addEventListener('input', () => validatePasswordInput(passwordInput));
+
+  document.querySelectorAll('.show-password input').forEach(chk => {
+    const pwdInput = chk.closest('.form-group').querySelector('input[type="password"]');
+    if (pwdInput) {
+      chk.addEventListener('click', () => togglePasswordVisibility(pwdInput.id, chk));
+    }
+  });
+
+  const gradeSelect = document.getElementById('gradeSelect');
+  if (gradeSelect) gradeSelect.addEventListener('change', loadStudentsByGrade);
+
+  const observations = document.getElementById('observations');
+  if (observations) observations.addEventListener('input', () => validateTextInput(observations));
+
+  const studentSearch = document.getElementById('studentSearch');
+  if (studentSearch) studentSearch.addEventListener('input', () => validateSearchInput(studentSearch));
+
+  const uploadPhoto = document.getElementById('uploadStudentPhoto');
+  if (uploadPhoto) uploadPhoto.addEventListener('change', handleImageUpload);
+
+  const studentName = document.getElementById('studentName');
+  if (studentName) studentName.addEventListener('input', () => validateNameInput(studentName));
+  const studentLastName = document.getElementById('studentLastName');
+  if (studentLastName) studentLastName.addEventListener('input', () => validateNameInput(studentLastName));
+  const studentDocument = document.getElementById('studentDocument');
+  if (studentDocument) studentDocument.addEventListener('input', () => validateDocumentInput(studentDocument));
+
+  const userName = document.getElementById('userName');
+  if (userName) userName.addEventListener('input', () => validateNameInput(userName));
+  const userEmail = document.getElementById('userEmail');
+  if (userEmail) userEmail.addEventListener('input', () => validateEmailInput(userEmail));
+  const userPassword = document.getElementById('userPassword');
+  if (userPassword) {
+    userPassword.addEventListener('input', () => validatePasswordInput(userPassword));
+    userPassword.addEventListener('keyup', checkPasswordStrength);
+  }
+
+  const reasonName = document.getElementById('reasonName');
+  if (reasonName) reasonName.addEventListener('input', () => validateTextInput(reasonName));
+  const reasonDesc = document.getElementById('reasonDescription');
+  if (reasonDesc) reasonDesc.addEventListener('input', () => validateTextInput(reasonDesc));
+  const gradeName = document.getElementById('gradeName');
+  if (gradeName) gradeName.addEventListener('input', () => validateTextInput(gradeName));
+
+  const historyDate = document.getElementById('historyDate');
+  if (historyDate) historyDate.addEventListener('change', () => loadHistory());
+}
+
+document.addEventListener('DOMContentLoaded', attachEventHandlers);
