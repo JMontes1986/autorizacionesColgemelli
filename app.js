@@ -32,7 +32,7 @@
                 
                 // Crear elemento script para Chart.js
                 const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
                 script.crossOrigin = 'anonymous';
                 
                 return new Promise((resolve, reject) => {
@@ -75,6 +75,62 @@
                     return true;
                 } catch (fallbackError) {
                     console.error('❌ Ambos métodos de carga fallaron:', fallbackError);
+                    return false;
+                }
+            }
+        }
+
+        // ========================================
+        // VERIFICACIÓN Y CARGA DE CRYPTOJS
+        // ========================================
+
+        function waitForCryptoJS() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 segundos máximo
+
+                const checkCrypto = () => {
+                    attempts++;
+                    if (typeof CryptoJS !== 'undefined') {
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('CryptoJS no se cargó'));
+                    } else {
+                        setTimeout(checkCrypto, 100);
+                    }
+                };
+
+                checkCrypto();
+            });
+        }
+
+        async function loadCryptoJS() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js';
+            script.crossOrigin = 'anonymous';
+
+            return new Promise((resolve, reject) => {
+                script.onload = () => resolve(true);
+                script.onerror = () => reject(new Error('Error cargando CryptoJS'));
+                document.head.appendChild(script);
+
+                setTimeout(() => {
+                    reject(new Error('Timeout cargando CryptoJS'));
+                }, 10000);
+            });
+        }
+
+        async function ensureCryptoJSLoaded() {
+            try {
+                await waitForCryptoJS();
+                return true;
+            } catch (error) {
+                try {
+                    await loadCryptoJS();
+                    await waitForCryptoJS();
+                    return true;
+                } catch (fallbackError) {
+                    console.error('❌ No se pudo cargar CryptoJS:', fallbackError);
                     return false;
                 }
             }
@@ -2268,6 +2324,13 @@
                 const email = document.getElementById('email').value.trim().toLowerCase();
                 const password = document.getElementById('password').value;
 
+                const cryptoReady = await ensureCryptoJSLoaded();
+                if (!cryptoReady) {
+                    showError('No se pudo cargar la librería de cifrado');
+                    resetCaptcha();
+                    return;
+                }
+
                 // Validaciones de seguridad
                 if (!email || !password) {
                     showError('Por favor, ingresa email y contraseña');
@@ -3901,6 +3964,12 @@
                 const email = document.getElementById('userEmail').value.trim().toLowerCase();
                 const password = document.getElementById('userPassword').value;
                 const roleId = document.getElementById('userRole').value;
+
+                const cryptoReady = await ensureCryptoJSLoaded();
+                if (!cryptoReady) {
+                    showError('No se pudo cargar la librería de cifrado');
+                    return;
+                }
 
                 // Validaciones de seguridad
                 if (!name || !email || !roleId) {
