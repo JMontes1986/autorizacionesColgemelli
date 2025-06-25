@@ -77,6 +77,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 190px;       /* Avoid layout shift when text changes */
+            text-align: center;
         }
 
         .connection-status.connected {
@@ -100,7 +102,7 @@
             min-height: 50px;
         }
 
-        
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -180,6 +182,7 @@
                 margin: 10px 0 0 0;
                 padding: 5px 10px;
                 font-size: 12px;
+                min-width: 190px; /* Preserve header width */
             }
 
             .logout-btn {
@@ -391,6 +394,8 @@
                 top: 15px;
                 left: 15px;
                 font-size: 13px;
+                min-width: 190px;
+                text-align: center;
             }
 
             .logout-btn {
