@@ -112,11 +112,11 @@
         <div class="form-group">
             <h3>🔐 Prueba de Login:</h3>
             <label>Email:</label>
-            <input type="email" id="testEmail" value="sistemas@colgemelli.edu.co">
+            <input type="email" id="testEmail" placeholder="usuario@colgemelli.edu.co">
         </div>
         <div class="form-group">
             <label>Contraseña:</label>
-            <input type="password" id="testPassword" value="G3m3ll1.202*">
+            <input type="password" id="testPassword" placeholder="contraseña">
         </div>
         <button class="btn" onclick="testLogin()">🚀 Probar Login</button>
 
@@ -126,10 +126,11 @@
         </div>
     </div>
 
+    <script defer src="env.js"></script>
     <script>
         // Configuración de Supabase
-        const SUPABASE_URL = 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
+        const SUPABASE_URL = process.env.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
         
         let supabase;
 
@@ -291,10 +292,11 @@
             log('=== PASO 5: Probando login específico ===');
             
             try {
+                const email = document.getElementById('testEmail').value;
                 const { data: user, error } = await supabase
                     .from('usuarios')
                     .select('*')
-                    .eq('email', 'sistemas@colgemelli.edu.co')
+                    .eq('email', email)
                     .single();
                 
                 if (error) {
