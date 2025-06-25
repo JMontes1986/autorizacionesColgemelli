@@ -4901,8 +4901,6 @@
             }
         });
 
-    </script>
-<script>
   function handleImageUpload(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('studentPhotoPreview');
@@ -4922,8 +4920,7 @@
 
     preview.src = URL.createObjectURL(file);
   }
-</script>
-<script>
+
   async function cargarVerificaciones() {
     const contenedor = document.getElementById("verificaciones");
     contenedor.innerHTML = "";
@@ -4962,13 +4959,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', cargarVerificaciones);
-</script>
-<script>
+
 document.querySelector('#fechaDesde').addEventListener('change', function() {
   document.getElementById('historicalWrapper').style.display = 'flex';
 });
-</script>
-<script>
+
 function checkMostrarHistorico() {
   const desde = document.getElementById('fechaDesde').value;
   const hasta = document.getElementById('fechaHasta').value;
@@ -4978,8 +4973,7 @@ function checkMostrarHistorico() {
 }
 document.getElementById('fechaDesde').addEventListener('change', checkMostrarHistorico);
 document.getElementById('fechaHasta').addEventListener('change', checkMostrarHistorico);
-</script>
-<script>
+
 function actualizarVisibilidadHistorico() {
   const seccionDashboard = document.getElementById('dashboardSectionDiv');
   const wrapperHistorico = document.getElementById('historicalWrapper');
@@ -4994,8 +4988,7 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
     setTimeout(actualizarVisibilidadHistorico, 100); // espera pequeña para que cambie la clase
   });
 });
-</script>
-<script>
+
 document.addEventListener('DOMContentLoaded', function () {
   const user = localStorage.getItem('correo');
   const btnVerificar = document.getElementById('btnVerificarSalida');
@@ -5023,8 +5016,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnVerificar) btnVerificar.style.display = 'none';
   }
 });
-</script>
-<script>
+
 document.addEventListener('DOMContentLoaded', function () {
   const user = localStorage.getItem('correo');
   const btnVerificar = document.getElementById('btnVerificarSalida');
@@ -5063,8 +5055,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnControl) btnControl.style.display = 'none';
   }
 });
-</script>
-<script>
+
 document.addEventListener("DOMContentLoaded", function () {
   const fechaSalida = document.getElementById("fechaSalida");
   if (fechaSalida) {
