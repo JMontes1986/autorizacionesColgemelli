@@ -19,7 +19,7 @@ El sistema web permite la gestión de autorizaciones de salida de estudiantes en
 
 Las funcionalidades incluyen autenticación, panel de control, autorizaciones, administración de datos y auditoría.
 
-Para utilizar la aplicación solo necesitas generar el archivo `env.js` con `./build.sh` y luego abrir `index.html` o `diagnostico.html` en tu navegador. Todo el código JavaScript está incrustado en los propios HTML; no existe un archivo `app.js` ni se requiere un servidor Node.
+Antes de abrir `index.html` o `diagnostico.html` debes contar con un archivo `env.js` en la raíz del proyecto. Puedes generarlo ejecutando `./build.sh` o copiando `env.example.js` y ajustando sus valores. La lógica principal reside ahora en `app.js`, que se carga de forma externa junto a los HTML.
 
 ## 2. Estructura del Proyecto
 
@@ -28,6 +28,7 @@ autorizacionesColgemelli/
 ├─ index.html         # Aplicación principal
 ├─ diagnostico.html   # Herramientas de diagnóstico
 ├─ styles.css         # Estilos principales del sistema
+├─ app.js             # Lógica de la aplicación
 └─ README.md          # Documentación breve
 ```
 
