@@ -19,7 +19,7 @@ El sistema web permite la gestión de autorizaciones de salida de estudiantes en
 
 Las funcionalidades incluyen autenticación, panel de control, autorizaciones, administración de datos y auditoría.
 
----
+Para utilizar la aplicación solo necesitas generar el archivo `env.js` con `./build.sh` y luego abrir `index.html` o `diagnostico.html` en tu navegador. Todo el código JavaScript está incrustado en los propios HTML; no existe un archivo `app.js` ni se requiere un servidor Node.
 
 ## 2. Estructura del Proyecto
 
