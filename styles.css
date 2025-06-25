@@ -1651,6 +1651,28 @@
             font-size: 10px;
         }
 
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon input {
+            padding-right: 30px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+        }
+
+        .toggle-password.visible {
+            opacity: 0.6;
+        }
+        
         /* Estilos para CAPTCHA */
         .captcha-container {
             margin: 15px 0;
