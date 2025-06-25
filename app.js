@@ -2349,7 +2349,8 @@
                 resetCaptcha();
                 showDashboard();
                 updateSecurityIndicator('secure', 'Sesión Activa');
-                
+                await cargarVerificaciones();
+
             } catch (error) {
                 console.error('❌ Error general en login:', error);
                 recordFailedAttempt();
@@ -2629,6 +2630,8 @@
                 document.getElementById('myConfirmedSection').style.display = 'none';
                 document.getElementById('pendingExitsSection').style.display = 'block';
                 
+                cargarVerificaciones();
+
                 if (currentUser && (currentUser.rol.nombre === 'vigilante' || currentUser.email === 'vigilancia@colgemelli.edu.co')) {
                     loadPendingExits();
                 }
@@ -4922,6 +4925,8 @@
   }
 
   async function cargarVerificaciones() {
+    if (!supabase || !validateSession()) return;
+
     const contenedor = document.getElementById("verificaciones");
     contenedor.innerHTML = "";
 
@@ -4958,7 +4963,6 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', cargarVerificaciones);
 
 document.querySelector('#fechaDesde').addEventListener('change', function() {
   document.getElementById('historicalWrapper').style.display = 'flex';
