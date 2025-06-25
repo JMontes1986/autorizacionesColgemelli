@@ -64,8 +64,10 @@
 </div>
 <button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" onclick="testConnection()" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
-<div class="alert alert-error" id="loginError" style="display: none; margin-top: 15px;"></div>
-<div class="alert alert-success" id="loginInfo" style="display: none; margin-top: 15px;"></div>
+<div class="login-messages" id="loginMessages" style="margin-top: 15px;">
+    <div class="alert alert-error" id="loginError" style="visibility: hidden;"></div>
+    <div class="alert alert-success" id="loginInfo" style="visibility: hidden;"></div>
+</div>
 </div>
 <!-- Dashboard -->
 <div class="dashboard" id="dashboard">
