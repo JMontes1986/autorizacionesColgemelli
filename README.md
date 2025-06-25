@@ -51,6 +51,7 @@ Antes de construir o desplegar la aplicación se deben definir las siguientes va
 - `SUPABASE_ANON_KEY` – clave anónima pública del proyecto.
 
 Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución.
+El script `build.sh` lee las variables y crea automáticamente `env.js`.
 En la raíz del repositorio también se provee `env.example.js` con valores de ejemplo. Puedes copiarlo como `env.js` y reemplazar los datos por los de tu proyecto si prefieres configurarlo manualmente.
 Para preparar el entorno local sigue los pasos:
 
