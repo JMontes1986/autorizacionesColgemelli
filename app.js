@@ -61,72 +61,23 @@
         }
 
         async function ensureChartJSLoaded() {
-            if (typeof Chart !== 'undefined') {
-                return true;
-            }
-
             try {
-                await loadChartJSFallback();
+                // Intentar con la carga normal primero
                 await waitForChartJS();
                 return true;
             } catch (error) {
-                console.error('❌ No se pudo cargar Chart.js:', error);
-                return false;
+                console.log('⚠️ Carga normal falló, intentando fallback...');
+                try {
+                    await loadChartJSFallback();
+                    // Esperar un poco más después del fallback
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await waitForChartJS();
+                    return true;
+                } catch (fallbackError) {
+                    console.error('❌ Ambos métodos de carga fallaron:', fallbackError);
+                    return false;
+                }
             }
-        }
-
-        // ========================================
-        // VERIFICACIÓN Y CARGA DE CRYPTOJS
-        // ========================================
-
-        function waitForCryptoJS() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 50; // 5 segundos máximo
-
-                const checkCrypto = () => {
-                    attempts++;
-                    if (typeof CryptoJS !== 'undefined') {
-                        resolve(true);
-                    } else if (attempts >= maxAttempts) {
-                        reject(new Error('CryptoJS no se cargó'));
-                    } else {
-                        setTimeout(checkCrypto, 100);
-                    }
-                };
-
-                checkCrypto();
-            });
-        }
-
-        async function loadCryptoJS() {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js';
-            script.crossOrigin = 'anonymous';
-
-            return new Promise((resolve, reject) => {
-                script.onload = () => resolve(true);
-                script.onerror = () => reject(new Error('Error cargando CryptoJS'));
-                document.head.appendChild(script);
-
-                setTimeout(() => {
-                    reject(new Error('Timeout cargando CryptoJS'));
-                }, 10000);
-            });
-        }
-
-        async function ensureCryptoJSLoaded() {
-            if (typeof CryptoJS !== 'undefined') {
-                return true;
-            }
-
-            try {
-                await loadCryptoJS();
-                await waitForCryptoJS();
-                return true;
-            } catch (error) {
-                console.error('❌ No se pudo cargar CryptoJS:', error);
-                return false;
         }
 
         // ========================================
@@ -2380,13 +2331,6 @@
                     return;
                 }
 
-                const cryptoReady = await ensureCryptoJSLoaded();
-                if (!cryptoReady) {
-                    showError('No se pudo cargar la librería de cifrado');
-                    resetCaptcha();
-                    return;
-                }
-
                 // Validaciones de seguridad
                 if (!email || !password) {
                     showError('Por favor, ingresa email y contraseña');
@@ -4020,12 +3964,6 @@
                 const email = document.getElementById('userEmail').value.trim().toLowerCase();
                 const password = document.getElementById('userPassword').value;
                 const roleId = document.getElementById('userRole').value;
-
-                const cryptoReady = await ensureCryptoJSLoaded();
-                if (!cryptoReady) {
-                    showError('No se pudo cargar la librería de cifrado');
-                    return;
-                }
 
                 const cryptoReady = await ensureCryptoJSLoaded();
                 if (!cryptoReady) {
