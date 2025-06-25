@@ -2043,22 +2043,32 @@
         }
 
         // ========================================
-        // FUNCIONES DE CAPTCHA
+        // FUNCIONES DE DESAFÍO ARITMÉTICO
         // ========================================
 
+        let captchaResult = 0;
+
+        function generateCaptcha() {
+            const a = Math.floor(Math.random() * 9) + 1;
+            const b = Math.floor(Math.random() * 9) + 1;
+            captchaResult = a + b;
+            const question = document.getElementById('captchaQuestion');
+            const input = document.getElementById('captchaAnswer');
+            if (question) question.textContent = `¿Cuánto es ${a} + ${b}?`;
+            if (input) input.value = '';
+        }
+
         function validateCaptcha() {
-            const captchaResponse = hcaptcha.getResponse();
-            if (!captchaResponse) {
-                showError('Por favor, completa el CAPTCHA de verificación');
+            const input = document.getElementById('captchaAnswer');
+            if (!input || parseInt(input.value, 10) !== captchaResult) {
+                showError('Respuesta incorrecta a la pregunta de seguridad');
                 return false;
             }
             return true;
         }
 
         function resetCaptcha() {
-            if (typeof hcaptcha !== 'undefined') {
-                hcaptcha.reset();
-            }
+            generateCaptcha();
         }
 
         // ========================================
@@ -2249,7 +2259,7 @@
                     return;
                 }
 
-                // Verificar CAPTCHA
+                // Verificar desafío aritmético
                 if (!validateCaptcha()) {
                     recordFailedAttempt();
                     return;
@@ -2395,7 +2405,7 @@
                 document.getElementById('email').value = '';
                 document.getElementById('password').value = '';
                 
-                // Resetear CAPTCHA
+                // Reiniciar desafío aritmético
                 resetCaptcha();
                 
                 updateSecurityIndicator('secure', 'Conexión Segura');
@@ -4813,7 +4823,7 @@
             console.log('  ✅ Headers de Seguridad CSP');
             console.log('  ✅ Sanitización XSS');
             console.log('  ✅ Rate Limiting');
-            console.log('  ✅ CAPTCHA Anti-Bot');
+            console.log('  ✅ Desafío Aritmético Anti-Bot');
             console.log('  ✅ Logs de Auditoría');
             console.log('  ✅ Validación HTML');
             console.log('  ✅ Sesiones Seguras');
@@ -4884,6 +4894,9 @@
             // Iniciar conexión a Supabase en cuanto las librerías estén listas
             console.log('🔗 Iniciando conexión a Supabase...');
             initSupabase();
+
+            // Generar primera pregunta aritmética
+            generateCaptcha();
         });
 
         // Limpiar recursos al cerrar la página
