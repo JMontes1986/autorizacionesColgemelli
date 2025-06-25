@@ -241,3 +241,6 @@ Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas
    ```
 3. **Verificar conectividad**
    Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza los botones numerados para comprobar las URLs, las tablas y el inicio de sesión. Los resultados de cada paso se muestran en el área de log.
+
+## Información de Versión
+La versión actual de la aplicación es **V.1** (compilación 1). Puedes ver estos datos en el pie de página (`footer`) de [index.html](index.html).
