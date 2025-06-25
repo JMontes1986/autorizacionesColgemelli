@@ -40,7 +40,15 @@ autorizacionesColgemelli/
 - **hCaptcha** como protección antispam.
 - **CryptoJS** para manejo de contraseñas.
 
----
+## Variables de Entorno Requeridas
+
+Antes de construir o desplegar la aplicación se deben definir las siguientes variables de entorno:
+
+- `SUPABASE_URL` – URL de tu instancia de Supabase.
+- `SUPABASE_ANON_KEY` – clave anónima pública del proyecto.
+
+Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución. Puedes generar dicho archivo ejecutando `./build.sh`.
+
 
 ## 4. index.html: Descripción Funcional
 
