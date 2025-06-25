@@ -7,6 +7,7 @@
     <!-- Múltiples CDNs de Supabase para asegurar carga -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
     <script>
         // Verificar si Supabase está disponible y cargar alternativa si no
         if (typeof window.supabase === 'undefined') {
@@ -15,7 +16,6 @@
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd.min.js';
             script.onload = function() {
                 console.log('✅ Supabase cargado desde CDN alternativa');
-                initApp();
             };
             script.onerror = function() {
                 console.error('❌ Error cargando Supabase desde todas las fuentes');
@@ -24,7 +24,6 @@
             document.head.appendChild(script);
         } else {
             console.log('✅ Supabase cargado correctamente');
-            initApp();
         }
     </script>
     <style>
@@ -126,7 +125,6 @@
         </div>
     </div>
 
-    <script defer src="env.js"></script>
     <script>
         // Configuración de Supabase
         const SUPABASE_URL = process.env.SUPABASE_URL;
