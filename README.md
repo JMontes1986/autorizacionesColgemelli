@@ -107,7 +107,17 @@ supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 - Rate limiting centralizado en Supabase mediante la tabla `login_attempts`.
 - Encabezados CSP definidos en el HTML.
 
----
+Para ejecutar correctamente estas herramientas necesitas un archivo `env.js` con
+tus credenciales de Supabase. Genera este archivo ejecutando:
+
+```bash
+SUPABASE_URL=https://tu-proyecto.supabase.co \
+SUPABASE_ANON_KEY=clave_publica ./build.sh
+```
+
+Coloca `env.js` junto a `diagnostico.html` y abre el archivo en tu navegador.
+Allí podrás introducir manualmente un correo y contraseña válidos para las
+pruebas de login.
 
 ## 5. diagnostico.html: Herramientas de Verificación
 
