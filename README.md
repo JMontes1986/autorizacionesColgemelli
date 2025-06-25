@@ -48,7 +48,7 @@ Antes de construir o desplegar la aplicación se deben definir las siguientes va
 - `SUPABASE_ANON_KEY` – clave anónima pública del proyecto.
 
 Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución.
-
+En la raíz del repositorio también se provee `env.example.js` con valores de ejemplo. Puedes copiarlo como `env.js` y reemplazar los datos por los de tu proyecto si prefieres configurarlo manualmente.
 Para preparar el entorno local sigue los pasos:
 
 1. Exporta las variables en tu terminal:
@@ -114,6 +114,7 @@ tus credenciales de Supabase. Genera este archivo ejecutando:
 SUPABASE_URL=https://tu-proyecto.supabase.co \
 SUPABASE_ANON_KEY=clave_publica ./build.sh
 ```
+Si lo prefieres, copia `env.example.js` a `env.js` y edita los valores manualmente.
 
 Coloca `env.js` junto a `diagnostico.html` y abre el archivo en tu navegador.
 Allí podrás introducir manualmente un correo y contraseña válidos para las
