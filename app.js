@@ -2516,6 +2516,27 @@
             }, 5000);
         }
 
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) return;
+            try {
+                Notification.requestPermission().then(permission => {
+                    console.log('🔔 Permiso de notificación:', permission);
+                });
+            } catch (e) {
+                console.error('Error solicitando permiso de notificación:', e);
+            }
+        }
+
+        function sendNotification(title, body) {
+            if (!('Notification' in window)) return;
+            if (Notification.permission !== 'granted') return;
+            try {
+                new Notification(title, { body });
+            } catch (e) {
+                console.error('Error enviando notificación:', e);
+            }
+        }
+
         async function testConnection() {
             updateConnectionStatus(false, 'Probando...');
             updateSecurityIndicator('warning', 'Probando Conexión');
@@ -3059,7 +3080,7 @@
                 }, true);
 
                 showSuccess(`✅ Autorización creada exitosamente para ${sanitizeHtml(studentName)} (${sanitizeHtml(gradeName)})`);
-                
+                sendNotification(studentName, gradeName);
                 resetAuthorizationForm();
                 
                 console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
@@ -5131,6 +5152,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 function attachEventHandlers() {
+    requestNotificationPermission();
   const clickHandlers = [
     ['.logout-btn', logout],
     ['#loginBtn', login],
