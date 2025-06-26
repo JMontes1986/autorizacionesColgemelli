@@ -6,9 +6,11 @@
     <title>DIAGNÓSTICO - Sistema Colegio Gemelli</title>
     <!-- Múltiples CDNs de Supabase para asegurar carga -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="env.js"></script>
-    <script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="env.js"></script>
+<!-- Animaciones con GSAP -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+<script>
         // Verificar si Supabase está disponible y cargar alternativa si no
         if (typeof window.supabase === 'undefined') {
             console.log('⚠️ Supabase no cargó desde CDN principal, intentando alternativa...');
@@ -384,6 +386,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            if (window.gsap) {
+                gsap.from('.container', { duration: 0.6, opacity: 0, y: -20 });
+            }
             // Esperar un momento para que las librerías se carguen
             setTimeout(() => {
                 if (typeof window.supabase !== 'undefined') {
