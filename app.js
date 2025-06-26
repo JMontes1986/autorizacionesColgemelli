@@ -4887,6 +4887,10 @@
             updateConnectionStatus(false, 'Conectando...');
             updateSecurityIndicator('warning', 'Iniciando Sistema');
             
+            if (window.gsap) {
+                gsap.from('#loginSection', { duration: 0.6, opacity: 0, y: -20 });
+            }
+
             // Verificar dependencias críticas
             setTimeout(() => {
                 console.log('🔍 Verificando dependencias...');
