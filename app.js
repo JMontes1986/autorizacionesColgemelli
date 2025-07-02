@@ -2360,7 +2360,8 @@
                 // Limpiar UI
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('dashboard').style.display = 'none';
-                document.querySelector('#logoutBtn').style.display = 'none';
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) logoutBtn.style.display = 'none';
                 document.getElementById('email').value = '';
                 document.getElementById('password').value = '';
                 
@@ -2545,7 +2546,8 @@
         function showDashboard() {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            document.querySelector('#logoutBtn').style.display = 'block';
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.style.display = 'block';
             
             setupNavigation();
             loadInitialData();
@@ -5095,8 +5097,9 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 function attachEventHandlers() {
     requestNotificationPermission();
+    const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
   const clickHandlers = [
-    ['#logoutBtn', logout],
     ['#loginBtn', login],
     ['#testConnectionBtn', testConnection],
     ['#loadPendingBtn', loadPendingExits],
