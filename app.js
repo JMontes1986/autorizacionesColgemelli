@@ -2,82 +2,14 @@
         // VERIFICACIÓN Y CARGA DE CHART.JS
         // ========================================
 
-        function waitForChartJS() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 50; // 5 segundos máximo
-                
-                const checkChart = () => {
-                    attempts++;
-                    console.log(`🔍 Verificando Chart.js - Intento ${attempts}/${maxAttempts}`);
-                    
-                    if (typeof Chart !== 'undefined') {
-                        console.log('✅ Chart.js cargado exitosamente:', Chart.version);
-                        resolve(true);
-                    } else if (attempts >= maxAttempts) {
-                        console.error('❌ Chart.js no se pudo cargar después de', maxAttempts, 'intentos');
-                        reject(new Error('Chart.js no se cargó'));
-                    } else {
-                        setTimeout(checkChart, 100);
-                    }
-                };
-                
-                checkChart();
-            });
-        }
-
-        async function loadChartJSFallback() {
-            try {
-                console.log('🔄 Intentando cargar Chart.js como fallback...');
-                
-                // Crear elemento script para Chart.js
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
-                script.crossOrigin = 'anonymous';
-                
-                return new Promise((resolve, reject) => {
-                    script.onload = () => {
-                        console.log('✅ Chart.js fallback cargado exitosamente');
-                        resolve(true);
-                    };
-                    
-                    script.onerror = () => {
-                        console.error('❌ Error cargando Chart.js fallback');
-                        reject(new Error('Fallback falló'));
-                    };
-                    
-                    document.head.appendChild(script);
-                    
-                    // Timeout de 10 segundos
-                    setTimeout(() => {
-                        reject(new Error('Timeout cargando Chart.js'));
-                    }, 10000);
-                });
-                
-            } catch (error) {
-                console.error('❌ Error en fallback de Chart.js:', error);
-                throw error;
+        function ensureChartJSLoaded() {
+            if (typeof Chart !== 'undefined') {
+                console.log('✅ Chart.js disponible:', Chart.version);
+                return Promise.resolve(true);
             }
-        }
 
-        async function ensureChartJSLoaded() {
-            try {
-                // Intentar con la carga normal primero
-                await waitForChartJS();
-                return true;
-            } catch (error) {
-                console.log('⚠️ Carga normal falló, intentando fallback...');
-                try {
-                    await loadChartJSFallback();
-                    // Esperar un poco más después del fallback
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    await waitForChartJS();
-                    return true;
-                } catch (fallbackError) {
-                    console.error('❌ Ambos métodos de carga fallaron:', fallbackError);
-                    return false;
-                }
-            }
+        console.error('❌ Chart.js no está disponible');
+            return Promise.resolve(false);
         }
 
         // ========================================
