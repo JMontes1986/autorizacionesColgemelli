@@ -1,0 +1,51 @@
+{
+ "Report": {
+  "ReportVersion": "2023.3",
+  "EngineVersion": "EngineV2",
+  "ScriptLanguage": "Js",
+  "Dictionary": {
+   "DataSources": [
+    {
+     "Name": "data",
+     "Alias": "data",
+     "Columns": [
+      {"Name": "Grado", "Type": "System.String"},
+      {"Name": "Estudiante", "Type": "System.String"},
+      {"Name": "Motivo", "Type": "System.String"},
+      {"Name": "FechaSalida", "Type": "System.DateTime"},
+      {"Name": "HoraSalida", "Type": "System.String"},
+      {"Name": "Observaciones", "Type": "System.String"}
+     ]
+    }
+   ]
+  },
+  "Pages": [
+   {
+    "Name": "Page1",
+    "Guid": "Page1",
+    "Components": [
+     {
+      "Ident": "StiPage",
+      "Name": "Page1",
+      "Guid": "Page1",
+      "Components": [
+       {
+        "Ident": "StiDataBand",
+        "Name": "DataBand1",
+        "DataSourceName": "data",
+        "Components": [
+         {"Ident": "StiText", "Text": "{data.Grado}", "Width": 2},
+         {"Ident": "StiText", "Text": "{data.Estudiante}", "Left": 2, "Width": 4},
+         {"Ident": "StiText", "Text": "{data.Motivo}", "Left": 6, "Width": 3},
+         {"Ident": "StiText", "Text": "{data.FechaSalida}", "Left": 9, "Width": 3},
+         {"Ident": "StiText", "Text": "{data.HoraSalida}", "Left": 12, "Width": 2},
+         {"Ident": "StiText", "Text": "{data.Observaciones}", "Left": 14, "Width": 4}
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
