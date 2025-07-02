@@ -1332,6 +1332,73 @@
             window.open('diagnostico.html', '_blank');
         }
 
+        function updateReportButton() {
+            const btn = document.getElementById('showReportBtn');
+            if (!btn) return;
+            const allowed = [
+                'sistemas@colgemelli.edu.co',
+                'vigilancia@colgemelli.edu.co'
+            ];
+            if (currentUser && allowed.includes(currentUser.email)) {
+                btn.style.display = 'inline-block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        async function showReport() {
+            try {
+                const allowed = [
+                    'sistemas@colgemelli.edu.co',
+                    'vigilancia@colgemelli.edu.co'
+                ];
+                if (!currentUser || !allowed.includes(currentUser.email)) {
+                    showError('Sin permisos');
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('autorizaciones_salida')
+                    .select(`
+                        observaciones,
+                        fecha_salida,
+                        hora_salida,
+                        estudiante:estudiantes(nombre, apellidos, grado:grados(nombre)),
+                        motivo:motivos(nombre)
+                    `)
+                    .order('fecha_creacion', { ascending: false });
+
+                if (error) throw error;
+
+                const records = (data || []).map(r => ({
+                    Grado: r.estudiante?.grado?.nombre || '',
+                    Estudiante: r.estudiante ? `${r.estudiante.nombre} ${r.estudiante.apellidos}` : '',
+                    Motivo: r.motivo?.nombre || '',
+                    FechaSalida: r.fecha_salida,
+                    HoraSalida: r.hora_salida,
+                    Observaciones: r.observaciones || ''
+                }));
+
+                const dataSet = new Stimulsoft.System.Data.DataSet('data');
+                dataSet.readJson({ data: records });
+
+                const report = new Stimulsoft.Report.StiReport();
+                report.loadFile('report.mrt');
+                report.regData('data', 'data', dataSet);
+
+                const viewerOptions = new Stimulsoft.Viewer.StiViewerOptions();
+                viewerOptions.appearance.fullScreenMode = true;
+                const viewer = new Stimulsoft.Viewer.StiViewer(viewerOptions, 'StiViewer', false);
+                viewer.report = report;
+                viewer.renderHtml('reportViewer');
+
+                openModal('reportModal');
+            } catch (err) {
+                console.error('Error mostrando reporte:', err);
+                showError('Error generando reporte: ' + err.message);
+            }
+        }
+
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
@@ -2365,6 +2432,8 @@
                 document.getElementById('email').value = '';
                 document.getElementById('password').value = '';
                 
+                updateReportButton();
+
                 // Reiniciar desafío aritmético
                 resetCaptcha();
                 
@@ -2548,8 +2617,9 @@
             document.getElementById('dashboard').style.display = 'block';
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'block';
-            
+
             setupNavigation();
+            updateReportButton();
             loadInitialData();
             resetSessionTimeout();
         }
@@ -5123,6 +5193,7 @@ function attachEventHandlers() {
     ['#debugHistoryBtn', debugHistory],
     ['#refreshDashboardBtn', refreshDashboard],
     ['#exportDashboardBtn', exportDashboardData],
+    ['#showReportBtn', showReport],
     ['#showDetailedViewBtn', showDetailedView],
     ['#debugDashboardBtn', debugDashboard],
     ['#loadLogsBtn', loadSecurityLogs],
@@ -5189,6 +5260,8 @@ function attachEventHandlers() {
 
   const historyDate = document.getElementById('historyDate');
   if (historyDate) historyDate.addEventListener('change', () => loadHistory());
+  
+  updateReportButton();
 }
 
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
