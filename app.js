@@ -245,23 +245,29 @@
 
                 console.log('✅ Estadísticas básicas actualizadas');
 
-                // Verificar si Chart.js está disponible
-                console.log('🔍 Verificando disponibilidad de Chart.js...');
-                const chartJSAvailable = await ensureChartJSLoaded();
-                
-                if (chartJSAvailable) {
-                    console.log('✅ Chart.js disponible, cargando gráficos completos...');
-                    // Cargar gráficos con Chart.js
-                    await loadDashboardCharts(authorizations);
-                } else {
-                    console.log('⚠️ Chart.js no disponible, usando gráficos simples...');
-                    // Usar gráficos simples
-                    createSimpleCharts();
-                    updateSimpleCharts(pending.length, confirmed.length);
-                }
+                // Iniciar carga de gráficos sin bloquear estadísticas
+                const chartsPromise = (async () => {
+                    try {
+                        console.log('🔍 Verificando disponibilidad de Chart.js...');
+                        const chartJSAvailable = await ensureChartJSLoaded();
+                        if (chartJSAvailable) {
+                            console.log('✅ Chart.js disponible, cargando gráficos completos...');
+                            await loadDashboardCharts(authorizations);
+                        } else {
+                            console.log('⚠️ Chart.js no disponible, usando gráficos simples...');
+                            createSimpleCharts();
+                            updateSimpleCharts(pending.length, confirmed.length);
+                        }
+                    } catch (chartError) {
+                        console.error('❌ Error al cargar gráficos:', chartError);
+                        createSimpleCharts();
+                        updateSimpleCharts(pending.length, confirmed.length);
+                    }
+                })();
 
-                // Cargar actividad reciente (esto no depende de Chart.js)
+                // Cargar actividad reciente mientras se procesan los gráficos
                 await loadDashboardActivity(authorizations);
+                await chartsPromise;
 
                 console.log('✅ Dashboard completamente cargado');
                 
