@@ -1,0 +1,57 @@
+<!-- archivo: reporte.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte Mensual de Salidas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+  <h1>📊 Reporte Mensual de Salidas</h1>
+  <div id="reporte"></div>
+
+  <script>
+    const supabaseUrl = 'https://TUSUPABASE.supabase.co'; // pon tu URL real
+    const supabaseKey = 'TU_API_KEY'; // pon tu clave real
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function generarReporte() {
+      const { data, error } = await supabase
+        .from('autorizaciones_salida')
+        .select('fecha_salida, estudiante_id, motivo_id, hora_salida, observaciones');
+
+      if (error) {
+        console.error('Error al obtener datos:', error);
+        return;
+      }
+
+      const agrupado = {};
+
+      data.forEach(item => {
+        const mes = item.fecha_salida.slice(0, 7); // 'YYYY-MM'
+        if (!agrupado[mes]) agrupado[mes] = [];
+        agrupado[mes].push(item);
+      });
+
+      const div = document.getElementById('reporte');
+      for (const mes in agrupado) {
+        const grupo = agrupado[mes];
+        const container = document.createElement('div');
+        container.innerHTML = `<h2>Mes: ${mes} (${grupo.length} autorizaciones)</h2>`;
+
+        const ul = document.createElement('ul');
+        grupo.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `Estudiante ID: ${item.estudiante_id} | Motivo ID: ${item.motivo_id} | Hora: ${item.hora_salida} | Obs: ${item.observaciones || 'Sin observación'}`;
+          ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+        div.appendChild(container);
+      }
+    }
+
+    generarReporte();
+  </script>
+</body>
+</html>
