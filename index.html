@@ -400,6 +400,7 @@
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
 <button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
+<button onclick="mostrarReporteMensual()" class="btn btn-secondary">📊 Reporte mensual</button>
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 </div>
@@ -442,6 +443,11 @@
 </div>
 </div>
 </div>
+</div>
+<div id="seccion-reporte-mensual" style="display:none;">
+  <h2>📊 Reporte mensual de autorizaciones</h2>
+  <input type="month" id="mesReporte" onchange="mostrarReporteMensual()">
+  <div id="contenedor-reporte"></div>
 </div>
 <!-- Modals -->
 <div class="modal" id="studentModal">
