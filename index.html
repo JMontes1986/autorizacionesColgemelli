@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- HEADERS DE SEGURIDAD MEJORADOS -->
-<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://cdn.stimulsoft.com https://mbosvnmhnbrslfwlfcxu.supabase.co https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.stimulsoft.com; style-src 'self' 'unsafe-inline'; frame-src 'none'; frame-ancestors 'self'; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co;" http-equiv="Content-Security-Policy"/>
+<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net ; style-src 'self' 'unsafe-inline'; frame-src 'none'; frame-ancestors 'self'; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co;" http-equiv="Content-Security-Policy"/>
 <meta content="DENY" http-equiv="X-Frame-Options"/>
 <meta content="nosniff" http-equiv="X-Content-Type-Options"/>
 <meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
@@ -21,10 +21,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
     <!-- Chart.js desde CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" defer></script>
-<!-- Stimulsoft Reports.JS -->
-    <script src="https://cdn.stimulsoft.com/js/stimulsoft.reports.js" defer></script>
-    <script src="https://cdn.stimulsoft.com/js/stimulsoft.viewer.js" defer></script>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="container">
@@ -399,7 +395,6 @@
 <div class="nav-buttons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button class="btn btn-secondary" onclick="exportDashboardData()">📥 Exportar Datos</button>
-<button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
 <button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 </div>
@@ -549,11 +544,6 @@
 <button id="cancelGradeModal" class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
 </form>
 </div>
-</div>
-<div class="modal" id="reportModal">
-<div class="modal-content" style="max-width:90%;width:95%;height:90vh;">
-<span class="close" onclick="closeModal('reportModal')">×</span>
-<div id="reportViewer" style="width:100%;height:100%;"></div>
 </div>
 </div>
 <script defer src="env.js"></script>
