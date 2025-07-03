@@ -4,54 +4,71 @@
 <head>
   <meta charset="UTF-8">
   <title>Reporte Mensual de Salidas</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <h1>📊 Reporte Mensual de Salidas</h1>
-  <div id="reporte"></div>
+  <input type="month" id="mesReporte" />
+  <button onclick="mostrarReporteMensual()">Generar</button>
+  <div id="contenedor-reporte"></div>
 
   <script>
-    const supabaseUrl = 'https://TUSUPABASE.supabase.co'; // pon tu URL real
-    const supabaseKey = 'TU_API_KEY'; // pon tu clave real
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-    async function generarReporte() {
-      const { data, error } = await supabase
+    async function mostrarReporteMensual() {
+      const contenedor = document.getElementById('contenedor-reporte');
+      contenedor.innerHTML = '<p>Cargando datos...</p>';
+
+      const mes = document.getElementById('mesReporte').value;
+      let consulta = supabase
         .from('autorizaciones_salida')
         .select('fecha_salida, estudiante_id, motivo_id, hora_salida, observaciones');
 
+         if (mes) {
+        consulta = consulta
+          .gte('fecha_salida', `${mes}-01`)
+          .lt('fecha_salida', obtenerSiguienteMes(mes));
+      }
+
+      const { data, error } = await consulta;
+
       if (error) {
-        console.error('Error al obtener datos:', error);
+        contenedor.innerHTML = '<p>Error al cargar datos.</p>';
+        console.error(error);
         return;
       }
 
       const agrupado = {};
-
       data.forEach(item => {
-        const mes = item.fecha_salida.slice(0, 7); // 'YYYY-MM'
-        if (!agrupado[mes]) agrupado[mes] = [];
-        agrupado[mes].push(item);
+       const key = item.fecha_salida.slice(0, 7);
+        if (!agrupado[key]) agrupado[key] = [];
+        agrupado[key].push(item);
       });
 
-      const div = document.getElementById('reporte');
-      for (const mes in agrupado) {
-        const grupo = agrupado[mes];
-        const container = document.createElement('div');
-        container.innerHTML = `<h2>Mes: ${mes} (${grupo.length} autorizaciones)</h2>`;
-
-        const ul = document.createElement('ul');
+      contenedor.innerHTML = '';
+      for (const clave in agrupado) {
+        const grupo = agrupado[clave];
+        const div = document.createElement('div');
+        div.innerHTML = `<h2>Mes: ${clave} (${grupo.length} autorizaciones)</h2><ul style="padding-left:20px;"></ul>`;
+        const ul = div.querySelector('ul');
         grupo.forEach(item => {
           const li = document.createElement('li');
-          li.textContent = `Estudiante ID: ${item.estudiante_id} | Motivo ID: ${item.motivo_id} | Hora: ${item.hora_salida} | Obs: ${item.observaciones || 'Sin observación'}`;
+          li.textContent = `Estudiante ID: ${item.estudiante_id} | Motivo: ${item.motivo_id} | Hora: ${item.hora_salida} | Obs: ${item.observaciones || 'Ninguna'}`;
           ul.appendChild(li);
         });
 
-        container.appendChild(ul);
-        div.appendChild(container);
+        contenedor.appendChild(div);
       }
     }
 
-    generarReporte();
+    function obtenerSiguienteMes(mes) {
+      const [y, m] = mes.split('-').map(Number);
+      const date = new Date(y, m - 1, 1);
+      date.setMonth(date.getMonth() + 1);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}-01`;
+    }
   </script>
 </body>
 </html>
