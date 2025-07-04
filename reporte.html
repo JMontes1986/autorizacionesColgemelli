@@ -27,7 +27,6 @@
             <th>Grado</th>
             <th>Fecha salida</th>
             <th>Hora salida</th>
-            <th>Solicitado por</th>
             <th>Autorizada</th>
             <th>Salida efectiva</th>
           </tr>
@@ -60,20 +59,12 @@
 
     async function mostrarReporte() {
       const tbody = document.querySelector('#tabla-reporte tbody');
-      tbody.innerHTML = '<tr><td colspan="10">Cargando datos...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9">Cargando datos...</td></tr>';
 
       const desde = document.getElementById('desdeReporte').value;
       const hasta = document.getElementById('hastaReporte').value;
       let consulta = supabase
-        .select(`
-          estudiante_id,
-          fecha_salida,
-          hora_salida,
-          autorizada,
-          salida_efectiva,
-          usuario_autorizador_id,
-          usuario:usuarios(nombre)
-        `);
+        .from('autorizaciones_salida')
         .select('estudiante_id, fecha_salida, hora_salida, autorizada, salida_efectiva');
 
       if (desde) {
@@ -86,13 +77,13 @@
       const { data: autorizaciones, error } = await consulta;
 
       if (error) {
-         tbody.innerHTML = '<tr><td colspan="10">Error al cargar datos</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9">Error al cargar datos</td></tr>';
         console.error(error);
         return;
       }
 
       if (!autorizaciones || autorizaciones.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10">No se encontraron datos</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9">No se encontraron datos</td></tr>';
         return;
       }
 
@@ -122,7 +113,6 @@
           <td>${sanitizeHtml(s.grado?.nombre)}</td>
           <td>${sanitizeHtml(item.fecha_salida)}</td>
           <td>${sanitizeHtml(item.hora_salida)}</td>
-          <td>${sanitizeHtml(item.usuario?.nombre)}</td>
           <td>${item.autorizada ? 'Sí' : 'No'}</td>
           <td>${sanitizeHtml(item.salida_efectiva || 'Pendiente')}</td>
         `;
