@@ -2605,8 +2605,10 @@ function mostrarReporteMensual() {
             }
 
             // Mostrar la primera sección disponible
-            if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
-                showSection('dashboardSectionDiv'); // Vigilancia empieza con dashboard
+            if (email === 'vigilancia@colgemelli.edu.co') {
+                showSection('verifySectionDiv'); // este usuario comienza en Control de Salidas
+            } else if (role === 'vigilante') {
+                showSection('dashboardSectionDiv'); // Vigilancia comienza con dashboard
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
                 // Convivencia y Gestión Formativa inician en la sección de autorización
                 showSection('authorizeSectionDiv');
