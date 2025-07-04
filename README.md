@@ -6,6 +6,7 @@ Sistema de control de salidas estudiantiles - Colegio Gemelli
 La política de seguridad se definió con el encabezado estándar `Content-Security-Policy`.
 La metaetiqueta del HTML ya no incluye la directiva `frame-ancestors`.
 Configura tu servidor web para enviar la cabecera `Content-Security-Policy` con `frame-ancestors` y así controlar quién puede embeber la página.
+La protección `X-Frame-Options` también debe enviarse como cabecera HTTP y no mediante una metaetiqueta. Asegúrate de definirla en tu servidor.
 Se permite `blob:` en `default-src` y `connect-src` para habilitar descargas de CSV
 generadas con `URL.createObjectURL()`. Además, se añadió la directiva `worker-src 'self' blob:`
 para compatibilidad con bibliotecas que crean Web Workers.
