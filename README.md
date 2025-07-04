@@ -6,7 +6,8 @@ Sistema de control de salidas estudiantiles - Colegio Gemelli
 La política de seguridad se definió con el encabezado estándar `Content-Security-Policy`.
 Incluye la directiva `frame-ancestors 'self'` para controlar quién puede embeber la página.
 Se permite `blob:` en `default-src` y `connect-src` para habilitar descargas de CSV
-generadas con `URL.createObjectURL()`.
+generadas con `URL.createObjectURL()`. Además, se añadió la directiva `worker-src 'self' blob:`
+para compatibilidad con bibliotecas que crean Web Workers.
 Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar fotos almacenadas en OneDrive.
 
 # Manual de Usuario y Referencia Técnica: Sistema Web de Autorización de Salidas - Colegio Gemelli
@@ -235,8 +236,8 @@ Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas
 
    ```html
    <!-- CSP -->
-   <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://cdn.jsdelivr.net https://<tuinstancia>.supabase.co ...">
-
+   <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://cdn.jsdelivr.net https://<tuinstancia>.supabase.co ...; worker-src 'self' blob:">
+   
    <!-- Logo -->
    <img class="logo" src="https://<tuinstancia>.supabase.co/storage/v1/object/sign/...">
    ```
