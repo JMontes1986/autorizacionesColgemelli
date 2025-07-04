@@ -3,48 +3,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Reporte Mensual de Salidas</title>
+  <title>Reporte de Salidas</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f5f6fa;
-      margin: 0;
-      padding: 20px;
-    }
-    .report-container {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      max-width: 1200px;
-      margin: auto;
-      padding: 20px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-    .table-container {
-      overflow-x: auto;
-    }
-    .student-photo {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-  </style>
 </head>
-<body>
+<body class="report">
   <div class="report-container">
-    <h1>📊 Reporte Mensual de Salidas</h1>
+    <h1>📊 Reporte de Salidas</h1>
     <div class="controls">
-      <input type="month" id="mesReporte" />
-      <button onclick="mostrarReporteMensual()">Generar</button>
+      <label>Desde: <input type="date" id="desdeReporte"></label>
+      <label>Hasta: <input type="date" id="hastaReporte"></label>
+      <button onclick="mostrarReporte()">Generar</button>
     </div>
     <div class="table-container">
       <table class="table" id="tabla-reporte">
@@ -84,11 +54,12 @@
       return escaped;
     }
 
-    async function mostrarReporteMensual() {
+    async function mostrarReporte() {
       const tbody = document.querySelector('#tabla-reporte tbody');
       tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
 
-      const mes = document.getElementById('mesReporte').value;
+      const desde = document.getElementById('desdeReporte').value;
+      const hasta = document.getElementById('hastaReporte').value;
       let consulta = supabase
         .from('autorizaciones_salida')
         .select(`
@@ -103,10 +74,11 @@
           fecha_salida
         `);
 
-      if (mes) {
-        consulta = consulta
-          .gte('fecha_salida', `${mes}-01`)
-          .lt('fecha_salida', obtenerSiguienteMes(mes));
+      if (desde) {
+        consulta = consulta.gte('fecha_salida', desde);
+      }
+      if (hasta) {
+        consulta = consulta.lte('fecha_salida', hasta);
       }
 
       const { data, error } = await consulta;
@@ -133,12 +105,6 @@
       });
     }
 
-    function obtenerSiguienteMes(mes) {
-      const [y, m] = mes.split('-').map(Number);
-      const date = new Date(y, m - 1, 1);
-      date.setMonth(date.getMonth() + 1);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}-01`;
-    }
   </script>
 </body>
 </html>
