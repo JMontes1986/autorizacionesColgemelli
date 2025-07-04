@@ -1329,8 +1329,14 @@
         }
 
         function showDetailedView() {
-            window.open('diagnostico.html', '_blank');
-        }
+    window.open('diagnostico.html', '_blank');
+}
+
+function mostrarReporteMensual() {
+    const month = document.getElementById('mesReporte')?.value;
+    const url = month ? `reporte.html?mes=${encodeURIComponent(month)}` : 'reporte.html';
+    window.open(url, '_blank');
+}
 
         async function forceReloadCharts() {
             try {
@@ -5194,3 +5200,5 @@ function attachEventHandlers() {
 }
 
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
+// Expose helpers for inline event handlers
+window.mostrarReporteMensual = mostrarReporteMensual;
