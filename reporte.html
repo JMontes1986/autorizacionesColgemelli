@@ -15,6 +15,7 @@
       <label>Desde: <input type="date" id="desdeReporte"></label>
       <label>Hasta: <input type="date" id="hastaReporte"></label>
       <button onclick="mostrarReporte()">Generar</button>
+      <button onclick="exportarCSV()">Descargar CSV</button>
     </div>
     <div class="table-container">
       <table class="table" id="tabla-reporte">
@@ -117,8 +118,31 @@
           <td>${sanitizeHtml(item.salida_efectiva || 'Pendiente')}</td>
         `;
         tbody.appendChild(row);
+    });
+  }
+
+  function exportarCSV() {
+    const tabla = document.getElementById('tabla-reporte');
+    const filas = tabla.querySelectorAll('tr');
+    const csv = [];
+    filas.forEach(fila => {
+      const cols = fila.querySelectorAll('th, td');
+      const datos = Array.from(cols).map(col => {
+        const texto = sanitizeHtml(col.textContent.trim()).replace(/"/g, '""');
+        return `"${texto}"`;
       });
-    }
+    csv.push(datos.join(','));
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0,10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_salidas_${fecha}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   </script>
 </body>
