@@ -25,7 +25,10 @@
             <th>Apellido</th>
             <th>Documento</th>
             <th>Grado</th>
-            <th>Foto</th>
+            <th>Fecha salida</th>
+            <th>Hora salida</th>
+            <th>Autorizada</th>
+            <th>Salida efectiva</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -56,7 +59,7 @@
 
     async function mostrarReporte() {
       const tbody = document.querySelector('#tabla-reporte tbody');
-      tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9">Cargando datos...</td></tr>';
 
       const desde = document.getElementById('desdeReporte').value;
       const hasta = document.getElementById('hastaReporte').value;
@@ -68,10 +71,13 @@
             nombre,
             apellidos,
             documento,
-            grado:grados(nombre),
+            grado:grados(nombre)
             foto_url
           ),
-          fecha_salida
+          fecha_salida,
+          hora_salida,
+          autorizada,
+          salida_efectiva
         `);
 
       if (desde) {
@@ -84,8 +90,13 @@
       const { data, error } = await consulta;
 
       if (error) {
-        tbody.innerHTML = '<tr><td colspan="6">Error al cargar datos</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9">Error al cargar datos</td></tr>';
         console.error(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9">No se encontraron datos</td></tr>';
         return;
       }
 
@@ -99,7 +110,10 @@
           <td>${sanitizeHtml(s.apellidos)}</td>
           <td>${sanitizeHtml(s.documento)}</td>
           <td>${sanitizeHtml(s.grado?.nombre)}</td>
-          <td><img src="${sanitizeHtml(s.foto_url || 'https://via.placeholder.com/80')}" alt="Foto" class="student-photo"></td>
+          <td>${sanitizeHtml(item.fecha_salida)}</td>
+          <td>${sanitizeHtml(item.hora_salida)}</td>
+          <td>${item.autorizada ? 'Sí' : 'No'}</td>
+          <td>${sanitizeHtml(item.salida_efectiva || 'Pendiente')}</td>
         `;
         tbody.appendChild(row);
       });
