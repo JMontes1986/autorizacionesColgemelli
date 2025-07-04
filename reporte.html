@@ -7,26 +7,103 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 20px;
+    }
+    .report-container {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    .student-photo {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
-  <h1>📊 Reporte Mensual de Salidas</h1>
-  <input type="month" id="mesReporte" />
-  <button onclick="mostrarReporteMensual()">Generar</button>
-  <div id="contenedor-reporte"></div>
+  <div class="report-container">
+    <h1>📊 Reporte Mensual de Salidas</h1>
+    <div class="controls">
+      <input type="month" id="mesReporte" />
+      <button onclick="mostrarReporteMensual()">Generar</button>
+    </div>
+    <div class="table-container">
+      <table class="table" id="tabla-reporte">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Documento</th>
+            <th>Grado</th>
+            <th>Foto</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
     const supabase = window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+    function sanitizeHtml(str) {
+      if (!str) return '';
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      let escaped = temp.innerHTML;
+      escaped = escaped.replace(/javascript:/gi, '')
+                       .replace(/vbscript:/gi, '')
+                       .replace(/data:/gi, '')
+                       .replace(/on\w+=/gi, '')
+                       .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                       .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+                       .replace(/<object[^>]*>.*?<\/object>/gi, '')
+                       .replace(/<embed[^>]*>/gi, '')
+                       .replace(/<link[^>]*>/gi, '')
+                       .replace(/<meta[^>]*>/gi, '');
+      return escaped;
+    }
+
     async function mostrarReporteMensual() {
-      const contenedor = document.getElementById('contenedor-reporte');
-      contenedor.innerHTML = '<p>Cargando datos...</p>';
+      const tbody = document.querySelector('#tabla-reporte tbody');
+      tbody.innerHTML = '<tr><td colspan="6">Cargando datos...</td></tr>';
 
       const mes = document.getElementById('mesReporte').value;
       let consulta = supabase
         .from('autorizaciones_salida')
-        .select('fecha_salida, estudiante_id, motivo_id, hora_salida, observaciones');
+        .select(`
+          estudiante:estudiantes(
+            id,
+            nombre,
+            apellidos,
+            documento,
+            grado:grados(nombre),
+            foto_url
+          ),
+          fecha_salida
+        `);
 
-         if (mes) {
+      if (mes) {
         consulta = consulta
           .gte('fecha_salida', `${mes}-01`)
           .lt('fecha_salida', obtenerSiguienteMes(mes));
@@ -35,32 +112,25 @@
       const { data, error } = await consulta;
 
       if (error) {
-        contenedor.innerHTML = '<p>Error al cargar datos.</p>';
+        tbody.innerHTML = '<tr><td colspan="6">Error al cargar datos</td></tr>';
         console.error(error);
         return;
       }
 
-      const agrupado = {};
+      tbody.innerHTML = '';
       data.forEach(item => {
-       const key = item.fecha_salida.slice(0, 7);
-        if (!agrupado[key]) agrupado[key] = [];
-        agrupado[key].push(item);
+       const s = item.estudiante || {};
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${sanitizeHtml(String(s.id || ''))}</td>
+          <td>${sanitizeHtml(s.nombre)}</td>
+          <td>${sanitizeHtml(s.apellidos)}</td>
+          <td>${sanitizeHtml(s.documento)}</td>
+          <td>${sanitizeHtml(s.grado?.nombre)}</td>
+          <td><img src="${sanitizeHtml(s.foto_url || 'https://via.placeholder.com/80')}" alt="Foto" class="student-photo"></td>
+        `;
+        tbody.appendChild(row);
       });
-
-      contenedor.innerHTML = '';
-      for (const clave in agrupado) {
-        const grupo = agrupado[clave];
-        const div = document.createElement('div');
-        div.innerHTML = `<h2>Mes: ${clave} (${grupo.length} autorizaciones)</h2><ul style="padding-left:20px;"></ul>`;
-        const ul = div.querySelector('ul');
-        grupo.forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = `Estudiante ID: ${item.estudiante_id} | Motivo: ${item.motivo_id} | Hora: ${item.hora_salida} | Obs: ${item.observaciones || 'Ninguna'}`;
-          ul.appendChild(li);
-        });
-
-        contenedor.appendChild(div);
-      }
     }
 
     function obtenerSiguienteMes(mes) {
