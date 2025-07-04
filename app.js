@@ -2754,8 +2754,8 @@ function mostrarReporteMensual() {
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
-            document.getElementById('logDateFrom').value = todayColombia;
-            document.getElementById('logDateTo').value = todayColombia;
+            // document.getElementById('logDateFrom').value = todayColombia;
+            // document.getElementById('logDateTo').value = todayColombia;
             
             console.log('📅 Fecha actual Colombia establecida:', todayColombia);
         }
