@@ -66,7 +66,7 @@
 <label id="captchaQuestion">Pregunta</label>
 <input id="captchaAnswer" type="number" inputmode="numeric" placeholder="Respuesta" />
 </div>
-<button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
+<button class="btn" id="loginBtn" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" id="testConnectionBtn" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
 <div class="login-messages" id="loginMessages" style="margin-top: 15px;">
     <div class="alert alert-error" id="loginError" style="visibility: hidden;"></div>
@@ -123,9 +123,9 @@
 <div class="section" id="verifySectionDiv">
 <h2>🔍 Control de Salidas - Vigilancia</h2>
 <div class="nav-buttons">
-<button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
-<button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
-<button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
+<button class="btn btn-success" id="loadPendingBtn">🔄 Actualizar Lista</button>
+<button class="btn btn-secondary" id="toggleSearchBtn">🔍 Buscar Estudiante</button>
+<button class="btn btn-warning" id="showMyConfirmedBtn">👁️ Ver Mis Confirmaciones</button>
 </div>
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
@@ -169,15 +169,15 @@
 <div class="section" id="adminSectionDiv">
 <h2>⚙️ Panel de Administración</h2>
 <div class="nav-buttons">
-<button class="btn" onclick="showAdminSection('students')">Gestionar Estudiantes</button>
-<button class="btn" onclick="showAdminSection('users')">Gestionar Usuarios</button>
-<button class="btn" onclick="showAdminSection('reasons')">Gestionar Motivos</button>
-<button class="btn" onclick="showAdminSection('grades')">Gestionar Grados</button>
-<button class="btn btn-warning" onclick="showAdminSection('security')">🔒 Seguridad y Logs</button>
+<button class="btn" id="btnAdminStudents">Gestionar Estudiantes</button>
+<button class="btn" id="btnAdminUsers">Gestionar Usuarios</button>
+<button class="btn" id="btnAdminReasons">Gestionar Motivos</button>
+<button class="btn" id="btnAdminGrades">Gestionar Grados</button>
+<button class="btn btn-warning" id="btnAdminSecurity">🔒 Seguridad y Logs</button>
 </div>
 <div class="admin-subsection" id="adminStudents" style="display: none;">
 <h3>👨‍🎓 Gestión de Estudiantes</h3>
-<button class="btn btn-success" onclick="openModal('studentModal')">Agregar Estudiante</button>
+<button class="btn btn-success" id="addStudentBtn">Agregar Estudiante</button>
 <div class="table-wrapper">
 <table class="table" id="studentsTable">
 <thead>
@@ -195,7 +195,7 @@
 </div>
 <div class="admin-subsection" id="adminUsers" style="display: none;">
 <h3>👥 Gestión de Usuarios</h3>
-<button class="btn btn-success" onclick="openModal('userModal')">Agregar Usuario</button>
+<button class="btn btn-success" id="addUserBtn">Agregar Usuario</button>
 <div class="table-wrapper">
 <table class="table" id="usersTable">
 <thead>
@@ -213,7 +213,7 @@
 </div>
 <div class="admin-subsection" id="adminReasons" style="display: none;">
 <h3>📝 Gestión de Motivos</h3>
-<button class="btn btn-success" onclick="openModal('reasonModal')">Agregar Motivo</button>
+<button class="btn btn-success" id="addReasonBtn">Agregar Motivo</button>
 <div class="table-wrapper">
 <table class="table" id="reasonsTable">
 <thead>
@@ -230,7 +230,7 @@
 </div>
 <div class="admin-subsection" id="adminGrades" style="display: none;">
 <h3>🎓 Gestión de Grados</h3>
-<button class="btn btn-success" onclick="openModal('gradeModal')">Agregar Grado</button>
+<button class="btn btn-success" id="addGradeBtn">Agregar Grado</button>
 <div class="table-wrapper">
 <table class="table" id="gradesTable">
 <thead>
@@ -296,8 +296,8 @@
 </select>
 </div>
 </div>
-<button class="btn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
-<button class="btn btn-secondary" onclick="exportLogs()">📥 Exportar Logs</button>
+<button class="btn" id="loadLogsBtn">🔍 Buscar Logs</button>
+<button class="btn btn-secondary" id="exportLogsBtn">📥 Exportar Logs</button>
 </div>
 <div class="table-wrapper">
 <table class="table" id="securityLogsTable">
@@ -397,12 +397,12 @@
 <!-- Nuevos Gráficos Históricos -->
 <!-- Controles del Dashboard -->
 <div class="nav-buttons" style="margin-top: 20px;">
-<button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
+<button class="btn btn-success" id="refreshDashboardBtn">🔄 Actualizar Dashboard</button>
 <button class="btn btn-secondary" id="exportDashboardBtn">📥 Exportar Datos</button>
 <button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
 <button class="btn btn-secondary" onclick="window.location.href='reporte.html'">📊 Reporte mensual</button>
-<button class="btn" onclick="showDetailedView()">📋 Vista Detallada</button>
-<button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
+<button class="btn" id="showDetailedViewBtn">📋 Vista Detallada</button>
+<button class="btn btn-warning" id="debugDashboardBtn" style="font-size: 12px;">🔧 Debug</button>
 </div>
 <div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
 <p style="margin: 0; color: #666;"><strong>Estado Chart.js:</strong> <span id="chartjsStatusText">Verificando...</span></p>
@@ -414,8 +414,9 @@
 <div class="form-group">
 <input id="historyDate" onchange="loadHistory()" type="date"/>
 <button class="btn" onclick="loadHistory()">Filtrar por Fecha</button>
-<button class="btn btn-secondary" onclick="loadHistory(true)">Ver Todo el Historial</button>
-<button class="btn" onclick="debugHistory()" style="background: #e67e22;">🔍 Debug Historial</button>
+<button class="btn" id="filterHistoryBtn">Filtrar por Fecha</button>
+<button class="btn btn-secondary" id="viewAllHistoryBtn">Ver Todo el Historial</button>
+<button class="btn" id="debugHistoryBtn" style="background: #e67e22;">🔍 Debug Historial</button>
 </div>
 <div id="historyDebug" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
 <h4>🔧 Información de Debug:</h4>
@@ -474,7 +475,7 @@
 <option value="">Seleccionar grado...</option>
 </select>
 </div>
-<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelStudentModal" class="btn btn-secondary" type="button">Cancelar</button>
 <button id="cancelStudentModal" class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
 </form>
 </div>
@@ -506,7 +507,7 @@
 <option value="">Seleccionar rol...</option>
 </select>
 </div>
-<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelUserModal" class="btn btn-secondary" type="button">Cancelar</button>
 <button id="cancelUserModal" class="btn btn-secondary" onclick="closeModal('userModal')" type="button">Cancelar</button>
 </form>
 </div>
@@ -524,7 +525,7 @@
 <label>Descripción:</label>
 <textarea id="reasonDescription" maxlength="200" oninput="validateTextInput(this)" rows="3"></textarea>
 </div>
-<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelReasonModal" class="btn btn-secondary" type="button">Cancelar</button>
 <button id="cancelReasonModal" class="btn btn-secondary" onclick="closeModal('reasonModal')" type="button">Cancelar</button>
 </form>
 </div>
@@ -546,7 +547,7 @@
 <option value="Bachillerato">Bachillerato</option>
 </select>
 </div>
-<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelGradeModal" class="btn btn-secondary" type="button">Cancelar</button>
 <button id="cancelGradeModal" class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
 </form>
 </div>
