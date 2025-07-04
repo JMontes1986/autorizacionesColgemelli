@@ -2457,24 +2457,33 @@ function mostrarReporteMensual() {
             }
         }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('loginError');
-            const infoDiv = document.getElementById('loginInfo');
-            errorDiv.textContent = sanitizeHtml(message);
-            if (infoDiv) infoDiv.style.visibility = 'hidden';
-            errorDiv.style.visibility = 'visible';
-            setTimeout(() => {
-                errorDiv.style.visibility = 'hidden';
-            }, 5000);
+        function showError(message, elementId = 'loginError') {
+            const errorDiv = document.getElementById(elementId);
+            const infoDiv = elementId === 'loginError' ? document.getElementById('loginInfo') : null;
+
+            if (errorDiv) {
+                errorDiv.textContent = sanitizeHtml(message);
+                errorDiv.classList.add('alert-error');
+                errorDiv.classList.remove('alert-success');
+                if (infoDiv) infoDiv.style.visibility = 'hidden';
+                errorDiv.style.visibility = 'visible';
+                setTimeout(() => {
+                    errorDiv.style.visibility = 'hidden';
+                }, 5000);
+            } else {
+                alert('❌ ' + sanitizeHtml(message));
+            }
         }
 
-        function showSuccess(message) {
-            const infoDiv = document.getElementById('loginInfo');
-            const errorDiv = document.getElementById('loginError');
+        function showSuccess(message, elementId = 'loginInfo') {
+            const infoDiv = document.getElementById(elementId);
+            const errorDiv = elementId === 'loginInfo' ? document.getElementById('loginError') : null;
             if (infoDiv) {
                 infoDiv.textContent = sanitizeHtml(message);
                  if (errorDiv) errorDiv.style.visibility = 'hidden';
-                infoDiv.style.visibility = 'visible';
+                infoDiv.classList.add('alert-success');
+                infoDiv.classList.remove('alert-error');
+                if (errorDiv) errorDiv.style.visibility = 'hidden';
                 setTimeout(() => {
                     infoDiv.style.visibility = 'hidden';
                 }, 5000);
@@ -3779,7 +3788,7 @@ function mostrarReporteMensual() {
                 if (error) throw error;
 
                 if (!logs || logs.length === 0) {
-                    showError('No se encontraron logs para exportar');
+                    showError('No se encontraron logs para exportar', 'logExportMessage');
                     return;
                 }
 
@@ -3792,14 +3801,14 @@ function mostrarReporteMensual() {
                     registros: logs.length
                 }, true);
 
-                showSuccess(`Logs exportados exitosamente: ${logs.length} registros`);
+                showSuccess(`Logs exportados exitosamente: ${logs.length} registros`, 'logExportMessage');
 
             } catch (error) {
                 console.error('Error exportando logs:', error);
                 await logSecurityEvent('error', 'Error al exportar logs', {
                     error: error.message.substring(0, 200)
                 }, false);
-                showError('Error al exportar logs: ' + error.message);
+                showError('Error al exportar logs: ' + error.message, 'logExportMessage');
             }
         }
 
