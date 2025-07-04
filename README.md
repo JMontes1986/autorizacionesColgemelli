@@ -4,7 +4,8 @@ Sistema de control de salidas estudiantiles - Colegio Gemelli
 ## Seguridad
 
 La política de seguridad se definió con el encabezado estándar `Content-Security-Policy`.
-Incluye la directiva `frame-ancestors 'self'` para controlar quién puede embeber la página.
+La metaetiqueta del HTML ya no incluye la directiva `frame-ancestors`.
+Configura tu servidor web para enviar la cabecera `Content-Security-Policy` con `frame-ancestors` y así controlar quién puede embeber la página.
 Se permite `blob:` en `default-src` y `connect-src` para habilitar descargas de CSV
 generadas con `URL.createObjectURL()`. Además, se añadió la directiva `worker-src 'self' blob:`
 para compatibilidad con bibliotecas que crean Web Workers.
