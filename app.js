@@ -5096,61 +5096,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-async function mostrarReporteMensual() {
-  document.querySelectorAll('section, .modulo').forEach(sec => sec.style.display = 'none');
-  const seccion = document.getElementById('seccion-reporte-mensual');
-  if (seccion) seccion.style.display = 'block';
-
-  const contenedor = document.getElementById('contenedor-reporte');
-  contenedor.innerHTML = "<p>Cargando datos...</p>";
-
-  const mesSeleccionado = document.getElementById('mesReporte')?.value || '';
-  let consulta = supabase
-    .from('autorizaciones_salida')
-    .select('fecha_salida, estudiante_id, motivo_id, hora_salida, observaciones');
-
-  if (mesSeleccionado) {
-    consulta = consulta
-      .gte('fecha_salida', `${mesSeleccionado}-01`)
-      .lt('fecha_salida', obtenerSiguienteMes(mesSeleccionado));
-  }
-
-  const { data, error } = await consulta;
-
-  if (error) {
-    contenedor.innerHTML = "<p>Error al cargar datos.</p>";
-    console.error(error);
-    return;
-  }
-
-  const agrupado = {};
-  data.forEach(item => {
-    const mes = item.fecha_salida.slice(0, 7);
-    if (!agrupado[mes]) agrupado[mes] = [];
-    agrupado[mes].push(item);
-  });
-
-  contenedor.innerHTML = "";
-  for (const mes in agrupado) {
-    const grupo = agrupado[mes];
-    const div = document.createElement('div');
-    div.innerHTML = `<h3>${mes} - Total: ${grupo.length}</h3><ul style="padding-left:20px;"></ul>`;
-    const ul = div.querySelector('ul');
-    grupo.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = `Estudiante ID: ${item.estudiante_id} | Motivo: ${item.motivo_id} | Hora: ${item.hora_salida} | Obs: ${item.observaciones || 'Ninguna'}`;
-      ul.appendChild(li);
-    });
-    contenedor.appendChild(div);
-  }
-}
-
-function obtenerSiguienteMes(mes) {
-  const [y, m] = mes.split('-').map(Number);
-  const date = new Date(y, m - 1, 1);
-  date.setMonth(date.getMonth() + 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}-01`;
-}
 function attachEventHandlers() {
     requestNotificationPermission();
     const logoutBtn = document.getElementById('logoutBtn');
