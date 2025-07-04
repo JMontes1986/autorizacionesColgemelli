@@ -1316,6 +1316,37 @@
             return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
         }
 
+        function generateCSVFromLogs(logs) {
+            const headers = [
+                'Fecha/Hora',
+                'Usuario',
+                'Tipo',
+                'Acción',
+                'Detalles',
+                'IP'
+            ];
+
+            const rows = logs.map(log => {
+                let details = {};
+                try {
+                    details = log.detalles ? JSON.parse(log.detalles) : {};
+                } catch (e) {
+                    details = { error: 'Error al parsear detalles' };
+                }
+
+                return [
+                    formatDateTime(log.timestamp),
+                    log.usuario ? log.usuario.nombre : 'Sistema',
+                    log.tipo,
+                    log.accion,
+                    JSON.stringify(details),
+                    log.ip_address || 'N/A'
+                ];
+            });
+
+            return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+        }
+
         function downloadCSV(content, filename) {
             const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -3723,7 +3754,53 @@ function mostrarReporteMensual() {
         }
 
         async function exportLogs() {
-            showSuccess('Función de exportación en desarrollo');
+            try {
+                if (!validateSession()) return;
+
+                const dateFrom = document.getElementById('logDateFrom').value;
+                const dateTo = document.getElementById('logDateTo').value;
+                const logType = document.getElementById('logType').value;
+                const logUser = document.getElementById('logUser').value;
+
+                let query = supabase
+                    .from('audit_logs')
+                    .select(`
+                        *,
+                        usuario:usuarios(nombre, email)
+                    `)
+                    .order('timestamp', { ascending: false });
+
+                if (dateFrom) query = query.gte('timestamp', dateFrom + 'T00:00:00');
+                if (dateTo) query = query.lte('timestamp', dateTo + 'T23:59:59');
+                if (logType) query = query.eq('tipo', logType);
+                if (logUser) query = query.eq('usuario_id', logUser);
+
+                const { data: logs, error } = await query;
+                if (error) throw error;
+
+                if (!logs || logs.length === 0) {
+                    showError('No se encontraron logs para exportar');
+                    return;
+                }
+
+                const csvContent = generateCSVFromLogs(logs);
+                const today = getColombiaDate();
+                downloadCSV(csvContent, `logs_${today}.csv`);
+
+                await logSecurityEvent('export', 'Exportación de logs', {
+                    fecha: today,
+                    registros: logs.length
+                }, true);
+
+                showSuccess(`Logs exportados exitosamente: ${logs.length} registros`);
+
+            } catch (error) {
+                console.error('Error exportando logs:', error);
+                await logSecurityEvent('error', 'Error al exportar logs', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al exportar logs: ' + error.message);
+            }
         }
 
         // ========================================
