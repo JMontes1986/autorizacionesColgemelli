@@ -258,7 +258,7 @@
             }
 
             .table {
-                min-width: 700px;
+                min-width: 600px;
                 font-size: 14px;
             }
 
@@ -849,7 +849,7 @@
 
         .table {
             width: 100%;
-            min-width: 900px; /* Ancho mínimo para evitar que se comprima demasiado */
+            min-width: 800px; /* Ancho mínimo para evitar que se comprima demasiado */
             border-collapse: collapse;
             margin: 0;
             background: white;
@@ -1059,7 +1059,7 @@
             }
 
             .table {
-                min-width: 700px;
+                min-width: 600px;
             }
         }
 
