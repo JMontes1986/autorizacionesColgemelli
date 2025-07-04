@@ -65,20 +65,7 @@
       const hasta = document.getElementById('hastaReporte').value;
       let consulta = supabase
         .from('autorizaciones_salida')
-        .select(`
-          estudiante:estudiantes(
-            id,
-            nombre,
-            apellidos,
-            documento,
-            grado:grados(nombre)
-            foto_url
-          ),
-          fecha_salida,
-          hora_salida,
-          autorizada,
-          salida_efectiva
-        `);
+        .select('estudiante_id, fecha_salida, hora_salida, autorizada, salida_efectiva');
 
       if (desde) {
         consulta = consulta.gte('fecha_salida', desde);
@@ -87,7 +74,7 @@
         consulta = consulta.lte('fecha_salida', hasta);
       }
 
-      const { data, error } = await consulta;
+      const { data: autorizaciones, error } = await consulta;
 
       if (error) {
         tbody.innerHTML = '<tr><td colspan="9">Error al cargar datos</td></tr>';
@@ -95,14 +82,28 @@
         return;
       }
 
-      if (!data || data.length === 0) {
+      if (!autorizaciones || autorizaciones.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9">No se encontraron datos</td></tr>';
         return;
       }
 
+      const studentIds = [...new Set(autorizaciones.map(a => a.estudiante_id))];
+      let studentsMap = {};
+      if (studentIds.length > 0) {
+        const { data: students, error: studentsError } = await supabase
+          .from('estudiantes')
+          .select('id, nombre, apellidos, documento, grado:grados(nombre)')
+          .in('id', studentIds);
+        if (studentsError) {
+          console.error(studentsError);
+        } else if (students) {
+          students.forEach(s => { studentsMap[s.id] = s; });
+        }
+      }
+
       tbody.innerHTML = '';
-      data.forEach(item => {
-       const s = item.estudiante || {};
+      autorizaciones.forEach(item => {
+        const s = studentsMap[item.estudiante_id] || {};
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${sanitizeHtml(String(s.id || ''))}</td>
