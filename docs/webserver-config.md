@@ -7,3 +7,11 @@ add_header Content-Security-Policy "default-src 'self' blob: https://cdn.jsdeliv
 ```
 
 Ajusta los dominios según tus necesidades. Esta cabecera incluye `frame-ancestors` para restringir quién puede embeber el sitio.
+
+También debes definir `X-Frame-Options` como cabecera HTTP. Un ejemplo básico:
+
+```nginx
+add_header X-Frame-Options "DENY" always;
+```
+
+Con ello evitarás advertencias del navegador porque la metaetiqueta ha sido eliminada del HTML.
