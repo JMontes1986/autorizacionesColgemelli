@@ -23,3 +23,24 @@ for delete
 using (
     auth.role() <> 'anon'
 );
+
+-- Enable RLS on table llegadas_tarde
+alter table public.llegadas_tarde enable row level security;
+
+create policy "llegadas_tarde_read" on public.llegadas_tarde
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "llegadas_tarde_write" on public.llegadas_tarde
+for insert, update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "llegadas_tarde_delete" on public.llegadas_tarde
+for delete
+using (
+    auth.role() <> 'anon'
+);
