@@ -5432,6 +5432,9 @@ function attachEventHandlers() {
   const historyDate = document.getElementById('historyDate');
   if (historyDate) historyDate.addEventListener('change', () => loadHistory());
 
+  // Ensure the captcha question is shown as soon as handlers are attached
+  generateCaptcha();
+
 }
 
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
