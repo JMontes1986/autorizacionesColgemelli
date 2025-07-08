@@ -72,7 +72,7 @@ Para preparar el entorno local sigue los pasos:
    ```
 
 3. Asegúrate de que el archivo `env.js` se haya creado en la raíz del proyecto antes de abrir `index.html` en tu navegador.
-
+4. Ejecuta el script de base de datos `supabase/schema.sql` en tu instancia de Supabase para crear la tabla `llegadas_tarde` (puedes usar la consola SQL o la CLI).
 ## 4. index.html: Descripción Funcional
 
 ### 4.1 Inicio de Sesión
