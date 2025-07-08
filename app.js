@@ -2632,6 +2632,7 @@ function mostrarReporteMensual() {
                 }, false);
                 select.innerHTML = '<option value="">Error al cargar estudiantes</option>';
                 select.disabled = true;
+                showError('Error al cargar estudiantes: ' + error.message);
             }
         }
 
