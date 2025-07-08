@@ -2737,18 +2737,14 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
                 `;
-            if (showLateBtn) {
-                    navButtons.innerHTML += `<button class="btn" onclick="showSection('lateArrivalSectionDiv')">Llegadas Tarde</button>`;
-                }
+
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-            if (showLateBtn) {
-                    navButtons.innerHTML += `<button class="btn" onclick="showSection('lateArrivalSectionDiv')">Llegadas Tarde</button>`;
-                }
+        
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
                 // Dashboard especial para convivencia y gestión formativa
                 navButtons.innerHTML = `
@@ -2757,18 +2753,14 @@ function mostrarReporteMensual() {
                     <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-             if (showLateBtn) {
-                    navButtons.innerHTML += `<button class="btn" onclick="showSection('lateArrivalSectionDiv')">Llegadas Tarde</button>`;
-                }
+
             } else if (email === 'enfermeria@colgemelli.edu.co') {
                 // Enfermería NO tiene acceso al dashboard
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-            if (showLateBtn) {
-                    navButtons.innerHTML += `<button class="btn" onclick="showSection('lateArrivalSectionDiv')">Llegadas Tarde</button>`;
-                }
+           
             } else {
                 // Todos los demás usuarios tienen acceso al dashboard
                 navButtons.innerHTML = `
@@ -2777,9 +2769,7 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             }
-            if (showLateBtn) {
-                    navButtons.innerHTML += `<button class="btn" onclick="showSection('lateArrivalSectionDiv')">Llegadas Tarde</button>`;
-                }
+            
             // Mostrar la primera sección disponible
             if (email === 'vigilancia@colgemelli.edu.co') {
                 showSection('verifySectionDiv'); // este usuario comienza en Control de Salidas
