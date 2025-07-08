@@ -2889,12 +2889,7 @@ function mostrarReporteMensual() {
             document.getElementById('userForm').addEventListener('submit', saveUser);
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
-
-            const lateGrade = document.getElementById('lateGradeSelect');
-            if (lateGrade) lateGrade.addEventListener('change', loadLateStudents);
-            const lateForm = document.getElementById('lateArrivalForm');
-            if (lateForm) lateForm.addEventListener('submit', saveLateArrival);
-
+            
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
