@@ -1790,3 +1790,8 @@ body.report {
     object-fit: cover;
     border-radius: 8px;
 }
+
+/* Sección Llegadas Tarde */
+#lateArrivalSectionDiv .form-group {
+    margin-bottom: 15px;
+}
