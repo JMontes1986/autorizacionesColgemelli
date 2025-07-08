@@ -77,7 +77,9 @@
 <div class="dashboard" id="dashboard">
 <div class="nav-buttons" id="navButtons">
 <!-- Botones se cargarán dinámicamente según el rol -->
-<button class="btn btn-primary" id="btnControlSalidas">📋 Control de Salidas</button></div>
+<button class="btn btn-primary" id="btnControlSalidas">📋 Control de Salidas</button>
+<button class="btn btn-primary" id="btnLlegadasTarde">⏰ Llegadas Tarde</button>
+</div>
 <!-- Sección para Autorizar Salidas -->
 <div class="section" id="authorizeSectionDiv">
 <h2>✅ Autorizar Salida de Estudiante</h2>
@@ -442,6 +444,37 @@
 💡 Desliza horizontalmente para ver toda la información
 </div>
 </div>
+</div>
+</div>
+<!-- Sección de Llegadas Tarde -->
+<div class="section" id="lateArrivalSectionDiv">
+    <h2>⏰ Registro de Llegadas Tarde</h2>
+    <form id="lateArrivalForm">
+        <div class="grid">
+            <div class="form-group">
+                <label for="lateGradeSelect">1. Seleccionar Grado:</label>
+                <select id="lateGradeSelect" required></select>
+            </div>
+            <div class="form-group">
+                <label for="lateStudentSelect">2. Seleccionar Estudiante:</label>
+                <select id="lateStudentSelect" required disabled>
+                    <option value="">Primero selecciona un grado...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="lateTime">3. Hora de Llegada:</label>
+                <input id="lateTime" type="time" required />
+            </div>
+            <div class="form-group">
+                <label for="lateExcuse">4. Presenta Excusa?</label>
+                <select id="lateExcuse" required>
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-success" type="submit">Guardar Llegada</button>
+    </form>
 </div>
 </div>
 </div>
