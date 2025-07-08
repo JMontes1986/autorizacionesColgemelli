@@ -2560,126 +2560,6 @@ function mostrarReporteMensual() {
             return new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Bogota', hour12: false }).substring(0, 5);
         }
 
-        // ================================
-        // LLEGADAS TARDE
-        // ================================
-
-        async function loadLateGrades() {
-            try {
-                if (!validateSession()) return;
-
-                const { data: grades, error } = await supabase
-                    .from('grados')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-
-                if (error) throw error;
-
-                const select = document.getElementById('lateGradeSelect');
-                if (!select) return;
-                select.innerHTML = '<option value="">Seleccionar grado...</option>';
-                grades.forEach(g => {
-                    const opt = document.createElement('option');
-                    opt.value = g.id;
-                    opt.textContent = sanitizeHtml(`${g.nombre} - ${g.nivel}`);
-                    select.appendChild(opt);
-                });
-            } catch (error) {
-                console.error('Error loading late grades:', error);
-                await logSecurityEvent('error', 'Error al cargar grados tardanza', {
-                    error: error.message.substring(0, 200)
-                }, false);
-            }
-        }
-
-        async function loadLateStudents() {
-            const gradeId = document.getElementById('lateGradeSelect').value;
-            const select = document.getElementById('lateStudentSelect');
-
-            if (!gradeId) {
-                select.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                select.disabled = true;
-                return;
-            }
-
-            try {
-                if (!validateSession()) return;
-
-                const { data: students, error } = await supabase
-                    .from('estudiantes')
-                    .select('id, nombre, apellidos')
-                    .eq('grado_id', gradeId)
-                    .eq('activo', true)
-                    .order('apellidos')
-                    .order('nombre');
-
-                if (error) throw error;
-
-                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-                students.forEach(st => {
-                    const opt = document.createElement('option');
-                    opt.value = st.id;
-                    opt.textContent = sanitizeHtml(`${st.apellidos}, ${st.nombre}`);
-                    select.appendChild(opt);
-                });
-                select.disabled = false;
-            } catch (error) {
-                console.error('Error loading late students:', error);
-                await logSecurityEvent('error', 'Error al cargar estudiantes tardanza', {
-                    gradeId,
-                    error: error.message.substring(0, 200)
-                }, false);
-                select.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-                select.disabled = true;
-                showError('Error al cargar estudiantes: ' + error.message);
-            }
-        }
-
-        async function saveLateArrival(e) {
-            e.preventDefault();
-
-            try {
-                if (!validateSession()) {
-                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
-                    logout();
-                    return;
-                }
-
-                const gradeId = document.getElementById('lateGradeSelect').value;
-                const studentId = document.getElementById('lateStudentSelect').value;
-                const hora = document.getElementById('lateTime').value;
-                const excusa = document.getElementById('lateExcuse').value === 'true';
-                const fecha = getColombiaDate();
-
-                if (!gradeId || !studentId || !hora) {
-                    showError('Completa todos los campos requeridos');
-                    return;
-                }
-
-                const { error } = await supabase
-                    .from('llegadas_tarde')
-                    .insert([{ estudiante_id: studentId, grado_id: gradeId, fecha, hora, excusa }]);
-
-                if (error) throw error;
-
-                await logSecurityEvent('create', 'Llegada tarde registrada', { studentId, gradeId, hora, excusa }, true);
-                showSuccess('Llegada tarde registrada');
-                e.target.reset();
-                const select = document.getElementById('lateStudentSelect');
-                if (select) {
-                    select.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                    select.disabled = true;
-                }
-            } catch (error) {
-                console.error('Error saving late arrival:', error);
-                await logSecurityEvent('error', 'Error al registrar llegada tarde', {
-                    error: error.message.substring(0, 200)
-                }, false);
-                showError('Error al registrar la llegada tarde: ' + error.message);
-            }
-        }
-
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString + 'T00:00:00-05:00');
@@ -2724,10 +2604,7 @@ function mostrarReporteMensual() {
             const navButtons = document.getElementById('navButtons');
             const role = currentUser.rol.nombre;
             const email = currentUser.email;
-            const showLateBtn = email === 'convivencia@colgemelli.edu.co' ||
-                email === 'sistemas@colgemelli.edu.co' ||
-                role.toLowerCase().includes('coordinador');
-
+            
             navButtons.innerHTML = '';
 
             if (role === 'administrador') {
@@ -2738,14 +2615,12 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
                 `;
-
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
                 // Dashboard especial para convivencia y gestión formativa
                 navButtons.innerHTML = `
@@ -2754,14 +2629,12 @@ function mostrarReporteMensual() {
                     <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-
             } else if (email === 'enfermeria@colgemelli.edu.co') {
                 // Enfermería NO tiene acceso al dashboard
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-
             } else {
                 // Todos los demás usuarios tienen acceso al dashboard
                 navButtons.innerHTML = `
@@ -2769,10 +2642,6 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
-            }
-            
-            if (showLateBtn) {
-                navButtons.innerHTML += `<button class="btn btn-danger" id="btnLlegadasTarde" onclick="showSection('lateArrivalSectionDiv')">⏰ Llegadas Tarde</button>`;
             }
 
             // Mostrar la primera sección disponible
@@ -2821,14 +2690,7 @@ function mostrarReporteMensual() {
                 ];
                 if (currentUser && (currentUser.rol.nombre === 'vigilante' || permitidos.includes(currentUser.email))) {
                     loadPendingExits();
-                    } else if (sectionId === 'lateArrivalSectionDiv') {
-                await loadLateGrades();
-                const studentSel = document.getElementById('lateStudentSelect');
-                if (studentSel) {
-                    studentSel.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                    studentSel.disabled = true;
                 }
-            } 
             } else if (sectionId === 'dashboardSectionDiv') {
                 console.log('📊 Iniciando sección dashboard...');
                 
@@ -2857,9 +2719,6 @@ function mostrarReporteMensual() {
                 await loadStudents();
                 await loadReasons();
                 await loadGrades();
-                 if (document.getElementById('lateGradeSelect')) {
-                    await loadLateGrades();
-                }
                 await loadRoles();
                 
                 if (currentUser.rol.nombre === 'administrador') {
@@ -2891,7 +2750,7 @@ function mostrarReporteMensual() {
             document.getElementById('userForm').addEventListener('submit', saveUser);
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
-            
+
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
@@ -5391,11 +5250,6 @@ function attachEventHandlers() {
   const gradeSelect = document.getElementById('gradeSelect');
   if (gradeSelect) gradeSelect.addEventListener('change', loadStudentsByGrade);
 
- const lateGradeSel = document.getElementById('lateGradeSelect');
-  if (lateGradeSel) lateGradeSel.addEventListener('change', loadLateStudents);
-  const lateForm = document.getElementById('lateArrivalForm');
-  if (lateForm) lateForm.addEventListener('submit', saveLateArrival);
-
   const observations = document.getElementById('observations');
   if (observations) observations.addEventListener('input', () => validateTextInput(observations));
 
@@ -5431,9 +5285,6 @@ function attachEventHandlers() {
 
   const historyDate = document.getElementById('historyDate');
   if (historyDate) historyDate.addEventListener('change', () => loadHistory());
-
-  // Ensure the captcha question is shown as soon as handlers are attached
-  generateCaptcha();
 
 }
 
