@@ -2773,7 +2773,7 @@ function mostrarReporteMensual() {
             if (showLateBtn) {
                 navButtons.innerHTML += `<button class="btn btn-danger" id="btnLlegadasTarde" onclick="showSection('lateArrivalSectionDiv')">⏰ Llegadas Tarde</button>`;
             }
-            
+
             // Mostrar la primera sección disponible
             if (email === 'vigilancia@colgemelli.edu.co') {
                 showSection('verifySectionDiv'); // este usuario comienza en Control de Salidas
@@ -2820,7 +2820,14 @@ function mostrarReporteMensual() {
                 ];
                 if (currentUser && (currentUser.rol.nombre === 'vigilante' || permitidos.includes(currentUser.email))) {
                     loadPendingExits();
+                    } else if (sectionId === 'lateArrivalSectionDiv') {
+                await loadLateGrades();
+                const studentSel = document.getElementById('lateStudentSelect');
+                if (studentSel) {
+                    studentSel.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                    studentSel.disabled = true;
                 }
+            } 
             } else if (sectionId === 'dashboardSectionDiv') {
                 console.log('📊 Iniciando sección dashboard...');
                 
