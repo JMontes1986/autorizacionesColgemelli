@@ -44,3 +44,6 @@ for delete
 using (
     auth.role() <> 'anon'
 );
+
+-- Existing policies remain valid after adding indexes; no policy changes
+-- are required for idx_llegadas_tarde_fecha or idx_llegadas_tarde_estudiante.
