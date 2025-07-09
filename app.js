@@ -2560,6 +2560,102 @@ function mostrarReporteMensual() {
             return new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Bogota', hour12: false }).substring(0, 5);
         }
 
+        async function loadLateStudents() {
+            const gradeId = document.getElementById('lateGradeSelect').value;
+            const studentSelect = document.getElementById('lateStudentSelect');
+
+            if (!gradeId) {
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                studentSelect.disabled = true;
+                return;
+            }
+
+            try {
+                if (!validateSession()) return;
+
+                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+                studentSelect.disabled = true;
+
+                const { data: students, error } = await supabase
+                    .from('estudiantes')
+                    .select(`id, nombre, apellidos`)
+                    .eq('grado_id', gradeId)
+                    .eq('activo', true)
+                    .order('apellidos')
+                    .order('nombre');
+
+                if (error) throw error;
+
+                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+
+                if (students && students.length > 0) {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = sanitizeHtml(`${student.apellidos}, ${student.nombre}`);
+                        studentSelect.appendChild(option);
+                    });
+                    studentSelect.disabled = false;
+                } else {
+                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                }
+
+            } catch (error) {
+                console.error('Error loading late students:', error);
+                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
+                studentSelect.disabled = true;
+                await logSecurityEvent('error', 'Error al cargar estudiantes para llegadas tarde', {
+                    gradeId: gradeId,
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function saveLateArrival(e) {
+            e.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const gradeId = document.getElementById('lateGradeSelect').value;
+                const studentId = document.getElementById('lateStudentSelect').value;
+                const time = document.getElementById('lateTime').value;
+                const excuse = document.getElementById('lateExcuse').value === 'true';
+
+                if (!gradeId || !studentId || !time) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                const fecha = getColombiaDate();
+
+                const { error } = await supabase
+                    .from('llegadas_tarde')
+                    .insert([{ estudiante_id: studentId, grado_id: gradeId, fecha, hora: time, excusa: excuse }]);
+
+                if (error) throw error;
+
+                await logSecurityEvent('create', 'Llegada tarde registrada', {
+                    studentId,
+                    gradeId,
+                    hora: time
+                }, true);
+
+                showSuccess('Llegada tarde registrada exitosamente');
+
+            } catch (error) {
+                console.error('Error al registrar llegada tarde:', error);
+                await logSecurityEvent('error', 'Error al registrar llegada tarde', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al registrar la llegada tarde: ' + error.message);
+            }
+        }
+
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString + 'T00:00:00-05:00');
@@ -2604,7 +2700,7 @@ function mostrarReporteMensual() {
             const navButtons = document.getElementById('navButtons');
             const role = currentUser.rol.nombre;
             const email = currentUser.email;
-            
+            const lateUser = email === 'convivencia@colgemelli.edu.co' || email === 'sistemas@colgemelli.edu.co';
             navButtons.innerHTML = '';
 
             if (role === 'administrador') {
@@ -2614,6 +2710,7 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
+                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button>' : ''}
                 `;
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
@@ -2627,6 +2724,7 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
+                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button>' : ''}
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else if (email === 'enfermeria@colgemelli.edu.co') {
@@ -2690,6 +2788,17 @@ function mostrarReporteMensual() {
                 ];
                 if (currentUser && (currentUser.rol.nombre === 'vigilante' || permitidos.includes(currentUser.email))) {
                     loadPendingExits();
+                }
+            } else if (sectionId === 'lateArrivalSectionDiv') {
+                const gradeSel = document.getElementById('lateGradeSelect');
+                const form = document.getElementById('lateArrivalForm');
+                if (gradeSel && !gradeSel.dataset.bound) {
+                    gradeSel.addEventListener('change', loadLateStudents);
+                    gradeSel.dataset.bound = 'true';
+                }
+                if (form && !form.dataset.bound) {
+                    form.addEventListener('submit', saveLateArrival);
+                    form.dataset.bound = 'true';
                 }
             } else if (sectionId === 'dashboardSectionDiv') {
                 console.log('📊 Iniciando sección dashboard...');
@@ -2847,13 +2956,24 @@ function mostrarReporteMensual() {
 
                 const gradeSelect = document.getElementById('gradeSelect');
                 gradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
-                
+
                 grades.forEach(grade => {
                     const option = document.createElement('option');
                     option.value = grade.id;
                     option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
                     gradeSelect.appendChild(option);
                 });
+
+                const lateGradeSelect = document.getElementById('lateGradeSelect');
+                if (lateGradeSelect) {
+                    lateGradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+                    grades.forEach(grade => {
+                        const option = document.createElement('option');
+                        option.value = grade.id;
+                        option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
+                        lateGradeSelect.appendChild(option);
+                    });
+                }
 
                 const studentGradeSelect = document.getElementById('studentGrade');
                 if (studentGradeSelect) {
@@ -2996,6 +3116,7 @@ function mostrarReporteMensual() {
             }
         }
 
+        
         // ========================================
         // FUNCIONES DE AUTORIZACIÓN Y VERIFICACIÓN (COPIADAS CON MEJORAS)
         // ========================================
