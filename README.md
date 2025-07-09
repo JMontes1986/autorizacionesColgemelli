@@ -72,8 +72,7 @@ Para preparar el entorno local sigue los pasos:
    ```
 
 3. Asegúrate de que el archivo `env.js` se haya creado en la raíz del proyecto antes de abrir `index.html` en tu navegador.
-4. Ejecuta el script de base de datos `supabase/schema.sql` en tu instancia de Supabase para crear o actualizar la tabla `llegadas_tarde` (puedes usar la consola SQL o la CLI). Esto añade las columnas `grado_id`, `hora` y `excusa`.
-4. Ejecuta el script de base de datos `supabase/schema.sql` en tu instancia de Supabase para crear la tabla `llegadas_tarde` (puedes usar la consola SQL o la CLI).
+4. Ejecuta el script de base de datos `supabase/schema.sql` en tu instancia de Supabase. Este script emplea `ALTER TABLE` para actualizar las tablas existentes sin perder datos. Vuelve a ejecutarlo cada vez que hagas pull y aparezcan columnas nuevas.
 ## 4. index.html: Descripción Funcional
 
 ### 4.1 Inicio de Sesión
