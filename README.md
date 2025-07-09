@@ -16,11 +16,11 @@ Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar f
 
 ## 1. Descripción General
 
-El sistema web permite la gestión de autorizaciones de salida de estudiantes en el Colegio Gemelli. El sistema consta de dos archivos HTML principales:
+El sistema web permite la gestión de autorizaciones de salida de estudiantes en el Colegio Gemelli. El sistema incluye varios archivos HTML principales:
 
 - **index.html**: Interfaz principal del sistema.
 - **diagnostico.html**: Herramientas para pruebas de conectividad y depuración.
-
+**dashboard.html**: Vista alternativa para análisis estadístico.
 Las funcionalidades incluyen autenticación, panel de control, autorizaciones, administración de datos y auditoría.
 
 Antes de abrir `index.html` o `diagnostico.html` debes contar con un archivo `env.js` en la raíz del proyecto. Puedes generarlo ejecutando `./build.sh` o copiando `env.example.js` y ajustando sus valores. La lógica principal reside ahora en `app.js`, que se carga de forma externa junto a los HTML.
@@ -31,6 +31,7 @@ Antes de abrir `index.html` o `diagnostico.html` debes contar con un archivo `en
 autorizacionesColgemelli/
 ├─ index.html         # Aplicación principal
 ├─ diagnostico.html   # Herramientas de diagnóstico
+├─ dashboard.html     # Nuevo dashboard de análisis
 ├─ styles.css         # Estilos principales del sistema
 ├─ app.js             # Lógica de la aplicación
 └─ README.md          # Documentación breve
