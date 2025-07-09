@@ -400,6 +400,7 @@
                 console.log('📊 Cargando actividad reciente...');
 
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
+                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
                 const vigilanteIds = [...new Set(authorizations.filter(auth => auth.vigilante_id).map(auth => auth.vigilante_id))];
                 const allUserIds = [...new Set([...userIds, ...vigilanteIds])];
 
