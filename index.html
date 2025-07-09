@@ -165,6 +165,38 @@
 </div>
 </div>
 </div>
+<!-- Sección de Llegadas Tarde -->
+<div class="section" id="lateArrivalSectionDiv">
+<h2>⏰ Registro de Llegadas Tarde</h2>
+<form id="lateArrivalForm">
+<div class="grid">
+<div class="form-group">
+<label for="lateGradeSelect">Grado:</label>
+<select id="lateGradeSelect">
+<option value="">Seleccionar grado...</option>
+</select>
+</div>
+<div class="form-group">
+<label for="lateStudentSelect">Estudiante:</label>
+<select id="lateStudentSelect" disabled>
+<option value="">Primero selecciona un grado...</option>
+</select>
+</div>
+<div class="form-group">
+<label for="lateTime">Hora de llegada:</label>
+<input type="time" id="lateTime" required />
+</div>
+<div class="form-group">
+<label for="lateExcuse">Excusa válida:</label>
+<select id="lateExcuse">
+<option value="false">No</option>
+<option value="true">Sí</option>
+</select>
+</div>
+</div>
+<button class="btn btn-danger" type="submit">Registrar Llegada</button>
+</form>
+</div>
 <!-- Sección de Administración -->
 <div class="section" id="adminSectionDiv">
 <h2>⚙️ Panel de Administración</h2>
