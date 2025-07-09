@@ -2483,6 +2483,7 @@ function mostrarReporteMensual() {
                  if (errorDiv) errorDiv.style.visibility = 'hidden';
                 infoDiv.classList.add('alert-success');
                 infoDiv.classList.remove('alert-error');
+                infoDiv.style.visibility = 'visible';
                 if (errorDiv) errorDiv.style.visibility = 'hidden';
                 setTimeout(() => {
                     infoDiv.style.visibility = 'hidden';
@@ -2621,8 +2622,10 @@ function mostrarReporteMensual() {
                     return;
                 }
 
-                const gradeId = document.getElementById('lateGradeSelect').value;
-                const studentId = document.getElementById('lateStudentSelect').value;
+                const gradeSelect = document.getElementById('lateGradeSelect');
+                const studentSelect = document.getElementById('lateStudentSelect');
+                const gradeId = gradeSelect.value;
+                const studentId = studentSelect.value;
                 const time = document.getElementById('lateTime').value;
                 const excuse = document.getElementById('lateExcuse').value === 'true';
 
@@ -2645,7 +2648,8 @@ function mostrarReporteMensual() {
                     hora: time
                 }, true);
 
-                showSuccess('Llegada tarde registrada exitosamente', 'lateArrivalInfo');
+                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+                showSuccess(`Llegada tarde registrada para ${sanitizeHtml(studentName)}`, 'lateArrivalInfo');
                 resetLateArrivalForm();
 
             } catch (error) {
@@ -2666,7 +2670,7 @@ function mostrarReporteMensual() {
                 studentSelect.disabled = true;
             }
         }
-        
+
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString + 'T00:00:00-05:00');
