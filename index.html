@@ -437,10 +437,11 @@
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button id="exportDashboardBtn" class="btn btn-secondary">📥 Exportar Datos</button>
 <button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
-<button onclick="mostrarReporteMensual()" class="btn btn-warning">📊 Reporte mensual</button>
+<button class="btn btn-danger" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 <button class="btn btn-warning" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 <button class="btn" onclick="showDetailedView()">📋 Diagnóstico</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
+<button class="btn btn-warning" id="lateReportBtn" onclick="mostrarReporteLlegadas()" style="display:none;">📄 Reporte Llegadas</button>
 </div>
 <div id="chartjsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
 <p style="margin: 0; color: #666;"><strong>Estado Chart.js:</strong> <span id="chartjsStatusText">Verificando...</span></p>
