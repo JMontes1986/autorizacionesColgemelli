@@ -33,8 +33,14 @@ using (
     auth.role() <> 'anon'
 );
 
-create policy "llegadas_tarde_write" on public.llegadas_tarde
-for insert, update
+create policy "llegadas_tarde_insert" on public.llegadas_tarde
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "llegadas_tarde_update" on public.llegadas_tarde
+for update
 with check (
     auth.role() <> 'anon'
 );
