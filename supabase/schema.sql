@@ -11,3 +11,11 @@ create table if not exists public.llegadas_tarde (
     registrado_por bigint references public.usuarios(id),
     created_at timestamp with time zone default now()
 );
+
+-- Index to quickly filter late arrivals by date
+create index if not exists idx_llegadas_tarde_fecha
+    on public.llegadas_tarde (fecha);
+
+-- Index to efficiently query records for a particular student
+create index if not exists idx_llegadas_tarde_estudiante
+    on public.llegadas_tarde (estudiante_id);
