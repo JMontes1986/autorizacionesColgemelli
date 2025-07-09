@@ -433,11 +433,12 @@
 <!-- Filtros de Fecha para Dashboard Histórico -->
 <!-- Nuevos Gráficos Históricos -->
 <!-- Controles del Dashboard -->
-<div class="nav-buttons" style="margin-top: 20px;">
+<div class="nav-buttons" id="dashboardButtons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button id="exportDashboardBtn" class="btn btn-secondary">📥 Exportar Datos</button>
 <button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
-<button onclick="mostrarReporteMensual()" class="btn btn-secondary">📊 Reporte mensual</button>
+<button onclick="mostrarReporteMensual()" class="btn btn-warning">📊 Reporte mensual</button>
+<button class="btn btn-warning" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 <button class="btn" onclick="showDetailedView()">📋 Diagnóstico</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 </div>
