@@ -1394,6 +1394,10 @@ function mostrarReporteLlegadas() {
     window.open('reporte_llegadas.html', '_blank');
 }
 
+function abrirReporte() {
+    window.open('reporte.html', '_blank');
+}
+
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
@@ -2795,6 +2799,15 @@ function mostrarReporteLlegadas() {
             const lateReportBtn = document.getElementById('lateReportBtn');
             if (lateReportBtn) {
                 lateReportBtn.style.display = lateUser ? 'inline-block' : 'none';
+            }
+            
+            const generalReportBtn = document.getElementById('generalReportBtn');
+            if (generalReportBtn) {
+                const allowedReportUsers = [
+                    'sistemas@colgemelli.edu.co',
+                    'vigilancia@colgemelli.edu.co'
+                ];
+                generalReportBtn.style.display = allowedReportUsers.includes(email) ? 'inline-block' : 'none';
             }
             
             // Mostrar la primera sección disponible
@@ -5468,3 +5481,4 @@ document.addEventListener('DOMContentLoaded', attachEventHandlers);
 // Expose helpers for inline event handlers
 window.mostrarReporteMensual = mostrarReporteMensual;
 window.mostrarReporteLlegadas = mostrarReporteLlegadas;
+window.abrirReporte = abrirReporte;
