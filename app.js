@@ -398,12 +398,26 @@
         async function loadDashboardActivity(authorizations) {
             try {
                 console.log('📊 Cargando actividad reciente...');
-                
-                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+
+                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const vigilanteIds = [...new Set(authorizations.filter(auth => auth.vigilante_id).map(auth => auth.vigilante_id))];
                 const allUserIds = [...new Set([...userIds, ...vigilanteIds])];
 
+                let students = [];
                 let users = [];
+
+                if (studentIds.length > 0) {
+                    const { data: studentsData, error: studentsError } = await supabase
+                        .from('estudiantes')
+                        .select('id, nombre, apellidos, grado:grados(nombre)')
+                        .in('id', studentIds);
+
+                    if (studentsError) {
+                        console.error('Error cargando estudiantes:', studentsError);
+                    } else {
+                        students = studentsData || [];
+                    }
+                }
 
                 if (allUserIds.length > 0) {
                     const { data: usersData, error: usersError } = await supabase
@@ -418,14 +432,20 @@
                     }
                 }
 
+                const studentMap = {};
+                students.forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
                 const userMap = {};
                 users.forEach(user => {
                     userMap[user.id] = user;
                 });
 
-                // Enriquecer con datos de usuarios
+                // Enriquecer con datos de estudiantes y usuarios
                 const enrichedForActivity = authorizations.map(auth => ({
                     ...auth,
+                    estudiante: studentMap[auth.estudiante_id],
                     usuario: userMap[auth.usuario_autorizador_id],
                     vigilante: userMap[auth.vigilante_id]
                 }));
