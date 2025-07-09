@@ -1,0 +1,155 @@
+<!-- archivo: reporte_llegadas.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte Llegadas Tarde</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="report">
+  <div class="report-container">
+    <h1>🕒 Reporte Llegadas Tarde</h1>
+    <div class="controls">
+      <label>Desde: <input type="date" id="desdeLlegadas"></label>
+      <label>Hasta: <input type="date" id="hastaLlegadas"></label>
+      <input type="text" id="busquedaEstudiante" placeholder="Buscar estudiante" />
+      <button onclick="mostrarReporteLlegadas()">Generar</button>
+      <button onclick="exportarLlegadasCSV()">Descargar CSV</button>
+    </div>
+    <div class="table-container">
+      <table class="table" id="tabla-reporte">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Grado</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Excusa</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+    function sanitizeHtml(str) {
+      if (!str) return '';
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      let escaped = temp.innerHTML;
+      escaped = escaped.replace(/javascript:/gi, '')
+                       .replace(/vbscript:/gi, '')
+                       .replace(/data:/gi, '')
+                       .replace(/on\w+=/gi, '')
+                       .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                       .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+                       .replace(/<object[^>]*>.*?<\/object>/gi, '')
+                       .replace(/<embed[^>]*>/gi, '')
+                       .replace(/<link[^>]*>/gi, '')
+                       .replace(/<meta[^>]*>/gi, '');
+      return escaped;
+    }
+
+    async function mostrarReporteLlegadas() {
+      const tbody = document.querySelector('#tabla-reporte tbody');
+      tbody.innerHTML = '<tr><td colspan="7">Cargando datos...</td></tr>';
+
+      const desde = document.getElementById('desdeLlegadas').value;
+      const hasta = document.getElementById('hastaLlegadas').value;
+      const busqueda = document.getElementById('busquedaEstudiante').value.toLowerCase().trim();
+      let consulta = supabase
+        .from('llegadas_tarde')
+        .select('id, estudiante_id, grado_id, fecha, hora, excusa');
+
+      if (desde) {
+        consulta = consulta.gte('fecha', desde);
+      }
+      if (hasta) {
+        consulta = consulta.lte('fecha', hasta);
+      }
+
+      const { data: llegadas, error } = await consulta;
+
+      if (error) {
+        tbody.innerHTML = '<tr><td colspan="7">Error al cargar datos</td></tr>';
+        console.error(error);
+        return;
+      }
+
+      if (!llegadas || llegadas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No se encontraron datos</td></tr>';
+        return;
+      }
+
+      const studentIds = [...new Set(llegadas.map(a => a.estudiante_id))];
+      let studentsMap = {};
+      if (studentIds.length > 0) {
+        const { data: students, error: studentsError } = await supabase
+          .from('estudiantes')
+          .select('id, nombre, apellidos, grado:grados(nombre)')
+          .in('id', studentIds);
+        if (studentsError) {
+          console.error(studentsError);
+        } else if (students) {
+          students.forEach(s => { studentsMap[s.id] = s; });
+        }
+      }
+
+      tbody.innerHTML = '';
+      let registros = llegadas;
+      if (busqueda) {
+        registros = registros.filter(it => {
+          const s = studentsMap[it.estudiante_id] || {};
+          const full = `${(s.nombre || '').toLowerCase()} ${(s.apellidos || '').toLowerCase()}`;
+          return full.includes(busqueda);
+        });
+      }
+      registros.forEach(item => {
+        const s = studentsMap[item.estudiante_id] || {};
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${sanitizeHtml(String(s.id || ''))}</td>
+          <td>${sanitizeHtml(s.nombre)}</td>
+          <td>${sanitizeHtml(s.apellidos)}</td>
+          <td>${sanitizeHtml(s.grado?.nombre)}</td>
+          <td>${sanitizeHtml(item.fecha)}</td>
+          <td>${sanitizeHtml(item.hora)}</td>
+          <td>${item.excusa ? 'Sí' : 'No'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+  }
+
+  function exportarLlegadasCSV() {
+    const tabla = document.getElementById('tabla-reporte');
+    const filas = tabla.querySelectorAll('tr');
+    const csv = [];
+    filas.forEach(fila => {
+      const cols = fila.querySelectorAll('th, td');
+      const datos = Array.from(cols).map(col => {
+        const texto = sanitizeHtml(col.textContent.trim()).replace(/"/g, '""');
+        return `"${texto}"`;
+      });
+    csv.push(datos.join(','));
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0,10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_llegadas_tarde_${fecha}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  </script>
+</body>
+</html>
