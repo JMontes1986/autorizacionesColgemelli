@@ -63,14 +63,8 @@
     }
 
     .logo {
-      width: 80px;
-      height: 80px;
-      background: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      height: 35px;
+      width: auto;
     }
 
     .logo-text {
@@ -335,10 +329,7 @@
   <div class="report-container">
     <div class="header">
       <div class="logo-container">
-        <div class="logo">
-          <div class="logo-text">G</div>
-        </div>
-        <div class="school-name">Soy Feliz en el Gemelli</div>
+        <img alt="Logo Colegio Gemelli" class="logo" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg" width="35" height="35"/>
       </div>
       <h1 class="report-title">
         <i class="fas fa-sign-out-alt"></i> Reporte de Salidas
@@ -529,12 +520,6 @@
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('G', 22, 25);
-      
-      // Nombre del colegio
-      doc.setTextColor(...darkColor);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Soy Feliz en el Gemelli', 40, 18);
       
       // Título del reporte
       doc.setTextColor(255, 255, 255);
