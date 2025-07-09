@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Autorizaciones - Colgemelli</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Supabase client -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -454,73 +456,37 @@
     </div>
 
     <script>
-        // Datos de ejemplo (simulados)
-        let datosCompletos = [
-            {
-                fecha: '2024-01-15',
-                estudiante: 'Ana García',
-                grado: '10',
-                tipo: 'salida',
-                motivo: 'Cita médica',
-                hora: '14:30'
-            },
-            {
-                fecha: '2024-01-15',
-                estudiante: 'Carlos Pérez',
-                grado: '9',
-                tipo: 'llegada_tarde',
-                motivo: 'Transporte',
-                hora: '08:45'
-            },
-            {
-                fecha: '2024-01-16',
-                estudiante: 'María López',
-                grado: '11',
-                tipo: 'salida',
-                motivo: 'Emergencia familiar',
-                hora: '15:00'
-            },
-            {
-                fecha: '2024-01-16',
-                estudiante: 'Juan Martínez',
-                grado: '8',
-                tipo: 'llegada_tarde',
-                motivo: 'Tráfico',
-                hora: '08:30'
-            },
-            {
-                fecha: '2024-01-17',
-                estudiante: 'Ana García',
-                grado: '10',
-                tipo: 'llegada_tarde',
-                motivo: 'Transporte',
-                hora: '08:40'
-            },
-            {
-                fecha: '2024-01-17',
-                estudiante: 'Laura Sánchez',
-                grado: '7',
-                tipo: 'salida',
-                motivo: 'Cita médica',
-                hora: '16:00'
-            },
-            {
-                fecha: '2024-01-18',
-                estudiante: 'Carlos Pérez',
-                grado: '9',
-                tipo: 'llegada_tarde',
-                motivo: 'Tráfico',
-                hora: '08:35'
-            },
-            {
-                fecha: '2024-01-18',
-                estudiante: 'Pedro Rodríguez',
-                grado: '6',
-                tipo: 'salida',
-                motivo: 'Diligencia personal',
-                hora: '14:45'
+        const SUPABASE_URL = window.process?.env?.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.process?.env?.SUPABASE_ANON_KEY;
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let datosCompletos = [];
+
+        async function obtenerDatosCompletos() {
+            const { data, error } = await supabase
+                .from('autorizaciones_salida')
+                .select(`
+                    fecha_salida,
+                    hora_salida,
+                    estudiante:estudiantes(nombre, grado:grados(nombre)),
+                    motivo:motivos(nombre)
+                `)
+                .order('fecha_salida', { ascending: false });
+
+            if (error) {
+                console.error('Error al cargar datos:', error);
+                return [];
             }
-        ];
+
+            return (data || []).map(it => ({
+                fecha: it.fecha_salida,
+                estudiante: it.estudiante?.nombre || '',
+                grado: it.estudiante?.grado?.nombre || '',
+                tipo: 'salida',
+                motivo: it.motivo?.nombre || '',
+                hora: it.hora_salida
+            }));
+        }
 
         let charts = {};
 
@@ -544,25 +510,26 @@
             loading.style.display = 'block';
             dashboard.style.opacity = '0.5';
 
-            setTimeout(() => {
-                const datosFiltrados = filtrarDatos();
+            obtenerDatosCompletos().then(registros => {
+                datosCompletos = registros;
+                const datosFiltrados = filtrarDatos(datosCompletos);
                 actualizarMetricas(datosFiltrados);
                 actualizarGraficos(datosFiltrados);
                 actualizarTabla(datosFiltrados);
 
                 loading.style.display = 'none';
                 dashboard.style.opacity = '1';
-            }, 1000);
+            });
         }
 
         // Filtrar datos según los controles
-        function filtrarDatos() {
+        function filtrarDatos(datos) {
             const fechaInicio = document.getElementById('fechaInicio').value;
             const fechaFin = document.getElementById('fechaFin').value;
             const grado = document.getElementById('filtroGrado').value;
             const tipo = document.getElementById('filtroTipo').value;
 
-            return datosCompletos.filter(item => {
+            return datos.filter(item => {
                 const fechaItem = new Date(item.fecha);
                 const fechaInicioDate = new Date(fechaInicio);
                 const fechaFinDate = new Date(fechaFin);
@@ -836,5 +803,6 @@
 
         document.addEventListener('DOMContentLoaded', inicializarDashboard);
     </script>
+    <script defer src="env.js"></script>
 </body>
 </html>
