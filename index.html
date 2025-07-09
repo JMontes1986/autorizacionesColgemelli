@@ -126,7 +126,6 @@
 <button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
 <button class="btn btn-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
 <button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
-<button class="btn btn-danger" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 </div>
 <!-- Búsqueda manual (inicialmente oculta) -->
 <div id="searchSection" style="display: none; margin-top: 20px;">
@@ -437,6 +436,8 @@
 <div class="nav-buttons" id="dashboardButtons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button id="exportDashboardBtn" class="btn btn-secondary">📥 Exportar Datos</button>
+<button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
+<button class="btn btn-danger" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 <button class="btn btn-warning" id="lateArrivalBtn" onclick="showSection('lateArrivalSectionDiv')" style="display:none;">⏰ Llegadas Tarde</button>
 <button class="btn" onclick="showDetailedView()">📋 Diagnóstico</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
