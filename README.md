@@ -203,8 +203,12 @@ Para impedir que la clave pública anónima acceda a tablas sensibles, habilita 
      for select
      using (auth.role() <> 'anon');
 
-   create policy "usuarios_write_authenticated" on public.usuarios
-     for insert, update
+  create policy "usuarios_insert_authenticated" on public.usuarios
+     for insert
+     with check (auth.role() <> 'anon');
+
+   create policy "usuarios_update_authenticated" on public.usuarios
+     for update
      with check (auth.role() <> 'anon');
 
    create policy "usuarios_delete_authenticated" on public.usuarios
