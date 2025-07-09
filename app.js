@@ -2627,7 +2627,7 @@ function mostrarReporteMensual() {
                 const excuse = document.getElementById('lateExcuse').value === 'true';
 
                 if (!gradeId || !studentId || !time) {
-                    showError('Por favor, completa todos los campos obligatorios');
+                    showError('Por favor, completa todos los campos obligatorios', 'lateArrivalError');
                     return;
                 }
 
@@ -2645,14 +2645,14 @@ function mostrarReporteMensual() {
                     hora: time
                 }, true);
 
-                showSuccess('Llegada tarde registrada exitosamente');
+                showSuccess('Llegada tarde registrada exitosamente', 'lateArrivalInfo');
 
             } catch (error) {
                 console.error('Error al registrar llegada tarde:', error);
                 await logSecurityEvent('error', 'Error al registrar llegada tarde', {
                     error: error.message.substring(0, 200)
                 }, false);
-                showError('Error al registrar la llegada tarde: ' + error.message);
+                showError('Error al registrar la llegada tarde: ' + error.message, 'lateArrivalError');
             }
         }
 
@@ -3116,7 +3116,7 @@ function mostrarReporteMensual() {
             }
         }
 
-        
+
         // ========================================
         // FUNCIONES DE AUTORIZACIÓN Y VERIFICACIÓN (COPIADAS CON MEJORAS)
         // ========================================
