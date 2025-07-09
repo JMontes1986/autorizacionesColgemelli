@@ -2729,7 +2729,6 @@ function mostrarReporteLlegadas() {
                     <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
-                    ${lateUser ? '<button class="btn" onclick="mostrarReporteLlegadas()">Reporte Llegadas</button>' : ''}
                 `;
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
@@ -2743,7 +2742,6 @@ function mostrarReporteLlegadas() {
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
-                    ${lateUser ? '<button class="btn" onclick="mostrarReporteLlegadas()">Reporte Llegadas</button>' : ''}
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else if (email === 'enfermeria@colgemelli.edu.co') {
@@ -2766,6 +2764,11 @@ function mostrarReporteLlegadas() {
                 lateBtn.style.display = lateUser ? 'inline-block' : 'none';
             }
 
+            const lateReportBtn = document.getElementById('lateReportBtn');
+            if (lateReportBtn) {
+                lateReportBtn.style.display = lateUser ? 'inline-block' : 'none';
+            }
+            
             // Mostrar la primera sección disponible
             if (email === 'vigilancia@colgemelli.edu.co') {
                 showSection('verifySectionDiv'); // este usuario comienza en Control de Salidas
