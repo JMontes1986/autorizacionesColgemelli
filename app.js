@@ -2729,7 +2729,7 @@ function mostrarReporteLlegadas() {
                     <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
-                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button>' : ''}
+                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button><button class="btn" onclick="mostrarReporteLlegadas()">Reporte Llegadas</button>' : ''}
                 `;
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
@@ -2743,7 +2743,7 @@ function mostrarReporteLlegadas() {
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
-                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button>' : ''}
+                    ${lateUser ? '<button class="btn btn-danger" onclick="showSection(\'lateArrivalSectionDiv\')">Llegadas Tarde</button><button class="btn" onclick="mostrarReporteLlegadas()">Reporte Llegadas</button>' : ''}
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else if (email === 'enfermeria@colgemelli.edu.co') {
@@ -5431,3 +5431,4 @@ function attachEventHandlers() {
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
 // Expose helpers for inline event handlers
 window.mostrarReporteMensual = mostrarReporteMensual;
+window.mostrarReporteLlegadas = mostrarReporteLlegadas;
