@@ -2646,6 +2646,7 @@ function mostrarReporteMensual() {
                 }, true);
 
                 showSuccess('Llegada tarde registrada exitosamente', 'lateArrivalInfo');
+                resetLateArrivalForm();
 
             } catch (error) {
                 console.error('Error al registrar llegada tarde:', error);
@@ -2656,6 +2657,16 @@ function mostrarReporteMensual() {
             }
         }
 
+        function resetLateArrivalForm() {
+            const form = document.getElementById('lateArrivalForm');
+            if (form) form.reset();
+            const studentSelect = document.getElementById('lateStudentSelect');
+            if (studentSelect) {
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+                studentSelect.disabled = true;
+            }
+        }
+        
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString + 'T00:00:00-05:00');
