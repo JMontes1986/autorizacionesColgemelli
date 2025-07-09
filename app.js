@@ -210,7 +210,7 @@
                 // Consulta simplificada - solo datos básicos primero
                 const { data: todayAuthorizations, error: authError } = await supabase
                     .from('autorizaciones_salida')
-                    .select('id, estudiante_id, motivo_id, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
+                    .select('id, estudiante_id, motivo_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
                     .order('fecha_creacion', { ascending: false });
