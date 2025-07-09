@@ -61,5 +61,7 @@ describe('saveLateArrival', () => {
       { estudiante_id: '3', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true }
     ]);
     expect(showSuccess).toHaveBeenCalled();
+    expect(document.getElementById('lateGradeSelect').value).toBe('');
+    expect(document.getElementById('lateStudentSelect').disabled).toBe(true);
   });
 });
