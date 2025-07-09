@@ -436,8 +436,9 @@
 <div class="nav-buttons" id="dashboardButtons" style="margin-top: 20px;">
 <button class="btn btn-success" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
 <button id="exportDashboardBtn" class="btn btn-secondary">📥 Exportar Datos</button>
-<button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
-<button class="btn" onclick="showDetailedView()">📋 Diagnóstico</button>
+    <button id="generalReportBtn" class="btn btn-warning" onclick="abrirReporte()" style="display:none;">📄 Reporte</button>
+    <button class="btn btn-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
+    <button class="btn" onclick="showDetailedView()">📋 Diagnóstico</button>
 <button class="btn btn-warning" onclick="debugDashboard()" style="font-size: 12px;">🔧 Debug</button>
 <button class="btn btn-warning" id="lateReportBtn" onclick="mostrarReporteLlegadas()" style="display:none;">📄 Reporte Llegadas</button>
 </div>
@@ -608,6 +609,6 @@
     });
   }
 </script>
-<footer>Versión v2.0.0 – Compilación 10.0</footer>
+<footer>Versión v1.0.0 – Compilación 2</footer>
 </body>
 </html>
