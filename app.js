@@ -1369,6 +1369,10 @@ function mostrarReporteMensual() {
     window.open(url, '_blank');
 }
 
+function mostrarReporteLlegadas() {
+    window.open('reporte_llegadas.html', '_blank');
+}
+
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
@@ -2755,6 +2759,10 @@ function mostrarReporteMensual() {
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
+            }
+
+            if (lateUser) {
+                navButtons.innerHTML += `<button class="btn btn-secondary" onclick="mostrarReporteLlegadas()">Reporte Llegadas Tarde</button>`;
             }
 
             // Mostrar la primera sección disponible
@@ -5427,3 +5435,4 @@ function attachEventHandlers() {
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
 // Expose helpers for inline event handlers
 window.mostrarReporteMensual = mostrarReporteMensual;
+window.mostrarReporteLlegadas = mostrarReporteLlegadas;
