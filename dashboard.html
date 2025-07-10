@@ -454,7 +454,7 @@
             </div>
         </div>
     </div>
-
+    <script defer src="env.js"></script>
     <script>
         const SUPABASE_URL = window.process?.env?.SUPABASE_URL;
         const SUPABASE_ANON_KEY = window.process?.env?.SUPABASE_ANON_KEY;
@@ -463,22 +463,33 @@
         let datosCompletos = [];
 
         async function obtenerDatosCompletos() {
-            const { data, error } = await supabase
-                .from('autorizaciones_salida')
-                .select(`
-                    fecha_salida,
-                    hora_salida,
-                    estudiante:estudiantes(nombre, grado:grados(nombre)),
-                    motivo:motivos(nombre)
-                `)
-                .order('fecha_salida', { ascending: false });
+            const [salidasRes, llegadasRes] = await Promise.all([
+                supabase
+                    .from('autorizaciones_salida')
+                    .select(`
+                        fecha_salida,
+                        hora_salida,
+                        estudiante:estudiantes(nombre, grado:grados(nombre)),
+                        motivo:motivos(nombre)
+                    `)
+                    .order('fecha_salida', { ascending: false }),
+                supabase
+                    .from('llegadas_tarde')
+                    .select(`
+                        fecha,
+                        hora,
+                        estudiante:estudiantes(nombre, grado:grados(nombre)),
+                        observacion
+                    `)
+                    .order('fecha', { ascending: false })
+            ]);
 
-            if (error) {
-                console.error('Error al cargar datos:', error);
+            if (salidasRes.error || llegadasRes.error) {
+                console.error('Error al cargar datos:', salidasRes.error || llegadasRes.error);
                 return [];
             }
 
-            return (data || []).map(it => ({
+            const salidas = (salidasRes.data || []).map(it => ({
                 fecha: it.fecha_salida,
                 estudiante: it.estudiante?.nombre || '',
                 grado: it.estudiante?.grado?.nombre || '',
@@ -487,6 +498,18 @@
                 hora: it.hora_salida
             }));
         }
+
+        
+            const llegadas = (llegadasRes.data || []).map(it => ({
+                fecha: it.fecha,
+                estudiante: it.estudiante?.nombre || '',
+                grado: it.estudiante?.grado?.nombre || '',
+                tipo: 'llegada_tarde',
+                motivo: it.observacion || '',
+                hora: it.hora
+            }));
+
+            return [...salidas, ...llegadas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
         let charts = {};
 
@@ -803,6 +826,5 @@
 
         document.addEventListener('DOMContentLoaded', inicializarDashboard);
     </script>
-    <script defer src="env.js"></script>
 </body>
 </html>
