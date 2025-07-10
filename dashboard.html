@@ -503,9 +503,7 @@
                 motivo: it.motivo?.nombre || '',
                 hora: it.hora_salida
             }));
-        }
 
-        
             const llegadas = (llegadasRes.data || []).map(it => ({
                 fecha: it.fecha,
                 estudiante: it.estudiante?.nombre || '',
@@ -516,6 +514,8 @@
             }));
 
             return [...salidas, ...llegadas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            }
 
         let charts = {};
 
