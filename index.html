@@ -594,6 +594,15 @@
 </form>
 </div>
 </div>
+<!-- Modal para advertir salidas pendientes -->
+<div class="modal" id="pendingExitModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('pendingExitModal')">×</span>
+    <h2>⚠️ Salida Pendiente Detectada</h2>
+    <div id="pendingExitDetails" style="margin-bottom:20px;"></div>
+    <button class="btn btn-secondary" onclick="closeModal('pendingExitModal')" type="button">Cerrar</button>
+  </div>
+</div>
 <div class="modal" id="reportModal">
 <div class="modal-content" style="max-width:90%;width:95%;height:90vh;">
 <span class="close" onclick="closeModal('reportModal')">×</span>
