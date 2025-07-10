@@ -3225,49 +3225,13 @@ function abrirReporte() {
                     return;
                 }
 
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
-                    timeZone: 'America/Bogota'
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
+                    timeZone: 'America/Bogota' 
                 });
-
-                const { data: pendingExists, error: pendingError } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('id, hora_salida, usuario:usuarios(nombre)')
-                    .eq('estudiante_id', studentId)
-                    .eq('fecha_salida', exitDate)
-                    .eq('autorizada', true)
-                    .is('salida_efectiva', null)
-                    .order('hora_salida', { ascending: true })
-                    .limit(1);
-
-                if (pendingError) {
-                    console.error('Error verificando salidas pendientes:', pendingError);
-                    showError('Error verificando salidas existentes: ' + pendingError.message);
-                    return;
-                }
-
-                if (pendingExists && pendingExists.length > 0) {
-                    const existing = pendingExists[0];
-                    const gradeSelect = document.getElementById('gradeSelect');
-                    const studentSelect = document.getElementById('studentSelect');
-                    const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
-                    const studentName = studentSelect.options[studentSelect.selectedIndex].text;
-                    const registeredBy = existing.usuario?.nombre || 'N/A';
-
-                    document.getElementById('pendingExitDetails').innerHTML = `
-                        <div class="verification-card not-authorized">
-                            <h3>Ya existe una salida pendiente para hoy</h3>
-                            <p><strong>Estudiante:</strong> ${sanitizeHtml(studentName)}</p>
-                            <p><strong>Grado:</strong> ${sanitizeHtml(gradeName)}</p>
-                            <p><strong>Hora autorizada:</strong> ${formatTime(existing.hora_salida)}</p>
-                            <p><strong>Registrada por:</strong> ${sanitizeHtml(registeredBy)}</p>
-                        </div>`;
-                    openModal('pendingExitModal');
-                    return;
-                }
 
                 const { data, error } = await supabase
                     .from('autorizaciones_salida')
-                    .insert([{ 
+                    .insert([{
                         estudiante_id: studentId,
                         motivo_id: reasonId,
                         usuario_autorizador_id: currentUser.id,
