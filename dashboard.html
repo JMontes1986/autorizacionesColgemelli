@@ -455,7 +455,13 @@
         </div>
     </div>
     <script defer src="env.js"></script>
-    <script>
+        <script type="module">
+        if (!window.process?.env) {
+            throw new Error('env.js did not load');
+        }
+        if (!window.supabase) {
+            throw new Error('Supabase client not loaded');
+        }
         const SUPABASE_URL = window.process?.env?.SUPABASE_URL;
         const SUPABASE_ANON_KEY = window.process?.env?.SUPABASE_ANON_KEY;
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
