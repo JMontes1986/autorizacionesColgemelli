@@ -3267,7 +3267,7 @@ function abrirReporte() {
 
                 const { data, error } = await supabase
                     .from('autorizaciones_salida')
-                    .insert([{
+                    .insert([{ 
                         estudiante_id: studentId,
                         motivo_id: reasonId,
                         usuario_autorizador_id: currentUser.id,
