@@ -3225,6 +3225,22 @@ function abrirReporte() {
                     return;
                 }
 
+                // Evitar registros duplicados pendientes
+                const { data: existing, error: existsError } = await supabase
+                    .from('autorizaciones_salida')
+                    .select('id')
+                    .eq('estudiante_id', studentId)
+                    .eq('fecha_salida', exitDate)
+                    .eq('autorizada', true)
+                    .is('salida_efectiva', null)
+                    .limit(1);
+
+                if (existsError) throw existsError;
+                if (existing && existing.length > 0) {
+                    showError('El estudiante ya ha sido registrado en Autorizar Salida y su estado está pendiente.');
+                    return;
+                }
+        
                 const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
                     timeZone: 'America/Bogota' 
                 });
