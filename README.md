@@ -238,7 +238,7 @@ Para correr las pruebas del proyecto utiliza el siguiente comando:
 npm test
 ```
 
-Este comando mostrará "No tests" ya que actualmente no hay pruebas automáticas configuradas.
+Este comando ejecuta la suite de pruebas basada en Jest.
 
 ## 13. Solución de problemas
 
