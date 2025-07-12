@@ -69,8 +69,8 @@
 <button class="btn" id="loginBtn" onclick="login()" style="width: 100%;">Iniciar Sesión</button>
 <button class="btn btn-secondary" id="testConnectionBtn" style="width: 100%; margin-top: 10px;">🔄 Probar Conexión</button>
 <div class="login-messages" id="loginMessages" style="margin-top: 15px;">
-    <div class="alert alert-error" id="loginError" style="visibility: hidden;"></div>
-    <div class="alert alert-success" id="loginInfo" style="visibility: hidden;"></div>
+    <div class="alert alert-error notification-card" id="loginError" style="visibility: hidden;"></div>
+    <div class="alert alert-success notification-card" id="loginInfo" style="visibility: hidden;"></div>
 </div>
 </div>
 <!-- Dashboard -->
@@ -169,8 +169,8 @@
 <div class="section" id="lateArrivalSectionDiv">
 <h2 style="margin-bottom: 10px;">⏰ Registro de Llegadas Tarde</h2>
 <div class="login-messages" id="lateArrivalMessages" style="margin-top: 5px;">
-    <div class="alert alert-error" id="lateArrivalError" style="visibility: hidden;"></div>
-    <div class="alert alert-success" id="lateArrivalInfo" style="visibility: hidden;"></div>
+    <div class="alert alert-error notification-card" id="lateArrivalError" style="visibility: hidden;"></div>
+    <div class="alert alert-success notification-card" id="lateArrivalInfo" style="visibility: hidden;"></div>
 </div>
 <form id="lateArrivalForm">
 <div class="grid">
@@ -334,7 +334,7 @@
 </div>
 <button class="btn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
 <button id="exportLogsBtn" class="btn btn-secondary" onclick="exportLogs()">📥 Exportar Logs</button>
-<div id="logExportMessage" class="alert" style="visibility: hidden;"></div>
+<div id="logExportMessage" class="alert notification-card" style="visibility: hidden;"></div>
 </div>
 <div class="table-wrapper">
 <table class="table" id="securityLogsTable">
