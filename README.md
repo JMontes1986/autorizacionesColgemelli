@@ -227,6 +227,9 @@ El archivo [`supabase/policies.sql`](supabase/policies.sql) contiene estas instr
 2. Aplica las políticas de lectura, escritura y eliminación solo a usuarios autenticados.
    Las sentencias completas se encuentran en [`supabase/policies.sql`](supabase/policies.sql).
 
+Para permitir el acceso de solo lectura al dashboard sin autenticación,
+   se agregó la política `llegadas_tarde_read_anon` que autoriza
+   `auth.role() = 'anon'`.
 Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
 debés adaptar la política o habilitar el inicio de sesión en Supabase;
 de lo contrario los `insert` fallarán.
