@@ -2390,7 +2390,6 @@ function abrirReporte() {
                 resetCaptcha();
                 showDashboard();
                 updateSecurityIndicator('secure', 'Sesión Activa');
-                await cargarVerificaciones();
 
             } catch (error) {
                 console.error('❌ Error general en login:', error);
