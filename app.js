@@ -2494,6 +2494,7 @@ function abrirReporte() {
                 errorDiv.textContent = sanitizeHtml(message);
                 errorDiv.classList.add('alert-error');
                 errorDiv.classList.remove('alert-success');
+                errorDiv.classList.remove('alert-warning');
                 if (infoDiv) infoDiv.style.visibility = 'hidden';
                 errorDiv.style.visibility = 'visible';
                 setTimeout(() => {
@@ -2501,6 +2502,25 @@ function abrirReporte() {
                 }, 5000);
             } else {
                 alert('❌ ' + sanitizeHtml(message));
+            }
+        }
+
+        function showWarning(message, elementId = 'loginError') {
+            const warnDiv = document.getElementById(elementId);
+            const infoDiv = elementId === 'loginError' ? document.getElementById('loginInfo') : null;
+
+            if (warnDiv) {
+                warnDiv.textContent = sanitizeHtml(message);
+                warnDiv.classList.add('alert-warning');
+                warnDiv.classList.remove('alert-error');
+                warnDiv.classList.remove('alert-success');
+                if (infoDiv) infoDiv.style.visibility = 'hidden';
+                warnDiv.style.visibility = 'visible';
+                setTimeout(() => {
+                    warnDiv.style.visibility = 'hidden';
+                }, 5000);
+            } else {
+                alert('⚠️ ' + sanitizeHtml(message));
             }
         }
 
@@ -3257,7 +3277,7 @@ function abrirReporte() {
                     if (pendingDetails) {
                         pendingDetails.textContent = dupMessage;
                     }
-                    showError(dupMessage);
+                    showWarning(dupMessage);
                     openModal('pendingExitModal');
                     sendNotification('Salida pendiente existente', dupMessage);
                     return;
