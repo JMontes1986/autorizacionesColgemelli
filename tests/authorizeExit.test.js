@@ -64,7 +64,7 @@ describe('authorizeExit duplicate check', () => {
     authorizeExit = global.authorizeExit;
   });
 
-  test('opens modal when a pending record exists', async () => {
+  test('shows notification when a pending record exists', async () => {
     document.getElementById('gradeSelect').value = '1';
     document.getElementById('studentSelect').value = '1';
     document.getElementById('reasonSelect').value = '1';
@@ -77,10 +77,10 @@ describe('authorizeExit duplicate check', () => {
 
     await authorizeExit(event);
 
-    expect(openModal).toHaveBeenCalledWith('pendingExitModal');
-    expect(showError).not.toHaveBeenCalled();
-    expect(document.getElementById('pendingExitDetails').innerHTML).toContain('09:00');
-    expect(document.getElementById('pendingExitDetails').innerHTML).toContain('Luis');
+    const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis.';
+    expect(showError).toHaveBeenCalledWith(msg);
+    expect(sendNotification).toHaveBeenCalledWith('Salida pendiente existente', msg);
+    expect(openModal).not.toHaveBeenCalled();
     expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 });
