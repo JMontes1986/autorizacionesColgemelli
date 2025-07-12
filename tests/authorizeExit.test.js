@@ -19,12 +19,14 @@ describe('authorizeExit duplicate check', () => {
         <input id="exitTime" />
         <textarea id="observations"></textarea>
       </form>
+      <div id="pendingExitDetails"></div>
     `);
     global.document = dom.window.document;
     global.window = dom.window;
 
     global.validateSession = jest.fn(() => true);
     global.showError = jest.fn();
+    global.openModal = jest.fn();
     global.showSuccess = jest.fn();
     global.logSecurityEvent = jest.fn();
     global.logout = jest.fn();
@@ -34,14 +36,24 @@ describe('authorizeExit duplicate check', () => {
     global.resetAuthorizationForm = jest.fn();
 
     const mockInsert = jest.fn().mockResolvedValue({ data: null, error: null });
-    const mockQuery = {
+
+    const exitQuery = {
       insert: mockInsert,
-      select: jest.fn(() => mockQuery),
-      eq: jest.fn(() => mockQuery),
-      is: jest.fn(() => mockQuery),
-      limit: jest.fn(() => Promise.resolve({ data: [{ id: 1 }], error: null }))
+      select: jest.fn(() => exitQuery),
+      eq: jest.fn(() => exitQuery),
+      is: jest.fn(() => exitQuery),
+      limit: jest.fn(() => Promise.resolve({ data: [{ id: 1, hora_salida: '09:00', usuario_autorizador_id: 2 }], error: null }))
     };
-    mockSupabase = { from: jest.fn(() => mockQuery) };
+
+    const userQuery = {
+      select: jest.fn(() => userQuery),
+      eq: jest.fn(() => userQuery),
+      single: jest.fn(() => Promise.resolve({ data: { nombre: 'Luis' }, error: null }))
+    };
+
+    mockSupabase = {
+      from: jest.fn((table) => (table === 'autorizaciones_salida' ? exitQuery : userQuery))
+    };
     global.supabase = mockSupabase;
 
     const code = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -52,7 +64,7 @@ describe('authorizeExit duplicate check', () => {
     authorizeExit = global.authorizeExit;
   });
 
-  test('shows error when a pending record exists', async () => {
+  test('opens modal when a pending record exists', async () => {
     document.getElementById('gradeSelect').value = '1';
     document.getElementById('studentSelect').value = '1';
     document.getElementById('reasonSelect').value = '1';
@@ -65,7 +77,10 @@ describe('authorizeExit duplicate check', () => {
 
     await authorizeExit(event);
 
-    expect(showError).toHaveBeenCalled();
+    expect(openModal).toHaveBeenCalledWith('pendingExitModal');
+    expect(showError).not.toHaveBeenCalled();
+    expect(document.getElementById('pendingExitDetails').innerHTML).toContain('09:00');
+    expect(document.getElementById('pendingExitDetails').innerHTML).toContain('Luis');
     expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 });
