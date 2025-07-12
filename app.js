@@ -5329,9 +5329,12 @@ function abrirReporte() {
   }
 
 
-document.querySelector('#fechaDesde').addEventListener('change', function() {
-  document.getElementById('historicalWrapper').style.display = 'flex';
-});
+const inputFechaDesde = document.getElementById('fechaDesde');
+if (inputFechaDesde) {
+  inputFechaDesde.addEventListener('change', function() {
+    document.getElementById('historicalWrapper').style.display = 'flex';
+  });
+}
 
 function checkMostrarHistorico() {
   const desde = document.getElementById('fechaDesde').value;
@@ -5340,8 +5343,10 @@ function checkMostrarHistorico() {
     document.getElementById('historicalWrapper').style.display = 'flex';
   }
 }
-document.getElementById('fechaDesde').addEventListener('change', checkMostrarHistorico);
-document.getElementById('fechaHasta').addEventListener('change', checkMostrarHistorico);
+const fechaDesde = document.getElementById('fechaDesde');
+if (fechaDesde) fechaDesde.addEventListener('change', checkMostrarHistorico);
+const fechaHasta = document.getElementById('fechaHasta');
+if (fechaHasta) fechaHasta.addEventListener('change', checkMostrarHistorico);
 
 function actualizarVisibilidadHistorico() {
   const seccionDashboard = document.getElementById('dashboardSectionDiv');
