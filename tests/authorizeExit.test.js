@@ -80,7 +80,8 @@ describe('authorizeExit duplicate check', () => {
     const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis.';
     expect(showError).toHaveBeenCalledWith(msg);
     expect(sendNotification).toHaveBeenCalledWith('Salida pendiente existente', msg);
-    expect(openModal).not.toHaveBeenCalled();
+    expect(openModal).toHaveBeenCalledWith('pendingExitModal');
+    expect(document.getElementById('pendingExitDetails').textContent).toBe(msg);
     expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 });
