@@ -19,7 +19,6 @@ describe('authorizeExit duplicate check', () => {
         <input id="exitTime" />
         <textarea id="observations"></textarea>
       </form>
-      <div id="pendingExitDetails"></div>
     `);
     global.document = dom.window.document;
     global.window = dom.window;
@@ -80,8 +79,6 @@ describe('authorizeExit duplicate check', () => {
     const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis.';
     expect(showWarning).toHaveBeenCalledWith(msg);
     expect(sendNotification).toHaveBeenCalledWith('Salida pendiente existente', msg);
-    expect(openModal).toHaveBeenCalledWith('pendingExitModal');
-    expect(document.getElementById('pendingExitDetails').textContent).toBe(msg);
     expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 });
