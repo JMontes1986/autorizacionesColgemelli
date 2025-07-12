@@ -3228,7 +3228,7 @@ function abrirReporte() {
                 // Evitar registros duplicados pendientes
                 const { data: existing, error: existsError } = await supabase
                     .from('autorizaciones_salida')
-                    .select('id')
+                    .select('id, hora_salida, usuario:usuarios(nombre)')
                     .eq('estudiante_id', studentId)
                     .eq('fecha_salida', exitDate)
                     .eq('autorizada', true)
@@ -3237,7 +3237,10 @@ function abrirReporte() {
 
                 if (existsError) throw existsError;
                 if (existing && existing.length > 0) {
-                    showError('El estudiante ya ha sido registrado en Autorizar Salida y su estado está pendiente.');
+                    const record = existing[0];
+                    const reporter = record.usuario?.nombre || 'otro usuario';
+                    const hora = record.hora_salida || 'hora desconocida';
+                    showError(`El estudiante ya está registrado con salida pendiente a las ${sanitizeHtml(hora)} reportado por ${sanitizeHtml(reporter)}.`);
                     return;
                 }
         
