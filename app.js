@@ -2500,6 +2500,7 @@ function abrirReporte() {
                 setTimeout(() => {
                     errorDiv.style.visibility = 'hidden';
                 }, 5000);
+                if (window.toastError) toastError(message);
             } else {
                 alert('❌ ' + sanitizeHtml(message));
             }
@@ -2519,6 +2520,7 @@ function abrirReporte() {
                 setTimeout(() => {
                     warnDiv.style.visibility = 'hidden';
                 }, 5000);
+                if (window.toastWarning) toastWarning(message);
             } else {
                 alert('⚠️ ' + sanitizeHtml(message));
             }
@@ -2537,6 +2539,7 @@ function abrirReporte() {
                 setTimeout(() => {
                     infoDiv.style.visibility = 'hidden';
                 }, 5000);
+                if (window.toastSuccess) toastSuccess(message);
             } else {
                 alert('✅ ' + sanitizeHtml(message));
             }
