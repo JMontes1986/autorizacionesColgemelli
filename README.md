@@ -233,6 +233,20 @@ Para permitir el acceso de solo lectura al dashboard sin autenticación,
 Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
 debés adaptar la política o habilitar el inicio de sesión en Supabase;
 de lo contrario los `insert` fallarán.
+### Tabla `autorizaciones_salida`
+1. Habilita RLS:
+   ```sql
+   alter table public.autorizaciones_salida enable row level security;
+   ```
+2. Aplica las políticas de lectura, escritura y eliminación solo a usuarios autenticados.
+   Las sentencias completas se encuentran en [`supabase/policies.sql`](supabase/policies.sql).
+
+Para permitir el acceso de solo lectura al dashboard sin autenticación,
+   se agregó la política `autorizaciones_salida_read_anon` que autoriza
+   `auth.role() = 'anon'`.
+Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
+debés adaptar la política o habilitar el inicio de sesión en Supabase;
+de lo contrario los `insert` fallarán.
 ## 12. Ejecutar pruebas
 
 Para correr las pruebas del proyecto utiliza el siguiente comando:
