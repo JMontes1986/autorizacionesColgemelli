@@ -5292,6 +5292,11 @@ function abrirReporte() {
     if (!supabase || !validateSession()) return;
 
     const contenedor = document.getElementById("verificaciones");
+    if (!contenedor) {
+      console.warn("Contenedor de verificaciones no encontrado");
+      return;
+    }
+
     contenedor.innerHTML = "";
 
     const { data: salidas, error: errorSalidas } = await supabase
