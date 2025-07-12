@@ -372,7 +372,7 @@
             <th><i class="fas fa-graduation-cap"></i> Grado</th>
             <th><i class="fas fa-calendar"></i> Fecha Salida</th>
             <th><i class="fas fa-clock"></i> Hora Salida</th>
-            <th><i class="fas fa-check-circle"></i> Autorizada</th>
+            <th><i class="fas fa-check-circle"></i> Autorizó<
             <th><i class="fas fa-door-open"></i> Salida Efectiva</th>
           </tr>
         </thead>
@@ -421,7 +421,7 @@
       const hasta = document.getElementById('hastaReporte').value;
       let consulta = supabase
         .from('autorizaciones_salida')
-        .select('estudiante_id, fecha_salida, hora_salida, autorizada, salida_efectiva');
+        .select('estudiante_id, fecha_salida, hora_salida, autorizada, salida_efectiva, usuario_autorizador_id');
 
       if (desde) {
         consulta = consulta.gte('fecha_salida', desde);
@@ -471,11 +471,25 @@
         }
       }
 
+      const userIds = [...new Set(autorizaciones.filter(a => a.usuario_autorizador_id).map(a => a.usuario_autorizador_id))];
+      let usersMap = {};
+      if (userIds.length > 0) {
+        const { data: users, error: usersError } = await supabase
+          .from('usuarios')
+          .select('id, nombre')
+          .in('id', userIds);
+        if (usersError) {
+          console.error(usersError);
+        } else if (users) {
+          users.forEach(u => { usersMap[u.id] = u; });
+        }
+      }
+
       tbody.innerHTML = '';
       autorizaciones.forEach(item => {
         const s = studentsMap[item.estudiante_id] || {};
         const row = document.createElement('tr');
-        
+
         // Determinar el estado de la salida efectiva
         let salidaEfectivaHtml = '';
         if (item.salida_efectiva) {
@@ -484,6 +498,16 @@
           salidaEfectivaHtml = `<span class="status-badge status-pendiente">Pendiente</span>`;
         }
         
+        let autorizadorHtml = '';
+        if (item.autorizada && item.usuario_autorizador_id) {
+          const u = usersMap[item.usuario_autorizador_id] || {};
+          autorizadorHtml = sanitizeHtml(u.nombre || '');
+        } else if (item.autorizada) {
+          autorizadorHtml = 'Autorizado';
+        } else {
+          autorizadorHtml = '<span class="status-badge status-no">No</span>';
+        }
+
         row.innerHTML = `
           <td>${sanitizeHtml(String(s.id || ''))}</td>
           <td>${sanitizeHtml(s.nombre)}</td>
@@ -492,7 +516,7 @@
           <td>${sanitizeHtml(s.grado?.nombre)}</td>
           <td>${sanitizeHtml(item.fecha_salida)}</td>
           <td>${sanitizeHtml(item.hora_salida)}</td>
-          <td><span class="status-badge ${item.autorizada ? 'status-si' : 'status-no'}">${item.autorizada ? 'Sí' : 'No'}</span></td>
+          <td>${autorizadorHtml}</td>
           <td>${salidaEfectivaHtml}</td>
         `;
         tbody.appendChild(row);
@@ -552,7 +576,7 @@
       }
       
       // Preparar datos para la tabla
-      const headers = ['ID', 'Nombre', 'Apellido', 'Documento', 'Grado', 'Fecha Salida', 'Hora Salida', 'Autorizada', 'Salida Efectiva'];
+      const headers = ['ID', 'Nombre', 'Apellido', 'Documento', 'Grado', 'Fecha Salida', 'Hora Salida', 'Autorizó', 'Salida Efectiva'];
       const datos = [];
       
       filas.forEach(fila => {
@@ -596,7 +620,7 @@
           4: { halign: 'center', cellWidth: 20 }, // Grado
           5: { halign: 'center', cellWidth: 25 }, // Fecha Salida
           6: { halign: 'center', cellWidth: 20 }, // Hora Salida
-          7: { halign: 'center', cellWidth: 20 }, // Autorizada
+           7: { halign: 'center', cellWidth: 30 }, // Autorizó
           8: { halign: 'center', cellWidth: 30 }  // Salida Efectiva
         },
         alternateRowStyles: {
