@@ -60,3 +60,37 @@ using (
 
 -- Existing policies remain valid after adding indexes; no policy changes
 -- are required for idx_llegadas_tarde_fecha or idx_llegadas_tarde_estudiante.
+
+-- Enable RLS on table autorizaciones_salida
+alter table public.autorizaciones_salida enable row level security;
+
+create policy "autorizaciones_salida_read" on public.autorizaciones_salida
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+-- Allow anonymous dashboard access
+create policy "autorizaciones_salida_read_anon" on public.autorizaciones_salida
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "autorizaciones_salida_insert" on public.autorizaciones_salida
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "autorizaciones_salida_update" on public.autorizaciones_salida
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "autorizaciones_salida_delete" on public.autorizaciones_salida
+for delete
+using (
+    auth.role() <> 'anon'
+);
