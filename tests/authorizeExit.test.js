@@ -25,7 +25,7 @@ describe('authorizeExit duplicate check', () => {
     global.window = dom.window;
 
     global.validateSession = jest.fn(() => true);
-    global.showError = jest.fn();
+    global.showWarning = jest.fn();
     global.openModal = jest.fn();
     global.showSuccess = jest.fn();
     global.logSecurityEvent = jest.fn();
@@ -78,7 +78,7 @@ describe('authorizeExit duplicate check', () => {
     await authorizeExit(event);
 
     const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis.';
-    expect(showError).toHaveBeenCalledWith(msg);
+    expect(showWarning).toHaveBeenCalledWith(msg);
     expect(sendNotification).toHaveBeenCalledWith('Salida pendiente existente', msg);
     expect(openModal).toHaveBeenCalledWith('pendingExitModal');
     expect(document.getElementById('pendingExitDetails').textContent).toBe(msg);
