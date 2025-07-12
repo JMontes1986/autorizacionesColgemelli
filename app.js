@@ -3255,8 +3255,6 @@ function abrirReporte() {
                     const dupMessage = `El estudiante ya está registrado con salida pendiente a las ${sanitizeHtml(hora)} reportado por ${sanitizeHtml(reporter)}.`;
                     showError(dupMessage);
                     sendNotification('Salida pendiente existente', dupMessage);
-                    document.getElementById('pendingExitDetails').innerHTML = msg;
-                    openModal('pendingExitModal');
                     return;
                 }
         
