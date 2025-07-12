@@ -33,6 +33,13 @@ using (
     auth.role() <> 'anon'
 );
 
+-- New policy: allow anonymous users to read late arrivals
+create policy "llegadas_tarde_read_anon" on public.llegadas_tarde
+for select
+using (
+    auth.role() = 'anon'
+);
+
 create policy "llegadas_tarde_insert" on public.llegadas_tarde
 for insert
 with check (
