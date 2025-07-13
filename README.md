@@ -12,6 +12,12 @@ generadas con `URL.createObjectURL()`. Además, se añadió la directiva `worker
 para compatibilidad con bibliotecas que crean Web Workers.
 Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar fotos almacenadas en OneDrive.
 
+## Prerrequisitos
+
+1. **Node.js >=18**.
+2. Ejecuta `npm install` para instalar las dependencias necesarias.
+3. Copia `env.example.js` a `env.js` y personaliza los valores.
+   Este archivo está en `.gitignore` para evitar subir credenciales.
 # Manual de Usuario y Referencia Técnica: Sistema Web de Autorización de Salidas - Colegio Gemelli
 
 ## 1. Descripción General
@@ -248,14 +254,22 @@ Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
 debés adaptar la política o habilitar el inicio de sesión en Supabase;
 de lo contrario los `insert` fallarán.
 ## 12. Ejecutar pruebas
+Antes de ejecutar las pruebas instala las dependencias con:
 
-Para correr las pruebas del proyecto utiliza el siguiente comando:
+```bash
+npm install
+```
+Luego ejecuta la suite con:
 
 ```bash
 npm test
 ```
 
-Este comando ejecuta la suite de pruebas basada en Jest.
+Para validar la estructura basica de `index.html` puedes correr de forma opcional:
+
+```bash
+node layout-test.js
+```
 
 ## 13. Solución de problemas
 
