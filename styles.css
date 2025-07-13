@@ -24,27 +24,6 @@
             min-height: 80vh;
         }
 
-        /* Layout grid for main sections */
-        .responsive-layout {
-            display: grid;
-            height: 100%;
-            grid-template-rows: 5rem 5rem auto 5rem;
-            grid-template-columns: 20% auto 20%;
-            font-size: 1.5rem;
-        }
-
-        @media (max-width: 480px) {
-            .responsive-layout {
-                grid-template-rows: 5rem 5rem 5rem auto 5rem 5rem;
-                grid-template-columns: 1fr;
-            }
-
-            .responsive-layout aside,
-            .responsive-layout main {
-                grid-column: 1 / 4;
-            }
-        }
-
         .header {
             background: #2c3e50;
             color: white;
