@@ -15,4 +15,3 @@ add_header X-Frame-Options "DENY" always;
 ```
 
 Con ello evitarás advertencias del navegador porque la metaetiqueta ha sido eliminada del HTML.
-Con ello evitarás advertencias del navegador porque la metaetiqueta ha sido eliminada del HTML.
