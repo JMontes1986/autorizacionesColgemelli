@@ -16,8 +16,8 @@ Se agregó `https://colgemelli-my.sharepoint.com` a `default-src` para mostrar f
 
 1. **Node.js >=18**.
 2. Ejecuta `npm install` para instalar las dependencias necesarias.
-3. Copia `env.example.js` a `env.js` y personaliza los valores.
-   Este archivo está en `.gitignore` para evitar subir credenciales.
+Copia el archivo de ejemplo `env.example.js` a `env.js` y personaliza los valores.
+   Este archivo está listado en `.gitignore` para evitar subir credenciales.
 # Manual de Usuario y Referencia Técnica: Sistema Web de Autorización de Salidas - Colegio Gemelli
 
 ## 1. Descripción General
