@@ -27,8 +27,8 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="container responsive-layout">
-<header class="header">
+<div class="container">
+<div class="header">
 <img alt="Logo Colegio Gemelli" class="logo" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg" width="35" height="35"/>
 <h1> Colegio Gemelli Control de Salidas</h1>
 <div class="subtitle">@j.montes86</div>
@@ -37,14 +37,8 @@
 <span id="connectionText">Verificando conexión...</span>
 </div>
 <button id="logoutBtn" class="logout-btn" type="button">Cerrar Sesión</button>
-</header>
-<nav id="mainNav">
-  <div class="nav-buttons" id="navButtons">
-    <!-- Botones se cargarán dinámicamente según el rol -->
-  </div>
-</nav>
-<aside id="leftAside"></aside>
-<main class="content">
+</div>
+<div class="content">
 <!-- Rate Limit Warning -->
 <div class="rate-limit-warning" id="rateLimitWarning">
 ⚠️ Demasiados intentos. Por favor espera antes de intentar de nuevo.
@@ -81,6 +75,9 @@
 </div>
 <!-- Dashboard -->
 <div class="dashboard" id="dashboard">
+<div class="nav-buttons" id="navButtons">
+<!-- Botones se cargarán dinámicamente según el rol -->
+<button class="btn btn-primary" id="btnControlSalidas">📋 Control de Salidas</button></div>
 <!-- Sección para Autorizar Salidas -->
 <div class="section" id="authorizeSectionDiv">
 <h2>✅ Autorizar Salida de Estudiante</h2>
@@ -490,8 +487,6 @@
   <input type="month" id="mesReporte" onchange="mostrarReporteMensual()">
   <div id="contenedor-reporte"></div>
 </div>
-</main>
-<aside id="rightAside"></aside>
 <!-- Modals -->
 <div class="modal" id="studentModal">
 <div class="modal-content">
