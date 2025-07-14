@@ -2331,20 +2331,15 @@ function abrirReporte() {
 
                 console.log('🔐 Intentando login seguro para:', email.substring(0, 5) + '...');
                 
-                // Buscar usuario en la base de datos
-                const { data: user, error } = await supabase
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .eq('email', email)
-                    .eq('activo', true)
-                    .single();
-
-                if (error || !user) {
+                // Autenticación en Supabase
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (authError || !authData || !authData.user) {
                     recordFailedAttempt();
-                    await logSecurityEvent('login', 'Usuario no encontrado', { email: email.substring(0, 20) + '...' }, false);
+                    await logSecurityEvent('login', 'Credenciales incorrectas', { email: email.substring(0, 20) + '...' }, false);
                     showError('Credenciales incorrectas');
                     resetCaptcha();
                     loginBtn.disabled = false;
@@ -2352,15 +2347,19 @@ function abrirReporte() {
                     return;
                 }
 
-                console.log('✅ Usuario encontrado:', user.nombre);
+                // Obtener datos del usuario sin password hash
+                const { data: user, error } = await supabase
+                    .from('usuarios')
+                    .select(
+                        'id, nombre, email, rol:roles(nombre, descripcion)'
+                    )
+                    .eq('email', email)
+                    .eq('activo', true)
+                    .single();
 
-                // Verificar contraseña con cifrado
-                if (!verifyPassword(password, user.password_hash)) {
+                if (error || !user) {
                     recordFailedAttempt();
-                    await logSecurityEvent('login', 'Contraseña incorrecta', { 
-                        email: email.substring(0, 20) + '...',
-                        userId: user.id 
-                    }, false);
+                    await logSecurityEvent('login', 'Usuario no encontrado', { email: email.substring(0, 20) + '...' }, false);
                     showError('Credenciales incorrectas');
                     resetCaptcha();
                     loginBtn.disabled = false;
