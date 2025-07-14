@@ -188,6 +188,7 @@ flowchart TD
 - Se recomienda eliminar scripts inline y moverlos a archivos externos.
 - Aplicar Subresource Integrity (SRI) a librerías externas.
 - Implementar tokens CSRF efectivos para formularios críticos.
+Consulta `docs/csrf-verification.md` para configurar la verificación del token en tu servidor.
 - El login debe migrarse a validación en servidor para evitar exponer hashes.
 
 ---
