@@ -1659,6 +1659,7 @@ function abrirReporte() {
         let supabase;
         let currentUser = null;
         let currentEditingId = null;
+        let currentExitAuthId = null;
         let sessionToken = null;
         let loginAttempts = 0;
         let lastLoginAttempt = null;
@@ -3280,55 +3281,77 @@ function abrirReporte() {
                     return;
                 }
 
-                // Evitar registros duplicados pendientes
-                const { data: existing, error: existsError } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('id, hora_salida, usuario_autorizador_id')
-                    .eq('estudiante_id', studentId)
-                    .eq('fecha_salida', exitDate)
-                    .eq('autorizada', true)
-                    .is('salida_efectiva', null)
-                    .limit(1);
+                 if (!currentExitAuthId) {
+                    const { data: existing, error: existsError } = await supabase
+                        .from('autorizaciones_salida')
+                        .select('id, motivo_id, fecha_salida, hora_salida, observaciones, usuario_autorizador_id')
+                        .eq('estudiante_id', studentId)
+                        .eq('fecha_salida', exitDate)
+                        .eq('autorizada', true)
+                        .is('salida_efectiva', null)
+                        .limit(1);
 
-                if (existsError) throw existsError;
-                if (existing && existing.length > 0) {
-                    const record = existing[0];
-                    let reporter = 'otro usuario';
-                    if (record.usuario_autorizador_id) {
-                        const { data: userData, error: userError } = await supabase
-                            .from('usuarios')
-                            .select('nombre')
-                            .eq('id', record.usuario_autorizador_id)
-                            .single();
-                        if (!userError && userData) {
-                            reporter = userData.nombre;
-                        } else if (userError) {
-                            console.error('Error obteniendo usuario autorizador:', userError.message);
+                    if (existsError) throw existsError;
+                    if (existing && existing.length > 0) {
+                        const record = existing[0];
+                        let reporter = 'otro usuario';
+                        if (record.usuario_autorizador_id) {
+                            const { data: userData, error: userError } = await supabase
+                                .from('usuarios')
+                                .select('nombre')
+                                .eq('id', record.usuario_autorizador_id)
+                                .single();
+                            if (!userError && userData) {
+                                reporter = userData.nombre;
+                            } else if (userError) {
+                                console.error('Error obteniendo usuario autorizador:', userError.message);
+                            }
                         }
+                         const hora = record.hora_salida || 'hora desconocida';
+                        const dupMessage = `El estudiante ya está registrado con salida pendiente a las ${sanitizeHtml(hora)} reportado por ${sanitizeHtml(reporter)}. Se cargaron los datos para editar.`;
+                        showWarning(dupMessage);
+                        sendNotification('Salida pendiente existente', dupMessage);
+                        document.getElementById('reasonSelect').value = record.motivo_id;
+                        document.getElementById('exitDate').value = record.fecha_salida;
+                        document.getElementById('exitTime').value = record.hora_salida || '';
+                        document.getElementById('observations').value = record.observaciones || '';
+                        currentExitAuthId = record.id;
+                        return;
                     }
-                    const hora = record.hora_salida || 'hora desconocida';
-                    const dupMessage = `El estudiante ya está registrado con salida pendiente a las ${sanitizeHtml(hora)} reportado por ${sanitizeHtml(reporter)}.`;
-                    showWarning(dupMessage);
-                    sendNotification('Salida pendiente existente', dupMessage);
-                    return;
                 }
         
                 const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
                     timeZone: 'America/Bogota' 
                 });
+                
+                 let dbAction;
+                if (currentExitAuthId) {
+                    dbAction = supabase
+                        .from('autorizaciones_salida')
+                        .update({
+                            motivo_id: reasonId,
+                            fecha_salida: exitDate,
+                            hora_salida: exitTime,
+                            observaciones: observations || null,
+                            usuario_autorizador_id: currentUser.id
+                        })
+                        .eq('id', currentExitAuthId);
+                } else {
+                    dbAction = supabase
+                        .from('autorizaciones_salida')
+                        .insert([{
+                            estudiante_id: studentId,
+                            motivo_id: reasonId,
+                            usuario_autorizador_id: currentUser.id,
+                            fecha_salida: exitDate,
+                            hora_salida: exitTime,
+                            observaciones: observations || null,
+                            fecha_creacion: colombiaDateTime,
+                            autorizada: true
+                        }]);
+                }
 
-                const { data, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .insert([{
-                        estudiante_id: studentId,
-                        motivo_id: reasonId,
-                        usuario_autorizador_id: currentUser.id,
-                        fecha_salida: exitDate,
-                        hora_salida: exitTime,
-                        observaciones: observations || null,
-                        fecha_creacion: colombiaDateTime,
-                        autorizada: true
-                    }]);
+                const { data, error } = await dbAction;
 
                 if (error) throw error;
 
@@ -3337,25 +3360,41 @@ function abrirReporte() {
                 const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
                 const studentName = studentSelect.options[studentSelect.selectedIndex].text;
 
-                await logSecurityEvent('create', 'Autorización de salida creada', {
-                    studentId,
-                    gradeId,
-                    reasonId,
-                    exitDate,
-                    exitTime
-                }, true);
+                  if (currentExitAuthId) {
+                    await logSecurityEvent('update', 'Autorización de salida actualizada', {
+                        authId: currentExitAuthId,
+                        studentId,
+                        gradeId,
+                        reasonId,
+                        exitDate,
+                        exitTime
+                    }, true);
 
-                showSuccess(`✅ Autorización creada exitosamente para ${sanitizeHtml(studentName)} (${sanitizeHtml(gradeName)})`);
+                    showSuccess(`✅ Autorización actualizada exitosamente para ${sanitizeHtml(studentName)} (${sanitizeHtml(gradeName)})`);
+                    console.log(`✅ Autorización actualizada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
+                } else {
+                    await logSecurityEvent('create', 'Autorización de salida creada', {
+                        studentId,
+                        gradeId,
+                        reasonId,
+                        exitDate,
+                        exitTime
+                    }, true);
+
+                    showSuccess(`✅ Autorización creada exitosamente para ${sanitizeHtml(studentName)} (${sanitizeHtml(gradeName)})`);
+                    console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
+                }
+
                 sendNotification(studentName, gradeName);
                 resetAuthorizationForm();
                 
-                console.log(`✅ Autorización creada: ${studentName} - ${gradeName} - ${exitDate} ${exitTime}`);
+
                 
             } catch (error) {
-                await logSecurityEvent('error', 'Error al crear autorización', { 
-                    error: error.message.substring(0, 200) 
+                await logSecurityEvent('error', 'Error al guardar autorización', {
+                    error: error.message.substring(0, 200)
                 }, false);
-                showError('Error al crear la autorización: ' + error.message);
+                showError('Error al guardar la autorización: ' + error.message);
             }
         }
 
@@ -3368,6 +3407,7 @@ function abrirReporte() {
             
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
+            currentExitAuthId = null;
         }
 
         async function searchStudent() {
