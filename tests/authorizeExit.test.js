@@ -41,7 +41,7 @@ describe('authorizeExit duplicate check', () => {
       select: jest.fn(() => exitQuery),
       eq: jest.fn(() => exitQuery),
       is: jest.fn(() => exitQuery),
-      limit: jest.fn(() => Promise.resolve({ data: [{ id: 1, hora_salida: '09:00', usuario_autorizador_id: 2 }], error: null }))
+      limit: jest.fn(() => Promise.resolve({ data: [{ id: 1, hora_salida: '09:00', motivo_id: 1, fecha_salida: '2024-05-01', observaciones: 'prev', usuario_autorizador_id: 2 }], error: null }))
     };
 
     const userQuery = {
@@ -63,7 +63,7 @@ describe('authorizeExit duplicate check', () => {
     authorizeExit = global.authorizeExit;
   });
 
-  test('shows notification when a pending record exists', async () => {
+  test('loads existing authorization for editing when a pending record exists', async () => {
     document.getElementById('gradeSelect').value = '1';
     document.getElementById('studentSelect').value = '1';
     document.getElementById('reasonSelect').value = '1';
@@ -76,9 +76,12 @@ describe('authorizeExit duplicate check', () => {
 
     await authorizeExit(event);
 
-    const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis.';
+    const msg = 'El estudiante ya está registrado con salida pendiente a las 09:00 reportado por Luis. Se cargaron los datos para editar.';
     expect(showWarning).toHaveBeenCalledWith(msg);
     expect(sendNotification).toHaveBeenCalledWith('Salida pendiente existente', msg);
+    expect(dom.window.document.getElementById('reasonSelect').value).toBe('1');
+    expect(dom.window.document.getElementById('exitTime').value).toBe('09:00');
+    expect(dom.window.document.getElementById('exitDate').value).toBe('2024-05-01');
     expect(mockSupabase.from().insert).not.toHaveBeenCalled();
   });
 });
