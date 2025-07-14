@@ -57,7 +57,7 @@
 <label for="password">Contraseña:</label>
 <div class="input-with-icon">
 <input autocomplete="current-password" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
-<span class="toggle-password" onclick="togglePasswordVisibility('password', this)">👁️</span>
+<span class="toggle-password">👁️</span>
 </div>
 <div class="password-strength" id="passwordStrength" style="display: none;"></div>
 </div>
@@ -539,7 +539,7 @@
 <label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
 <div class="input-with-icon">
 <input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
-<span class="toggle-password" onclick="togglePasswordVisibility('userPassword', this)">👁️</span>
+<span class="toggle-password">👁️</span>
 </div>
 <div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
 </div>
