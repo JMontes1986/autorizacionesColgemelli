@@ -4,8 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<!-- Las cabeceras CSP y X-Frame-Options se envían desde el servidor -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+<!-- HEADERS DE SEGURIDAD MEJORADOS -->
+<meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://cdn.stimulsoft.com https://mbosvnmhnbrslfwlfcxu.supabase.co https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.stimulsoft.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://via.placeholder.com https://mbosvnmhnbrslfwlfcxu.supabase.co https://*.sharepoint.com https://*.1drv.ms; frame-src 'none'; connect-src 'self' blob: https://mbosvnmhnbrslfwlfcxu.supabase.co;" http-equiv="Content-Security-Policy"/>
+<meta content="DENY" http-equiv="X-Frame-Options"/>
 <meta content="nosniff" http-equiv="X-Content-Type-Options"/>
 <meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
 <meta content="strict-origin-when-cross-origin" http-equiv="Referrer-Policy"/>
