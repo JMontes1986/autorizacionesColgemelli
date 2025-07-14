@@ -1669,9 +1669,10 @@ function abrirReporte() {
         const MAX_LOGIN_ATTEMPTS = 5;
         const LOGIN_COOLDOWN = 300000; // 5 minutos
         const SESSION_TIMEOUT = 1800000; // 30 minutos
+        const CSRF_TOKEN = getOrCreateCSRFToken();
         const SECURE_HEADERS = {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': generateCSRFToken()
+            'X-CSRF-Token': CSRF_TOKEN
         };
 
         // ========================================
@@ -1681,6 +1682,33 @@ function abrirReporte() {
         // Generar token CSRF
         function generateCSRFToken() {
             return 'csrf_' + Date.now() + '_' + Math.random().toString(36).substr(2, 16);
+        }
+
+        function storeCSRFToken(token) {
+            document.cookie = `csrf_token=${token}; path=/; Secure; SameSite=Strict`;
+            let meta = document.querySelector('meta[name="csrf-token"]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.name = 'csrf-token';
+                document.head.appendChild(meta);
+            }
+            meta.setAttribute('content', token);
+        }
+
+        function getCSRFToken() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) return meta.getAttribute('content');
+            const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+            return match ? match[1] : null;
+        }
+
+        function getOrCreateCSRFToken() {
+            let token = getCSRFToken();
+            if (!token) {
+                token = generateCSRFToken();
+            }
+            storeCSRFToken(token);
+            return token;
         }
 
         // Función de sanitización XSS mejorada
@@ -2239,6 +2267,11 @@ function abrirReporte() {
                     auth: {
                         persistSession: false, // No persistir sesiones por seguridad
                         autoRefreshToken: false
+                        },
+                    global: {
+                        headers: {
+                            'X-CSRF-Token': getCSRFToken()
+                        }
                     }
                 });
                 
