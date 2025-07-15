@@ -255,6 +255,14 @@ Para permitir el acceso de solo lectura al dashboard sin autenticación,
 Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
 debés adaptar la política o habilitar el inicio de sesión en Supabase;
 de lo contrario los `insert` fallarán.
+
+### Tabla `audit_logs`
+1. Habilita RLS:
+   ```sql
+   alter table public.audit_logs enable row level security;
+   ```
+2. Aplica las políticas de lectura y escritura solo a usuarios autenticados.
+   Las sentencias correspondientes se encuentran en [`supabase/policies.sql`](supabase/policies.sql).
 ## 12. Ejecutar pruebas
 Antes de ejecutar las pruebas instala las dependencias con:
 
