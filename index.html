@@ -603,14 +603,23 @@
 <div id="toast-container" class="toast-container"></div>
 <script defer src="toast.js"></script>
 <script defer src="env.js"></script>
+<script defer src="version.js"></script>
 <script defer src="app.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(err => {
-      console.error('Error registrando Service Worker:', err);
-    });
-  }
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.APP_VERSION) {
+      const f = document.getElementById('appVersion');
+      if (f) {
+        f.textContent = `Versión v${window.APP_VERSION.version} – Compilación ${window.APP_VERSION.build}`;
+      }
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.error('Error registrando Service Worker:', err);
+      });
+    }
+  });
 </script>
-<footer>Versión v1.0.0 – Compilación 2</footer>
+<footer id="appVersion"></footer>
 </body>
 </html>
