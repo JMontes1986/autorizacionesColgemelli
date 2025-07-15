@@ -4,12 +4,19 @@ Esta aplicación genera un token CSRF al iniciar y lo guarda en la cookie `csrf_
 
 ## Ejemplo de función en servidor
 
-El siguiente fragmento muestra cómo validar el token en una función de Cloud Function o API Express usando el middleware `functions/verifyCsrf.js`:
+El siguiente fragmento muestra un ejemplo básico de middleware en Express para validar el token. Puedes adaptarlo en tu servidor o función de Cloud Function:
 
 ```js
-const verifyCsrf = require('./verifyCsrf');
 const express = require('express');
 const app = express();
+
+function verifyCsrf(req, res, next) {
+  const token = req.get('X-CSRF-Token');
+  if (token !== process.env.CSRF_SECRET) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  next();
+}
 
 app.use(verifyCsrf);
 app.post('/api/accion', (req, res) => {
