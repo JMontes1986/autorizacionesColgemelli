@@ -19,3 +19,21 @@ create index if not exists idx_llegadas_tarde_fecha
 -- Index to efficiently query records for a particular student
 create index if not exists idx_llegadas_tarde_estudiante
     on public.llegadas_tarde (estudiante_id);
+
+
+-- Tabla de auditoría para registrar eventos de seguridad
+create table if not exists public.audit_logs (
+    id bigserial primary key,
+    usuario_id bigint references public.usuarios(id),
+    tipo text,
+    accion text,
+    detalles jsonb,
+    ip_address text,
+    user_agent text,
+    exitoso boolean,
+    timestamp timestamptz default now()
+);
+
+-- Index para consultas por fecha
+create index if not exists idx_audit_logs_timestamp
+    on public.audit_logs (timestamp);
