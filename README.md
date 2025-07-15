@@ -306,4 +306,4 @@ Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza l
 Consulta [docs/CLS_NOTES.md](docs/CLS_NOTES.md) para conocer las funciones que generan cambios de layout y cómo mitigarlos.
 
 ## Información de Versión
-La versión actual de la aplicación es **V.1** (compilación 1). Puedes ver estos datos en el pie de página (`footer`) de [index.html](index.html).
+El número de versión de la aplicación se toma del campo `version` de `package.json` y el número de compilación corresponde al conteo de *commits* en el repositorio. Al ejecutar `./build.sh` se genera un archivo `version.js` con ambos valores y `index.html` los muestra de forma automática en el pie de página.
