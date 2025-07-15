@@ -5620,3 +5620,6 @@ document.addEventListener('DOMContentLoaded', attachEventHandlers);
 window.mostrarReporteMensual = mostrarReporteMensual;
 window.mostrarReporteLlegadas = mostrarReporteLlegadas;
 window.abrirReporte = abrirReporte;
+window.loadSecurityLogs = loadSecurityLogs;
+window.loadSecurityStats = loadSecurityStats;
+window.exportLogs = exportLogs;
