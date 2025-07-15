@@ -13,5 +13,13 @@ window.process = {
 };
 EOL
 
+VERSION=$(node -p "require('./package.json').version")
+BUILD=$(git rev-list --count HEAD)
+
+cat > version.js <<EOF
+window.APP_VERSION = { version: "$VERSION", build: "$BUILD" };
+EOF
+
 echo "env.js generado"
+echo "version.js generado con v$VERSION build $BUILD"
 exit 0
