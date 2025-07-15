@@ -94,3 +94,20 @@ for delete
 using (
     auth.role() <> 'anon'
 );
+
+-- Enable RLS on table audit_logs
+alter table public.audit_logs enable row level security;
+
+-- Allow authenticated users to read audit logs
+create policy "audit_logs_read" on public.audit_logs
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+-- Allow authenticated users to insert audit logs
+create policy "audit_logs_insert" on public.audit_logs
+for insert
+with check (
+    auth.role() <> 'anon'
+);
