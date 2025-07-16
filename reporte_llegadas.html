@@ -392,6 +392,7 @@
             <th><i class="fas fa-calendar"></i> Fecha</th>
             <th><i class="fas fa-clock"></i> Hora</th>
             <th><i class="fas fa-file-alt"></i> Excusa</th>
+            <th><i class="fas fa-user-check"></i> Registrado por</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -428,7 +429,7 @@
       const tbody = document.querySelector('#tabla-reporte tbody');
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="loading">
+          <td colspan="8" class="loading">
             <i class="fas fa-spinner"></i>
             <div>Cargando datos...</div>
           </td>
@@ -440,7 +441,7 @@
       const busqueda = document.getElementById('busquedaEstudiante').value.toLowerCase().trim();
       let consulta = supabase
         .from('llegadas_tarde')
-        .select('id, estudiante_id, grado_id, fecha, hora, excusa');
+        .select('id, estudiante_id, grado_id, fecha, hora, excusa, registrado_por');
 
       if (desde) {
         consulta = consulta.gte('fecha', desde);
@@ -454,7 +455,7 @@
       if (error) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="no-data">
+            <td colspan="8" class="no-data">
               <i class="fas fa-exclamation-triangle"></i>
               <div>Error al cargar datos</div>
             </td>
@@ -467,7 +468,7 @@
       if (!llegadas || llegadas.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="no-data">
+            <td colspan="8" class="no-data">
               <i class="fas fa-search"></i>
               <div>No se encontraron datos</div>
             </td>
@@ -490,6 +491,20 @@
         }
       }
 
+       const userIds = [...new Set(llegadas.filter(a => a.registrado_por).map(a => a.registrado_por))];
+      let usersMap = {};
+      if (userIds.length > 0) {
+        const { data: users, error: usersError } = await supabase
+          .from('usuarios')
+          .select('id, nombre')
+          .in('id', userIds);
+        if (usersError) {
+          console.error(usersError);
+        } else if (users) {
+          users.forEach(u => { usersMap[u.id] = u; });
+        }
+      }
+
       tbody.innerHTML = '';
       let registros = llegadas;
       if (busqueda) {
@@ -502,6 +517,7 @@
       
       registros.forEach(item => {
         const s = studentsMap[item.estudiante_id] || {};
+        const u = usersMap[item.registrado_por] || {};
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${sanitizeHtml(String(s.id || ''))}</td>
@@ -511,6 +527,7 @@
           <td>${sanitizeHtml(item.fecha)}</td>
           <td>${sanitizeHtml(item.hora)}</td>
           <td><span class="status-badge ${item.excusa ? 'status-si' : 'status-no'}">${item.excusa ? 'Sí' : 'No'}</span></td>
+          <td>${sanitizeHtml(u.nombre || '')}</td>
         `;
         tbody.appendChild(row);
       });
@@ -568,7 +585,7 @@
       }
       
       // Preparar datos para la tabla
-      const headers = ['ID', 'Nombre', 'Apellido', 'Grado', 'Fecha', 'Hora', 'Excusa'];
+      const headers = ['ID', 'Nombre', 'Apellido', 'Grado', 'Fecha', 'Hora', 'Excusa', 'Registrado por'];
       const datos = [];
       
       filas.forEach(fila => {
@@ -611,7 +628,8 @@
           3: { halign: 'center', cellWidth: 20 }, // Grado
           4: { halign: 'center', cellWidth: 25 }, // Fecha
           5: { halign: 'center', cellWidth: 20 }, // Hora
-          6: { halign: 'center', cellWidth: 20 }  // Excusa
+          6: { halign: 'center', cellWidth: 20 }, // Excusa
+          7: { halign: 'left', cellWidth: 30 }    // Registrado por
         },
         alternateRowStyles: {
           fillColor: [249, 249, 249]
