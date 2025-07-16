@@ -2710,31 +2710,42 @@ function abrirReporte() {
                 const gradeSelect = document.getElementById('lateGradeSelect');
                 const studentSelect = document.getElementById('lateStudentSelect');
                 const gradeId = gradeSelect.value;
-                const studentId = studentSelect.value;
+                const selectedIds = Array.from(studentSelect.selectedOptions).map(o => o.value);
                 const time = document.getElementById('lateTime').value;
                 const excuse = document.getElementById('lateExcuse').value === 'true';
 
-                if (!gradeId || !studentId || !time) {
+                if (!gradeId || selectedIds.length === 0 || !time) {
                     showError('Por favor, completa todos los campos obligatorios', 'lateArrivalError');
                     return;
                 }
 
                 const fecha = getColombiaDate();
 
+                 const records = selectedIds.map(id => ({
+                    estudiante_id: id,
+                    grado_id: gradeId,
+                    fecha,
+                    hora: time,
+                    excusa: excuse,
+                    registrado_por: currentUser.id
+                }));
+
                 const { error } = await supabase
                     .from('llegadas_tarde')
-                    .insert([{ estudiante_id: studentId, grado_id: gradeId, fecha, hora: time, excusa: excuse, registrado_por: currentUser.id }]);
+                    .insert(records);
 
                 if (error) throw error;
 
-                await logSecurityEvent('create', 'Llegada tarde registrada', {
-                    studentId,
-                    gradeId,
-                    hora: time
-                }, true);
+                for (const id of selectedIds) {
+                    await logSecurityEvent('create', 'Llegada tarde registrada', {
+                        studentId: id,
+                        gradeId,
+                        hora: time
+                    }, true);
+                }
 
-                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
-                showSuccess(`Llegada tarde registrada para ${sanitizeHtml(studentName)}`, 'lateArrivalInfo');
+                 const names = Array.from(studentSelect.selectedOptions).map(o => o.textContent);
+                showSuccess(`Llegada tarde registrada para ${sanitizeHtml(names.join(', '))}`, 'lateArrivalInfo');
                 resetLateArrivalForm();
 
             } catch (error) {
@@ -2751,6 +2762,7 @@ function abrirReporte() {
             if (form) form.reset();
             const studentSelect = document.getElementById('lateStudentSelect');
             if (studentSelect) {
+                studentSelect.selectedIndex = -1;
                 studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
                 studentSelect.disabled = true;
             }
