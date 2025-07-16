@@ -12,7 +12,7 @@ describe('loadLateStudents', () => {
     const { JSDOM } = require('jsdom');
     dom = new JSDOM(`
       <select id="lateGradeSelect"></select>
-      <select id="lateStudentSelect"></select>
+      <div id="lateStudentList" class="checkbox-list"></div>
     `);
     global.document = dom.window.document;
     global.window = dom.window;
@@ -50,10 +50,9 @@ describe('loadLateStudents', () => {
     await loadLateStudents();
 
     expect(mockSupabase.from).toHaveBeenCalledWith('estudiantes');
-    const options = Array.from(document.getElementById('lateStudentSelect').options);
-    const texts = options.map(o => o.textContent);
+    const labels = Array.from(document.querySelectorAll('#lateStudentList label'));
+    const texts = labels.map(l => l.textContent.trim());
     expect(texts).toEqual([
-      'Seleccionar estudiante...',
       'Perez, Juan',
       'Lopez, Maria'
     ]);
