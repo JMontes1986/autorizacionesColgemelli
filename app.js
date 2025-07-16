@@ -2649,6 +2649,7 @@ function abrirReporte() {
         async function loadLateStudents() {
             const studentList = document.getElementById('lateStudentList');
             const studentSelect = document.getElementById('lateStudentSelect');
+            const gradeId = document.getElementById('lateGradeSelect').value;
 
             if (!gradeId) {
                 studentList.innerHTML = '';
