@@ -2647,20 +2647,20 @@ function abrirReporte() {
         }
 
         async function loadLateStudents() {
-            const gradeId = document.getElementById('lateGradeSelect').value;
+            const studentList = document.getElementById('lateStudentList');
             const studentSelect = document.getElementById('lateStudentSelect');
 
             if (!gradeId) {
-                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                studentSelect.disabled = true;
+                studentList.innerHTML = '';
+                studentList.dataset.disabled = 'true';
                 return;
             }
 
             try {
                 if (!validateSession()) return;
 
-                studentSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
-                studentSelect.disabled = true;
+                studentList.textContent = 'Cargando estudiantes...';
+                studentList.dataset.disabled = 'true';
 
                 const { data: students, error } = await supabase
                     .from('estudiantes')
@@ -2672,24 +2672,29 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-                studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                studentList.innerHTML = '';
 
                 if (students && students.length > 0) {
                     students.forEach(student => {
-                        const option = document.createElement('option');
-                        option.value = student.id;
-                        option.textContent = sanitizeHtml(`${student.apellidos}, ${student.nombre}`);
-                        studentSelect.appendChild(option);
+                        const label = document.createElement('label');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'lateStudentCheckbox';
+                        checkbox.value = student.id;
+                        checkbox.dataset.name = `${student.apellidos}, ${student.nombre}`;
+                        label.appendChild(checkbox);
+                        label.appendChild(document.createTextNode(' ' + sanitizeHtml(`${student.apellidos}, ${student.nombre}`)));
+                        studentList.appendChild(label);
                     });
-                    studentSelect.disabled = false;
+                    studentList.dataset.disabled = 'false';
                 } else {
-                    studentSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+                    studentList.textContent = 'No hay estudiantes en este grado';
                 }
 
             } catch (error) {
                 console.error('Error loading late students:', error);
-                studentSelect.innerHTML = '<option value="">Error al cargar estudiantes</option>';
-                studentSelect.disabled = true;
+                studentList.textContent = 'Error al cargar estudiantes';
+                studentList.dataset.disabled = 'true';x
                 await logSecurityEvent('error', 'Error al cargar estudiantes para llegadas tarde', {
                     gradeId: gradeId,
                     error: error.message.substring(0, 200)
@@ -2708,9 +2713,9 @@ function abrirReporte() {
                 }
 
                 const gradeSelect = document.getElementById('lateGradeSelect');
-                const studentSelect = document.getElementById('lateStudentSelect');
                 const gradeId = gradeSelect.value;
-                const selectedIds = Array.from(studentSelect.selectedOptions).map(o => o.value);
+                const boxes = document.querySelectorAll('#lateStudentList input:checked');
+                const selectedIds = Array.from(boxes).map(b => b.value);
                 const time = document.getElementById('lateTime').value;
                 const excuse = document.getElementById('lateExcuse').value === 'true';
 
@@ -2744,7 +2749,7 @@ function abrirReporte() {
                     }, true);
                 }
 
-                 const names = Array.from(studentSelect.selectedOptions).map(o => o.textContent);
+                const names = Array.from(boxes).map(b => b.dataset.name);
                 showSuccess(`Llegada tarde registrada para ${sanitizeHtml(names.join(', '))}`, 'lateArrivalInfo');
                 resetLateArrivalForm();
 
@@ -2758,13 +2763,10 @@ function abrirReporte() {
         }
 
         function resetLateArrivalForm() {
-            const form = document.getElementById('lateArrivalForm');
-            if (form) form.reset();
-            const studentSelect = document.getElementById('lateStudentSelect');
-            if (studentSelect) {
-                studentSelect.selectedIndex = -1;
-                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-                studentSelect.disabled = true;
+            const studentList = document.getElementById('lateStudentList');
+            if (studentList) {
+                studentList.innerHTML = '';
+                studentList.dataset.disabled = 'true';
             }
         }
 
