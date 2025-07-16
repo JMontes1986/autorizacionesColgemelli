@@ -13,7 +13,10 @@ describe('saveLateArrival', () => {
     dom = new JSDOM(`
       <form id="lateArrivalForm">
         <select id="lateGradeSelect"></select>
-        <select id="lateStudentSelect"></select>
+         <select id="lateStudentSelect" multiple>
+          <option value="3" selected>Est 3</option>
+          <option value="4" selected>Est 4</option>
+        </select>
         <input id="lateTime" />
         <select id="lateExcuse">
           <option value="false">No</option>
@@ -47,7 +50,6 @@ describe('saveLateArrival', () => {
 
   test('inserts arrival with new columns', async () => {
     document.getElementById('lateGradeSelect').value = '2';
-    document.getElementById('lateStudentSelect').value = '3';
     document.getElementById('lateTime').value = '08:10';
     document.getElementById('lateExcuse').value = 'true';
 
@@ -59,7 +61,8 @@ describe('saveLateArrival', () => {
 
     expect(mockSupabase.from).toHaveBeenCalledWith('llegadas_tarde');
     expect(mockSupabase.from().insert).toHaveBeenCalledWith([
-      { estudiante_id: '3', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true, registrado_por: 5 }
+      { estudiante_id: '3', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true, registrado_por: 5 },
+      { estudiante_id: '4', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true, registrado_por: 5 }
     ]);
     expect(showSuccess).toHaveBeenCalled();
     expect(document.getElementById('lateGradeSelect').value).toBe('');
