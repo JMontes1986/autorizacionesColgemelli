@@ -2723,7 +2723,7 @@ function abrirReporte() {
 
                 const { error } = await supabase
                     .from('llegadas_tarde')
-                    .insert([{ estudiante_id: studentId, grado_id: gradeId, fecha, hora: time, excusa: excuse }]);
+                    .insert([{ estudiante_id: studentId, grado_id: gradeId, fecha, hora: time, excusa: excuse, registrado_por: currentUser.id }]);
 
                 if (error) throw error;
 
