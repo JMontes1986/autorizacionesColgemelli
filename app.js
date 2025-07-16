@@ -2695,7 +2695,7 @@ function abrirReporte() {
             } catch (error) {
                 console.error('Error loading late students:', error);
                 studentList.textContent = 'Error al cargar estudiantes';
-                studentList.dataset.disabled = 'true';x
+                studentList.dataset.disabled = 'true';
                 await logSecurityEvent('error', 'Error al cargar estudiantes para llegadas tarde', {
                     gradeId: gradeId,
                     error: error.message.substring(0, 200)
