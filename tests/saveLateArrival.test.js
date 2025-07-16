@@ -66,6 +66,6 @@ describe('saveLateArrival', () => {
     ]);
     expect(showSuccess).toHaveBeenCalled();
     expect(document.getElementById('lateGradeSelect').value).toBe('');
-    expect(document.getElementById('lateStudentList').dataset.disabled).toBe('true');
+    expect(document.querySelectorAll('#lateStudentList input').length).toBe(0);
   });
 });
