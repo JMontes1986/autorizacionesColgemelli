@@ -30,6 +30,7 @@ describe('saveLateArrival', () => {
     global.logSecurityEvent = jest.fn();
     global.logout = jest.fn();
     global.getColombiaDate = jest.fn(() => '2024-05-01');
+    global.currentUser = { id: 5 };
 
     const mockInsert = jest.fn().mockResolvedValue({ data: null, error: null });
     const mockFrom = jest.fn(() => ({ insert: mockInsert }));
@@ -58,7 +59,7 @@ describe('saveLateArrival', () => {
 
     expect(mockSupabase.from).toHaveBeenCalledWith('llegadas_tarde');
     expect(mockSupabase.from().insert).toHaveBeenCalledWith([
-      { estudiante_id: '3', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true }
+      { estudiante_id: '3', grado_id: '2', fecha: '2024-05-01', hora: '08:10', excusa: true, registrado_por: 5 }
     ]);
     expect(showSuccess).toHaveBeenCalled();
     expect(document.getElementById('lateGradeSelect').value).toBe('');
