@@ -13,10 +13,10 @@ describe('saveLateArrival', () => {
     dom = new JSDOM(`
       <form id="lateArrivalForm">
         <select id="lateGradeSelect"></select>
-         <select id="lateStudentSelect" multiple>
-          <option value="3" selected>Est 3</option>
-          <option value="4" selected>Est 4</option>
-        </select>
+         <div id="lateStudentList">
+          <label><input type="checkbox" class="lateStudentCheckbox" value="3" data-name="Est 3" checked> Est 3</label>
+          <label><input type="checkbox" class="lateStudentCheckbox" value="4" data-name="Est 4" checked> Est 4</label>
+        </div>
         <input id="lateTime" />
         <select id="lateExcuse">
           <option value="false">No</option>
@@ -66,6 +66,6 @@ describe('saveLateArrival', () => {
     ]);
     expect(showSuccess).toHaveBeenCalled();
     expect(document.getElementById('lateGradeSelect').value).toBe('');
-    expect(document.getElementById('lateStudentSelect').disabled).toBe(true);
+    expect(document.getElementById('lateStudentList').dataset.disabled).toBe('true');
   });
 });
