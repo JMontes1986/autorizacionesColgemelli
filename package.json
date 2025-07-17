@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "Sistema de control de salidas estudiantiles - Colegio Gemelli",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare": "node scripts/generate-version.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-   "type": "commonjs",
+  "type": "commonjs",
   "devDependencies": {
     "jest": "^29.7.0",
     "jsdom": "^22.1.0"
