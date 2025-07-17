@@ -306,4 +306,4 @@ Después de generar `env.js`, abre `diagnostico.html` en tu navegador. Utiliza l
 Consulta [docs/CLS_NOTES.md](docs/CLS_NOTES.md) para conocer las funciones que generan cambios de layout y cómo mitigarlos.
 
 ## Información de Versión
-El número de versión de la aplicación se toma del campo `version` de `package.json` y el número de compilación corresponde al conteo de *commits* en el repositorio. Al ejecutar `./build.sh` se genera un archivo `version.js` con ambos valores y `index.html` los muestra de forma automática en el pie de página.
+El número de versión de la aplicación se toma del campo `version` de `package.json` y el número de compilación corresponde al conteo de *commits* en el repositorio. El archivo `version.js` se crea automáticamente al instalar las dependencias (`npm install`) o al ejecutar `./build.sh`, por lo que no se incluye en el control de versiones. `index.html` muestra estos valores de forma automática en el pie de página.
