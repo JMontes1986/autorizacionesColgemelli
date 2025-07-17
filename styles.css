@@ -1431,12 +1431,21 @@
         }
 
         .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-left: 5px solid #667eea;
-        }
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-left: 5px solid #667eea;
+}
+
+#lateArrivalCard {
+    border-left-color: #e74c3c;
+    margin-top: 20px;
+}
+
+#lateArrivalForm .btn {
+    margin-top: 15px;
+}
 
         .verification-card {
             text-align: center;
