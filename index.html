@@ -167,13 +167,14 @@
 </div>
 <!-- Sección de Llegadas Tarde -->
 <div class="section" id="lateArrivalSectionDiv">
-<h2 style="margin-bottom: 10px;">⏰ Registro de Llegadas Tarde</h2>
-<div class="login-messages" id="lateArrivalMessages" style="margin-top: 5px;">
-    <div class="alert alert-error notification-card" id="lateArrivalError" style="visibility: hidden;"></div>
-    <div class="alert alert-success notification-card" id="lateArrivalInfo" style="visibility: hidden;"></div>
-</div>
-<form id="lateArrivalForm">
-<div class="grid">
+<h2>⏰ Registro de Llegadas Tarde</h2>
+    <div id="lateArrivalCard" class="card">
+        <div class="login-messages" id="lateArrivalMessages" style="margin-top: 15px;">
+            <div class="alert alert-error notification-card" id="lateArrivalError" style="visibility: hidden;"></div>
+            <div class="alert alert-success notification-card" id="lateArrivalInfo" style="visibility: hidden;"></div>
+        </div>
+        <form id="lateArrivalForm">
+            <div class="grid">
 <div class="form-group">
 <label for="lateGradeSelect">Grado:</label>
 <select id="lateGradeSelect">
@@ -197,7 +198,8 @@
 </div>
 </div>
 <button class="btn btn-danger" type="submit">Registrar Llegada</button>
-</form>
+        </form>
+    </div>
 </div>
 <!-- Sección de Administración -->
 <div class="section" id="adminSectionDiv">
