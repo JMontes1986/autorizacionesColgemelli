@@ -2815,7 +2815,10 @@ function abrirReporte() {
             const navButtons = document.getElementById('navButtons');
             const role = currentUser.rol.nombre;
             const email = currentUser.email;
-            const lateUser = email === 'convivencia@colgemelli.edu.co' || email === 'sistemas@colgemelli.edu.co';
+            const lateUser =
+                email === 'convivencia@colgemelli.edu.co' ||
+                email === 'sistemas@colgemelli.edu.co' ||
+                email === 'gformativa@colgemelli.edu.co';
             const lateBtnHtml = lateUser ?
                 `<button id="lateArrivalBtn" class="btn btn-danger" onclick="showSection('lateArrivalSectionDiv')">⏰ Llegadas Tarde</button>` : '';
             navButtons.innerHTML = '';
