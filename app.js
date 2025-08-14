@@ -528,6 +528,7 @@
                 }
                 if (dashboardCharts.gradeChart) {
                 dashboardCharts.gradeChart.dispose();
+                    dashboardCharts.gradeChart.destroy();
                 }
                 const gradeData = {};
                 authorizations.forEach(auth => {
@@ -541,7 +542,6 @@
                         gradeData[gradeName].pending++;
                     }
                 });
-                const labels = Object.keys(gradeData);
                 const pendingData = labels.map(g => gradeData[g].pending);
                 const confirmedData = labels.map(g => gradeData[g].confirmed);
                 const chart = echarts.init(el);
@@ -588,7 +588,7 @@
                     el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
                     return;
                 }
-                dashboardCharts.reasonChart.dispose();
+                if (dashboardCharts.reasonChart) {
                     dashboardCharts.reasonChart.destroy();
                 }
                 const reasonData = {};
