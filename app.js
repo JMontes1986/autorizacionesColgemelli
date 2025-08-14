@@ -542,6 +542,7 @@
                         gradeData[gradeName].pending++;
                     }
                 });
+                const labels = Object.keys(gradeData);
                 const pendingData = labels.map(g => gradeData[g].pending);
                 const confirmedData = labels.map(g => gradeData[g].confirmed);
                 const chart = echarts.init(el);
