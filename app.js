@@ -1,14 +1,14 @@
         // ========================================
-        // VERIFICACIÓN Y CARGA DE CHART.JS
+        // VERIFICACIÓN Y CARGA DE ECHARTS
         // ========================================
 
-        function ensureChartJSLoaded() {
-            if (typeof Chart !== 'undefined') {
-                console.log('✅ Chart.js disponible:', Chart.version);
+        function ensureEChartsLoaded() {
+            if (typeof echarts !== 'undefined') {
+                console.log('✅ ECharts disponible:', echarts.version);
                 return Promise.resolve(true);
             }
 
-        console.error('❌ Chart.js no está disponible');
+            console.error('❌ ECharts no está disponible');
             return Promise.resolve(false);
         }
 
@@ -26,9 +26,9 @@
             return true;
         }
     
-        // Crear gráficos simples sin Chart.js como última opción
+        // Crear gráficos simples sin ECharts como última opción
         function createSimpleCharts() {
-            console.log('📊 Creando gráficos simples sin Chart.js...');
+            console.log('📊 Creando gráficos simples sin ECharts...');
             
             // Gráfico de estado simple
             const statusChart = document.getElementById('statusChart');
@@ -57,7 +57,7 @@
                     chart.parentElement.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: #666;">
                             <p>📊 Gráfico no disponible</p>
-                            <p><small>Chart.js no se pudo cargar. Los datos básicos están disponibles arriba.</small></p>
+                            <p><small>ECharts no se pudo cargar. Los datos básicos están disponibles arriba.</small></p>
                         </div>
                     `;
                 }
@@ -248,13 +248,13 @@
                 // Iniciar carga de gráficos sin bloquear estadísticas
                 const chartsPromise = (async () => {
                     try {
-                        console.log('🔍 Verificando disponibilidad de Chart.js...');
-                        const chartJSAvailable = await ensureChartJSLoaded();
-                        if (chartJSAvailable) {
-                            console.log('✅ Chart.js disponible, cargando gráficos completos...');
+                        console.log('🔍 Verificando disponibilidad de ECharts...');
+                        const echartsAvailable = await ensureEChartsLoaded();
+                        if (echartsAvailable) {
+                            console.log('✅ ECharts disponible, cargando gráficos completos...');
                             await loadDashboardCharts(authorizations);
                         } else {
-                            console.log('⚠️ Chart.js no disponible, usando gráficos simples...');
+                            console.log('⚠️ ECharts no disponible, usando gráficos simples...');
                             createSimpleCharts();
                             updateSimpleCharts(pending.length, confirmed.length);
                         }
@@ -288,9 +288,9 @@
             document.getElementById('dashTotalCount').textContent = '0';
             document.getElementById('dashRecentCount').textContent = '0';
 
-            // Verificar si Chart.js está disponible
-            if (typeof Chart !== 'undefined') {
-                // Crear gráficos vacíos con Chart.js
+            // Verificar si ECharts está disponible
+            if (typeof echarts !== 'undefined') {
+                // Crear gráficos vacíos con ECharts
                 createStatusChart(0, 0);
                 createGradeChart([]);
                 createReasonChart([]);
@@ -463,322 +463,198 @@
 
         function createStatusChart(pendingCount, confirmedCount) {
             try {
-                const ctx = document.getElementById('statusChart');
-                if (!ctx) {
+                const el = document.getElementById('statusChart');
+                if (!el) {
                     console.error('❌ Elemento statusChart no encontrado');
                     return;
                 }
-                
-                // Verificar que Chart.js esté disponible
-                if (typeof Chart === 'undefined') {
-                    console.error('❌ Chart.js no está disponible');
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chart.js no está cargado</p>';
+                if (typeof echarts === 'undefined') {
+                    console.error('❌ ECharts no está disponible');
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
                     return;
                 }
-                
                 console.log(`📊 Creando gráfico de estado: ${pendingCount} pendientes, ${confirmedCount} confirmadas`);
-                
-                // Destruir gráfico existente si existe
                 if (dashboardCharts.statusChart) {
-                    dashboardCharts.statusChart.destroy();
+                    dashboardCharts.statusChart.dispose();
                 }
-
-                // Si no hay datos, mostrar gráfico vacío
-                if (pendingCount === 0 && confirmedCount === 0) {
-                    dashboardCharts.statusChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Sin datos'],
-                            datasets: [{
-                                data: [1],
-                                backgroundColor: ['#ecf0f1'],
-                                borderColor: ['#bdc3c7'],
-                                borderWidth: 2
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        padding: 20,
-                                        font: {
-                                            size: 14
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    return;
-                }
-
-                dashboardCharts.statusChart = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['🟢 Pendientes', '🔵 Confirmadas'],
-                        datasets: [{
-                            data: [pendingCount, confirmedCount],
-                            backgroundColor: ['#2ecc71', '#3498db'],
-                            borderColor: ['#27ae60', '#2980b9'],
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 20,
-                                    font: {
-                                        size: 14
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const total = pendingCount + confirmedCount;
-                                        const percentage = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
-                                        return `${context.label}: ${context.parsed} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                
+                const chart = echarts.init(el);
+                const hasData = pendingCount !== 0 || confirmedCount !== 0;
+                const option = hasData ? {
+                    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                    legend: { bottom: 0 },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: { show: false },
+                        data: [
+                            { value: pendingCount, name: '🟢 Pendientes' },
+                            { value: confirmedCount, name: '🔵 Confirmadas' }
+                        ]
+                    }]
+                } : {
+                    tooltip: { show: false },
+                    legend: { show: false },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        label: { show: false },
+                        data: [{ value: 1, name: 'Sin datos', itemStyle: { color: '#ecf0f1' } }]
+                    }]
+                };
+                chart.setOption(option);
+                dashboardCharts.statusChart = chart;
                 console.log('✅ Gráfico de estado creado');
-                
             } catch (error) {
                 console.error('❌ Error creando gráfico de estado:', error);
-                const ctx = document.getElementById('statusChart');
-                if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
+                const el2 = document.getElementById('statusChart');
+                if (el2) {
+                    el2.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
             }
         }
 
         function createGradeChart(authorizations) {
             try {
-                const ctx = document.getElementById('gradeChart');
-                if (!ctx || typeof Chart === 'undefined') {
-                    console.error('❌ gradeChart no disponible o Chart.js no cargado');
+                const el = document.getElementById('gradeChart');
+                if (!el) {
+                    console.error('❌ gradeChart no disponible');
                     return;
                 }
-                
-                console.log(`📊 Creando gráfico por grados con ${authorizations.length} autorizaciones`);
-                
-                // Destruir gráfico existente
+                if (typeof echarts === 'undefined') {
+                    console.error('❌ ECharts no está disponible');
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
+                    return;
+                }
                 if (dashboardCharts.gradeChart) {
+                dashboardCharts.gradeChart.dispose();
                     dashboardCharts.gradeChart.destroy();
                 }
-
-                // Agrupar por grado
                 const gradeData = {};
                 authorizations.forEach(auth => {
                     const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
                     if (!gradeData[gradeName]) {
                         gradeData[gradeName] = { pending: 0, confirmed: 0 };
                     }
-                    
                     if (auth.salida_efectiva) {
                         gradeData[gradeName].confirmed++;
                     } else {
                         gradeData[gradeName].pending++;
                     }
                 });
-
-                const labels = Object.keys(gradeData);
-                const pendingData = labels.map(grade => gradeData[grade].pending);
-                const confirmedData = labels.map(grade => gradeData[grade].confirmed);
-
-                // Si no hay datos, mostrar gráfico vacío
+                const pendingData = labels.map(g => gradeData[g].pending);
+                const confirmedData = labels.map(g => gradeData[g].confirmed);
+                const chart = echarts.init(el);
+                let option;
                 if (labels.length === 0) {
-                    dashboardCharts.gradeChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Sin datos'],
-                            datasets: [{
-                                label: 'Sin datos',
-                                data: [0],
-                                backgroundColor: '#ecf0f1'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: { stepSize: 1 }
-                                }
-                            }
-                        }
-                    });
-                    return;
-                }
-
-                dashboardCharts.gradeChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: '🟢 Pendientes',
-                                data: pendingData,
-                                backgroundColor: '#2ecc71',
-                                borderColor: '#27ae60',
-                                borderWidth: 1
-                            },
-                            {
-                                label: '🔵 Confirmadas',
-                                data: confirmedData,
-                                backgroundColor: '#3498db',
-                                borderColor: '#2980b9',
-                                borderWidth: 1
-                            }
+                    option = {
+                        xAxis: { type: 'category', data: ['Sin datos'] },
+                        yAxis: { type: 'value' },
+                        series: [{ type: 'bar', data: [0], itemStyle: { color: '#ecf0f1' } }]
+                    };
+                } else {
+                    option = {
+                        tooltip: { trigger: 'axis' },
+                        legend: {},
+                        xAxis: { type: 'category', data: labels },
+                        yAxis: { type: 'value', min: 0 },
+                        series: [
+                            { name: '🟢 Pendientes', type: 'bar', data: pendingData, itemStyle: { color: '#2ecc71' } },
+                            { name: '🔵 Confirmadas', type: 'bar', data: confirmedData, itemStyle: { color: '#3498db' } }
                         ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
+                     };
+                }
+                chart.setOption(option);
+                dashboardCharts.gradeChart = chart;
                 
                 console.log('✅ Gráfico por grados creado');
-                
             } catch (error) {
-                console.error('❌ Error creando gráfico por grados:', error);
-                const ctx = document.getElementById('gradeChart');
-                if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
+                const el = document.getElementById('gradeChart');
+                if (el) {
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
             }
         }
 
         function createReasonChart(authorizations) {
             try {
-                const ctx = document.getElementById('reasonChart');
-                if (!ctx || typeof Chart === 'undefined') {
-                    console.error('❌ reasonChart no disponible o Chart.js no cargado');
+                const el = document.getElementById('reasonChart');
+                if (!el) {
+                    console.error('❌ reasonChart no disponible');
                     return;
                 }
-                
-                console.log(`📊 Creando gráfico por motivos con ${authorizations.length} autorizaciones`);
-                
-                // Destruir gráfico existente
+                if (typeof echarts === 'undefined') {
+                    console.error('❌ ECharts no está disponible');
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
+                    return;
+                }
                 if (dashboardCharts.reasonChart) {
                     dashboardCharts.reasonChart.destroy();
                 }
-
-                // Agrupar por motivo
                 const reasonData = {};
                 authorizations.forEach(auth => {
                     const reasonName = auth.motivo?.nombre || 'Sin motivo';
                     reasonData[reasonName] = (reasonData[reasonName] || 0) + 1;
                 });
-
                 const labels = Object.keys(reasonData);
                 const data = Object.values(reasonData);
                 const colors = ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
-
-                // Si no hay datos
+                const chart = echarts.init(el);
+                const seriesData = labels.map((label, i) => ({
+                    value: data[i],
+                    name: label,
+                    itemStyle: { color: colors[i % colors.length] }
+                }));
+                let option;
                 if (labels.length === 0) {
-                    dashboardCharts.reasonChart = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: ['Sin datos'],
-                            datasets: [{
-                                data: [1],
-                                backgroundColor: ['#ecf0f1']
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    return;
-                }
-
-                dashboardCharts.reasonChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colors.slice(0, labels.length),
-                            borderWidth: 2,
-                            borderColor: '#fff'
+                    option = {
+                        series: [{
+                            type: 'pie',
+                            data: [{ value: 1, name: 'Sin datos', itemStyle: { color: '#ecf0f1' } }],
+                            label: { show: false }
                         }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                    };
+                } else {
+                    option = {
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '70%',
+                            data: seriesData
+                        }]
+                    };
+                }
+                chart.setOption(option);
+                dashboardCharts.reasonChart = chart;
                 
                 console.log('✅ Gráfico por motivos creado');
-                
             } catch (error) {
-                console.error('❌ Error creando gráfico por motivos:', error);
-                const ctx = document.getElementById('reasonChart');
-                if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
+                const el = document.getElementById('reasonChart');
+                if (el) {
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
             }
         }
 
         function createTimelineChart(authorizations) {
             try {
-                const ctx = document.getElementById('timelineChart');
-                if (!ctx || typeof Chart === 'undefined') {
-                    console.error('❌ timelineChart no disponible o Chart.js no cargado');
+                const el = document.getElementById('timelineChart');
+                if (!el) {
+                    console.error('❌ timelineChart no disponible');
                     return;
                 }
-                
-                console.log(`📊 Creando timeline con ${authorizations.length} autorizaciones`);
-                
-                // Destruir gráfico existente
-                if (dashboardCharts.timelineChart) {
-                    dashboardCharts.timelineChart.destroy();
+                if (typeof echarts === 'undefined') {
+                    console.error('❌ ECharts no está disponible');
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
+                    return;
                 }
-
-                // Agrupar por hora
+                if (dashboardCharts.timelineChart) {
+                    dashboardCharts.timelineChart.dispose();
+                }
                 const hourlyData = {};
                 for (let i = 6; i <= 18; i++) {
                     hourlyData[i] = { pending: 0, confirmed: 0 };
                 }
-
                 authorizations.forEach(auth => {
                     if (auth.hora_salida) {
                         const hour = parseInt(auth.hora_salida.split(':')[0]);
@@ -791,62 +667,28 @@
                         }
                     }
                 });
-
-                const labels = Object.keys(hourlyData).map(hour => `${hour}:00`);
-                const pendingData = Object.values(hourlyData).map(data => data.pending);
-                const confirmedData = Object.values(hourlyData).map(data => data.confirmed);
-
-                dashboardCharts.timelineChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: '🟢 Pendientes',
-                                data: pendingData,
-                                borderColor: '#2ecc71',
-                                backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: '🔵 Confirmadas',
-                                data: confirmedData,
-                                borderColor: '#3498db',
-                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-                
+const labels = Object.keys(hourlyData).map(h => `${h}:00`);
+                const pendingData = Object.values(hourlyData).map(d => d.pending);
+                const confirmedData = Object.values(hourlyData).map(d => d.confirmed);
+                const chart = echarts.init(el);
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    legend: {},
+                    xAxis: { type: 'category', data: labels },
+                    yAxis: { type: 'value' },
+                    series: [
+                        { name: '🟢 Pendientes', type: 'line', data: pendingData, smooth: true, areaStyle: {}, lineStyle: { color: '#2ecc71' }, itemStyle: { color: '#2ecc71' } },
+                        { name: '🔵 Confirmadas', type: 'line', data: confirmedData, smooth: true, areaStyle: {}, lineStyle: { color: '#3498db' }, itemStyle: { color: '#3498db' } }
+                    ]
+                };
+                chart.setOption(option);
+                dashboardCharts.timelineChart = chart;
                 console.log('✅ Timeline creado');
-                
             } catch (error) {
                 console.error('❌ Error creando timeline:', error);
-                const ctx = document.getElementById('timelineChart');
-                if (ctx) {
-                    ctx.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
+                const el = document.getElementById('timelineChart');
+                if (el) {
+                    el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Error cargando gráfico</p>';
                 }
             }
         }
@@ -1131,19 +973,19 @@
                 
                 // 1. Verificar dependencias críticas
                 console.log('📊 === VERIFICACIÓN DE DEPENDENCIAS ===');
-                console.log('Chart.js disponible:', typeof Chart !== 'undefined');
-                if (typeof Chart !== 'undefined') {
-                    console.log('Chart.js versión:', Chart.version || 'Versión no disponible');
+                console.log('ECharts disponible:', typeof echarts !== 'undefined');
+                if (typeof echarts !== 'undefined') {
+                    console.log('ECharts versión:', echarts.version || 'Versión no disponible');
                 } else {
-                    console.error('❌ Chart.js NO ESTÁ CARGADO');
-                    
-                    // Intentar cargar Chart.js ahora
-                    console.log('🔄 Intentando cargar Chart.js...');
+                    console.error('❌ ECharts NO ESTÁ CARGADO');
+
+                    // Intentar cargar ECharts ahora
+                    console.log('🔄 Intentando cargar ECharts...');
                     try {
-                        const loaded = await ensureChartJSLoaded();
-                        console.log('Chart.js carga forzada:', loaded ? 'ÉXITO' : 'FALLÓ');
+                        const loaded = await ensureEChartsLoaded();
+                        console.log('ECharts carga forzada:', loaded ? 'ÉXITO' : 'FALLÓ');
                     } catch (error) {
-                        console.error('❌ Error cargando Chart.js:', error.message);
+                        console.error('❌ Error cargando ECharts:', error.message);
                     }
                 }
                 
@@ -1226,30 +1068,18 @@
                 console.log('Gráficos en dashboardCharts:', Object.keys(dashboardCharts || {}));
                 
                 // 7. Intentar crear un gráfico de prueba
-                if (typeof Chart !== 'undefined') {
+               if (typeof echarts !== 'undefined') {
                     console.log('🧪 === PRUEBA DE CREACIÓN DE GRÁFICO ===');
                     try {
-                        const testCanvas = document.createElement('canvas');
-                        testCanvas.width = 100;
-                        testCanvas.height = 100;
-                        
-                        const testChart = new Chart(testCanvas, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Prueba'],
-                                datasets: [{
-                                    data: [1],
-                                    backgroundColor: ['#2ecc71']
-                                }]
-                            },
-                            options: {
-                                responsive: false,
-                                animation: false
-                            }
+                        const testDiv = document.createElement('div');
+                        testDiv.style.width = '100px';
+                        testDiv.style.height = '100px';
+                        const testChart = echarts.init(testDiv);
+                        testChart.setOption({
+                            series: [{ type: 'pie', data: [{ value: 1, name: 'Prueba' }] }]
                         });
-                        
                         console.log('✅ Gráfico de prueba creado exitosamente');
-                        testChart.destroy();
+                        testChart.dispose();
                     } catch (chartError) {
                         console.error('❌ Error creando gráfico de prueba:', chartError);
                     }
@@ -1401,69 +1231,69 @@ function abrirReporte() {
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
-                showSuccess('Intentando recargar Chart.js...');
+                showSuccess('Intentando recargar ECharts...');
                 
                 // Mostrar estado
-                const statusDiv = document.getElementById('chartjsStatus');
-                const statusText = document.getElementById('chartjsStatusText');
+                const statusDiv = document.getElementById('echartsStatus');
+                const statusText = document.getElementById('echartsStatusText');
                 
                 if (statusDiv && statusText) {
                     statusDiv.style.display = 'block';
-                    statusText.textContent = 'Recargando Chart.js...';
+                    statusText.textContent = 'Recargando ECharts...';
                 }
                 
-                // Intentar cargar Chart.js de nuevo
-                const loaded = await ensureChartJSLoaded();
+                // Intentar cargar ECharts de nuevo
+                const loaded = await ensureEChartsLoaded();
                 
                 if (loaded) {
-                    console.log('✅ Chart.js recargado exitosamente');
+                    console.log('✅ ECharts recargado exitosamente');
                     if (statusText) {
-                        statusText.textContent = 'Chart.js cargado ✅';
+                        statusText.textContent = 'ECharts cargado ✅';
                         statusText.style.color = '#2ecc71';
                     }
                     
-                    showSuccess('Chart.js cargado exitosamente. Actualizando dashboard...');
+                    showSuccess('ECharts cargado exitosamente. Actualizando dashboard...');
                     
                     // Recargar dashboard con gráficos
                     setTimeout(async () => {
                         await loadDashboard();
                         showSuccess('Dashboard actualizado con gráficos completos');
                     }, 500);
-                    
+
                 } else {
-                    console.error('❌ No se pudo cargar Chart.js');
+                    console.error('❌ No se pudo cargar ECharts');
                     if (statusText) {
-                        statusText.textContent = 'Chart.js no disponible ❌';
+                        statusText.textContent = 'ECharts no disponible ❌';
                         statusText.style.color = '#e74c3c';
                     }
-                    showError('No se pudo cargar Chart.js. El dashboard funcionará en modo simplificado.');
+                    showError('No se pudo cargar ECharts. El dashboard funcionará en modo simplificado.');
                 }
-                
+
             } catch (error) {
                 console.error('❌ Error forzando recarga de gráficos:', error);
                 showError('Error al recargar gráficos: ' + error.message);
                 
-                const statusText = document.getElementById('chartjsStatusText');
+                const statusText = document.getElementById('echartsStatusText');
                 if (statusText) {
-                    statusText.textContent = 'Error cargando Chart.js ❌';
+                    statusText.textContent = 'Error cargando ECharts ❌';
                     statusText.style.color = '#e74c3c';
                 }
             }
         }
 
-        function updateChartJSStatus() {
-            const statusDiv = document.getElementById('chartjsStatus');
-            const statusText = document.getElementById('chartjsStatusText');
+        function updateEChartsStatus() {
+            const statusDiv = document.getElementById('echartsStatus');
+            const statusText = document.getElementById('echartsStatusText');
             
             if (!statusDiv || !statusText) return;
-            
+
             statusDiv.style.display = 'block';
             
-            if (typeof Chart !== 'undefined') {
-                statusText.textContent = `Chart.js ${Chart.version || 'cargado'} ✅`;
+            if (typeof echarts !== 'undefined') {
+                statusText.textContent = `ECharts ${echarts.version || 'cargado'} ✅`;
                 statusText.style.color = '#2ecc71';
             } else {
-                statusText.textContent = 'Chart.js no disponible ❌';
+                statusText.textContent = 'ECharts no disponible ❌';
                 statusText.style.color = '#e74c3c';
             }
         }
@@ -2951,7 +2781,7 @@ function abrirReporte() {
                 document.getElementById('dashTotalCount').textContent = '...';
                 document.getElementById('dashRecentCount').textContent = '...';
                 
-                // Cargar dashboard con manejo de Chart.js
+                // Cargar dashboard con manejo de ECharts
                 setTimeout(async () => {
                     try {
                         await loadDashboard();
@@ -5265,12 +5095,12 @@ function abrirReporte() {
             setTimeout(() => {
                 console.log('🔍 Verificando dependencias...');
                 
-                // Verificar Chart.js
-                if (typeof Chart === 'undefined') {
-                    console.error('❌ Chart.js no se cargó correctamente');
-                    updateSecurityIndicator('error', 'Error: Chart.js no cargado');
+                 // Verificar ECharts
+                if (typeof echarts === 'undefined') {
+                    console.error('❌ ECharts no se cargó correctamente');
+                    updateSecurityIndicator('error', 'Error: ECharts no cargado');
                 } else {
-                    console.log('✅ Chart.js cargado correctamente:', Chart.version);
+                    console.log('✅ ECharts cargado correctamente:', echarts.version);
                 }
                 
                 // Verificar Supabase
