@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Autorizaciones - Colgemelli</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@6/dist/echarts.min.js"></script>
     <!-- Supabase client -->
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -369,7 +369,7 @@
                 Estudiantes con Más Llegadas Tarde
             </h3>
             <div class="chart-container">
-                <canvas id="chegadasTardeChart"></canvas>
+                <div id="chegadasTardeChart" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
 
@@ -382,7 +382,7 @@
                 Estudiantes con Más Salidas
             </h3>
             <div class="chart-container">
-                <canvas id="salidasChart"></canvas>
+                <div id="salidasChart" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
 
@@ -395,7 +395,7 @@
                 Motivos Más Solicitados
             </h3>
             <div class="chart-container">
-                <canvas id="motivosChart"></canvas>
+                <div id="motivosChart" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
 
@@ -408,7 +408,7 @@
                 Tendencia por Fechas
             </h3>
             <div class="chart-container">
-                <canvas id="tendenciaChart"></canvas>
+                <div id="tendenciaChart" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
 
@@ -450,7 +450,7 @@
                 Distribución por Grados
             </h3>
             <div class="chart-container">
-                <canvas id="gradosChart"></canvas>
+                <div id="gradosChart" style="width: 100%; height: 100%;"></div>
             </div>
         </div>
     </div>
@@ -607,35 +607,18 @@
             const estudiantes = Object.keys(conteoEstudiantes).sort((a, b) => conteoEstudiantes[b] - conteoEstudiantes[a]).slice(0, 10);
             const valores = estudiantes.map(est => conteoEstudiantes[est]);
 
-            const ctx = document.getElementById('chegadasTardeChart').getContext('2d');
-            if (charts.chegadasTarde) charts.chegadasTarde.destroy();
+            const dom = document.getElementById('chegadasTardeChart');
+            if (charts.chegadasTarde) charts.chegadasTarde.dispose();
 
-            charts.chegadasTarde = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: estudiantes,
-                    datasets: [{
-                        label: 'Llegadas Tarde',
-                        data: valores,
-                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+            charts.chegadasTarde = echarts.init(dom);
+            charts.chegadasTarde.setOption({
+                xAxis: { type: 'category', data: estudiantes },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(255, 99, 132, 0.8)' }
+                }]
             });
         }
 
@@ -650,35 +633,18 @@
             const estudiantes = Object.keys(conteoEstudiantes).sort((a, b) => conteoEstudiantes[b] - conteoEstudiantes[a]).slice(0, 10);
             const valores = estudiantes.map(est => conteoEstudiantes[est]);
 
-            const ctx = document.getElementById('salidasChart').getContext('2d');
-            if (charts.salidas) charts.salidas.destroy();
+           const dom = document.getElementById('salidasChart');
+            if (charts.salidas) charts.salidas.dispose();
 
-            charts.salidas = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: estudiantes,
-                    datasets: [{
-                        label: 'Salidas',
-                        data: valores,
-                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+            charts.salidas = echarts.init(dom);
+            charts.salidas.setOption({
+                xAxis: { type: 'category', data: estudiantes },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(54, 162, 235, 0.8)' }
+                }]
             });
         }
 
@@ -692,34 +658,16 @@
             const motivos = Object.keys(conteoMotivos);
             const valores = motivos.map(motivo => conteoMotivos[motivo]);
 
-            const ctx = document.getElementById('motivosChart').getContext('2d');
-            if (charts.motivos) charts.motivos.destroy();
+            const dom = document.getElementById('motivosChart');
+            if (charts.motivos) charts.motivos.dispose();
 
-            charts.motivos = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: motivos,
-                    datasets: [{
-                        data: valores,
-                        backgroundColor: [
-                            '#FF6384',
-                            '#36A2EB',
-                            '#FFCE56',
-                            '#4BC0C0',
-                            '#9966FF',
-                            '#FF9F40'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
+            charts.motivos = echarts.init(dom);
+            charts.motivos.setOption({
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    data: motivos.map((m, i) => ({ value: valores[i], name: m }))
+                }]
             });
         }
 
@@ -733,35 +681,17 @@
             const fechas = Object.keys(conteoPorFecha).sort();
             const valores = fechas.map(fecha => conteoPorFecha[fecha]);
 
-            const ctx = document.getElementById('tendenciaChart').getContext('2d');
-            if (charts.tendencia) charts.tendencia.destroy();
+            const dom = document.getElementById('tendenciaChart');
+            if (charts.tendencia) charts.tendencia.dispose();
 
-            charts.tendencia = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: fechas,
-                    datasets: [{
-                        label: 'Registros por Día',
-                        data: valores,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+            charts.tendencia = echarts.init(dom);
+            charts.tendencia.setOption({
+                xAxis: { type: 'category', data: fechas },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'line',
+                    data: valores
+                }]
             });
         }
 
@@ -775,35 +705,18 @@
             const grados = Object.keys(conteoPorGrado).sort();
             const valores = grados.map(grado => conteoPorGrado[grado]);
 
-            const ctx = document.getElementById('gradosChart').getContext('2d');
-            if (charts.grados) charts.grados.destroy();
+            const dom = document.getElementById('gradosChart');
+            if (charts.grados) charts.grados.dispose();
 
-            charts.grados = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: grados,
-                    datasets: [{
-                        label: 'Registros por Grado',
-                        data: valores,
-                        backgroundColor: 'rgba(153, 102, 255, 0.8)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+            charts.grados = echarts.init(dom);
+            charts.grados.setOption({
+                xAxis: { type: 'category', data: grados },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(153, 102, 255, 0.8)' }
+                }]
             });
         }
 
