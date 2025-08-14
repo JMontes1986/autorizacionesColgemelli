@@ -528,7 +528,6 @@
                 }
                 if (dashboardCharts.gradeChart) {
                 dashboardCharts.gradeChart.dispose();
-                    dashboardCharts.gradeChart.destroy();
                 }
                 const gradeData = {};
                 authorizations.forEach(auth => {
@@ -589,7 +588,7 @@
                     el.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ECharts no está cargado</p>';
                     return;
                 }
-                if (dashboardCharts.reasonChart) {
+                dashboardCharts.reasonChart.dispose();
                     dashboardCharts.reasonChart.destroy();
                 }
                 const reasonData = {};
