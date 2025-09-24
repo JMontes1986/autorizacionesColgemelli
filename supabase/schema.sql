@@ -21,6 +21,58 @@ create index if not exists idx_llegadas_tarde_estudiante
     on public.llegadas_tarde (estudiante_id);
 
 
+-- Tabla para gestionar el personal del colegio
+create table if not exists public.personal_colegio (
+    id bigserial primary key,
+    cedula text not null unique,
+    nombre text not null,
+    cargo text not null,
+    activo boolean default true,
+    created_at timestamp with time zone default now()
+);
+
+create index if not exists idx_personal_colegio_activo
+    on public.personal_colegio (activo);
+
+
+-- Tabla de autorizaciones de salida para personal del colegio
+create table if not exists public.autorizaciones_personal (
+    id bigserial primary key,
+    colaborador_id bigint not null references public.personal_colegio(id),
+    motivo_id bigint references public.motivos(id),
+    usuario_autorizador_id bigint not null references public.usuarios(id),
+    fecha_salida date not null,
+    hora_salida time not null,
+    observaciones text,
+    autorizada boolean default true,
+    fecha_creacion timestamp with time zone default now(),
+    salida_efectiva timestamp with time zone,
+    vigilante_id bigint references public.usuarios(id)
+);
+
+create index if not exists idx_autorizaciones_personal_fecha
+    on public.autorizaciones_personal (fecha_salida);
+
+create index if not exists idx_autorizaciones_personal_colaborador
+    on public.autorizaciones_personal (colaborador_id);
+
+
+-- Rol de Talento Humano
+insert into public.roles (nombre, descripcion)
+select 'talento_humano', 'Talento Humano'
+where not exists (
+    select 1 from public.roles where nombre = 'talento_humano'
+);
+
+insert into public.usuarios (nombre, email, password_hash, rol_id, activo)
+select 'Gestión Administrativa', 'gadministrativa@colgemelli.edu.co', 'sha256$3b1996e11b61defa2f2c53ea4ea3eec3810170bd1042f7b149498b7d181cf65b', r.id, true
+from public.roles r
+where r.nombre = 'talento_humano'
+and not exists (
+    select 1 from public.usuarios where email = 'gadministrativa@colgemelli.edu.co'
+);
+
+
 -- Tabla de auditoría para registrar eventos de seguridad
 create table if not exists public.audit_logs (
     id bigserial primary key,

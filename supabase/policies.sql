@@ -111,3 +111,51 @@ for insert
 with check (
     auth.role() <> 'anon'
 );
+
+-- Enable RLS on table personal_colegio
+alter table public.personal_colegio enable row level security;
+
+create policy "personal_colegio_read" on public.personal_colegio
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "personal_colegio_write" on public.personal_colegio
+for insert, update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "personal_colegio_delete" on public.personal_colegio
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+-- Enable RLS on table autorizaciones_personal
+alter table public.autorizaciones_personal enable row level security;
+
+create policy "autorizaciones_personal_read" on public.autorizaciones_personal
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "autorizaciones_personal_insert" on public.autorizaciones_personal
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "autorizaciones_personal_update" on public.autorizaciones_personal
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "autorizaciones_personal_delete" on public.autorizaciones_personal
+for delete
+using (
+    auth.role() <> 'anon'
+);
