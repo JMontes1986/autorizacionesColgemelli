@@ -256,6 +256,19 @@ Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
 debés adaptar la política o habilitar el inicio de sesión en Supabase;
 de lo contrario los `insert` fallarán.
 
+### Tabla `personal_colegio`
+1. Se utiliza para almacenar el personal del colegio (cédula, nombre y cargo).
+2. Ejecuta el bloque correspondiente en [`supabase/schema.sql`](supabase/schema.sql) para crear la tabla e índices.
+3. Las políticas de acceso están definidas en [`supabase/policies.sql`](supabase/policies.sql).
+
+### Tabla `autorizaciones_personal`
+1. Registra las autorizaciones de salida del personal creadas por Talento Humano.
+2. Asegúrate de ejecutar las políticas y la creación de tabla presentes en la carpeta `supabase/`.
+
+### Rol `talento_humano`
+* El script de esquema inserta el rol y el usuario `gadministrativa@colgemelli.edu.co` con acceso exclusivo para gestionar salidas del personal.
+* Las contraseñas se almacenan con un prefijo `sha256$`, soportado por `verifyPassword` en `app.js`.
+
 ### Tabla `audit_logs`
 1. Habilita RLS:
    ```sql

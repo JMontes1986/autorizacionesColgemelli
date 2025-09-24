@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment ./custom-jsdom-environment */
 const vm = require('vm');
 
 describe('loadLateArrivals page', () => {
