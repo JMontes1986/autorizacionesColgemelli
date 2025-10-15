@@ -1313,6 +1313,10 @@ function abrirReporte() {
     window.open('reporte.html', '_blank');
 }
 
+        function abrirReportePersonal() {
+    window.open('reporte_personal.html', '_blank');
+}
+
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
@@ -2336,11 +2340,19 @@ function abrirReporte() {
                 sessionStartTime = Date.now();
                 currentUser = user;
                 
+                try {
+                    localStorage.setItem('correo', user.email);
+                    localStorage.setItem('userRole', user.rol?.nombre || '');
+                    localStorage.setItem('userName', user.nombre || '');
+                } catch (storageError) {
+                    console.warn('No fue posible persistir la sesión en localStorage:', storageError);
+                }
+                    
                 // Registrar login exitoso
-                await logSecurityEvent('login', 'Login exitoso', { 
+                await logSecurityEvent('login', 'Login exitoso', {
                     userId: user.id, 
                     email: email.substring(0, 20) + '...',
-                    role: user.rol.nombre 
+                    role: user.rol.nombre
                 }, true);
                 
                 resetCaptcha();
@@ -2378,6 +2390,14 @@ function abrirReporte() {
                 sessionStartTime = null;
                 clearTimeout(sessionTimeout);
                 
+                try {
+                    localStorage.removeItem('correo');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userName');
+                } catch (storageError) {
+                    console.warn('No fue posible limpiar los datos de sesión locales:', storageError);
+                }
+                    
                 // Limpiar UI
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('dashboard').style.display = 'none';
@@ -2812,6 +2832,15 @@ function abrirReporte() {
                 generalReportBtn.style.display = allowedReportUsers.includes(email) ? 'inline-block' : 'none';
             }
             
+            const staffReportBtn = document.getElementById('staffReportBtn');
+            if (staffReportBtn) {
+                const allowedStaffReportUsers = [
+                    'sistemas@colgemelli.edu.co',
+                    'gadministrativa@colgemelli.edu.co'
+                ];
+                staffReportBtn.style.display = allowedStaffReportUsers.includes(email) ? 'inline-block' : 'none';
+            }
+                
             // Mostrar la primera sección disponible
             if (role === 'talento_humano') {
                 showSection('authorizeStaffSectionDiv');
@@ -6186,6 +6215,7 @@ document.addEventListener('DOMContentLoaded', attachEventHandlers);
 // Expose helpers for inline event handlers
 window.mostrarReporteMensual = mostrarReporteMensual;
 window.mostrarReporteLlegadas = mostrarReporteLlegadas;
+window.abrirReportePersonal = abrirReportePersonal;
 window.abrirReporte = abrirReporte;
 window.loadSecurityLogs = loadSecurityLogs;
 window.loadSecurityStats = loadSecurityStats;
