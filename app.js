@@ -794,7 +794,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 const todayColombia = getColombiaDate();
                 console.log(`📋 Cargando salidas confirmadas por ${currentUser.nombre} para Colombia:`, todayColombia);
 
-                const [studentResponse, staffResponse] = await Promise.all([
+                const [studentResponse, staffExitResponse, staffReturnResponse] = await Promise.all([
                     supabase
                         .from('autorizaciones_salida')
                         .select('*')
@@ -808,15 +808,24 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_id', currentUser.id)
                         .not('salida_efectiva', 'is', null)
-                        .order('salida_efectiva', { ascending: false })
+                        .order('salida_efectiva', { ascending: false }),
+                    supabase
+                        .from('autorizaciones_personal')
+                        .select('*')
+                        .eq('fecha_salida', todayColombia)
+                        .eq('vigilante_regreso_id', currentUser.id)
+                        .not('regreso_efectivo', 'is', null)
+                        .order('regreso_efectivo', { ascending: false })
                 ]);
 
                 if (studentResponse.error) throw studentResponse.error;
-                if (staffResponse.error) throw staffResponse.error;
+                if (staffExitResponse.error) throw staffExitResponse.error;
+                if (staffReturnResponse.error) throw staffReturnResponse.error;
 
                 const myConfirmations = studentResponse.data || [];
-                const myStaffConfirmations = staffResponse.data || [];
-                const totalRecords = myConfirmations.length + myStaffConfirmations.length;
+                const myStaffExitConfirmations = staffExitResponse.data || [];
+                const myStaffReturnConfirmations = staffReturnResponse.data || [];
+                const totalRecords = myConfirmations.length + myStaffExitConfirmations.length + myStaffReturnConfirmations.length;
                     
                  if (totalRecords === 0) {
                     const currentTime = getColombiaTime();
@@ -833,19 +842,25 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
 
                  console.log('📊 Confirmaciones encontradas:', {
                     estudiantes: myConfirmations.length,
-                    personal: myStaffConfirmations.length
+                    personal: myStaffExitConfirmations.length,
+                    regresos: myStaffReturnConfirmations.length
                 });
 
-               
+                
                 const studentIds = [...new Set(myConfirmations.map(auth => auth.estudiante_id))];
-                 const staffIds = [...new Set(myStaffConfirmations.map(auth => auth.colaborador_id))];
+                const staffIds = [...new Set([
+                    ...myStaffExitConfirmations.map(auth => auth.colaborador_id),
+                    ...myStaffReturnConfirmations.map(auth => auth.colaborador_id)
+                ])];
                 const reasonIds = [...new Set([
                     ...myConfirmations.map(auth => auth.motivo_id),
-                    ...myStaffConfirmations.map(auth => auth.motivo_id)
+                    ...myStaffExitConfirmations.map(auth => auth.motivo_id),
+                    ...myStaffReturnConfirmations.map(auth => auth.motivo_id)
                 ].filter(Boolean))];
                 const userIds = [...new Set([
                     ...myConfirmations.map(auth => auth.usuario_autorizador_id),
-                    ...myStaffConfirmations.map(auth => auth.usuario_autorizador_id)
+                    ...myStaffExitConfirmations.map(auth => auth.usuario_autorizador_id),
+                    ...myStaffReturnConfirmations.map(auth => auth.usuario_autorizador_id)
                 ])];
 
                 const [studentsResult, staffResult, reasonsResult, usersResult] = await Promise.all([
@@ -886,7 +901,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 const currentTime = getColombiaTime();
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas confirmadas por mí: <strong>${totalRecords}</strong> (Estudiantes: ${myConfirmations.length} • Personal: ${myStaffConfirmations.length})</p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas confirmadas por mí: <strong>${totalRecords}</strong> (Estudiantes: ${myConfirmations.length} • Personal: ${myStaffExitConfirmations.length} • Regresos: ${myStaffReturnConfirmations.length})</p>
                 </div>`;
                     
                 myConfirmations.forEach(auth => {
@@ -921,7 +936,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     `;
                 });
 
-                myStaffConfirmations.forEach(auth => {
+                myStaffExitConfirmations.forEach(auth => {
                     const staff = staffMap[auth.colaborador_id];
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
@@ -954,6 +969,40 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     `;
                 });
 
+                myStaffReturnConfirmations.forEach(auth => {
+                    const staff = staffMap[auth.colaborador_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card verified">
+                            <h3>✅ REGRESO DE PERSONAL REGISTRADO</h3>
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
+                                    <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
+                                    <p><strong>🕐 Hora de salida:</strong> <span class="info-value">${auth.salida_efectiva ? formatDateTime(auth.salida_efectiva) : formatTime(auth.hora_salida)}</span></p>
+                                    <p><strong>🔁 Regreso registrado:</strong> <span class="info-value">${auth.regreso_efectivo ? formatDateTime(auth.regreso_efectivo) : 'No registrado'}</span></p>
+                                </div>
+                            </div>
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
+                                ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        🔁 REGRESO CONFIRMADO<br>
+                                        <small>Registrado por: ${sanitizeHtml(currentUser.nombre)}</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                    
                 confirmedList.innerHTML = html;
                 console.log('✅ Mis confirmaciones cargadas exitosamente');
 
@@ -2887,6 +2936,14 @@ function abrirReporte() {
             if (staffForm) {
                 staffForm.addEventListener('submit', authorizeStaffExit);
             }
+            
+            const staffHasReturn = document.getElementById('staffHasReturn');
+            if (staffHasReturn) {
+                staffHasReturn.addEventListener('change', () => {
+                    toggleStaffReturnFields(staffHasReturn.checked);
+                });
+                toggleStaffReturnFields(staffHasReturn.checked);
+            }  
                 
             const studentSearchInput = document.getElementById('studentSearch');
             if (studentSearchInput) {
@@ -3380,12 +3437,19 @@ function abrirReporte() {
                 const exitDate = document.getElementById('staffExitDate').value;
                 const exitTime = document.getElementById('staffExitTime').value;
                 const observations = sanitizeHtml(document.getElementById('staffObservations').value.trim());
+                const hasReturn = document.getElementById('staffHasReturn')?.checked || false;
+                const returnTime = document.getElementById('staffReturnTime')?.value || '';
 
                 if (!staffId || !reasonId || !exitDate || !exitTime) {
                     showError('Por favor, completa todos los campos obligatorios');
                     return;
                 }
 
+                 if (hasReturn && !returnTime) {
+                    showError('Por favor, indica la hora estimada de regreso del colaborador.');
+                    return;
+                }
+                    
                 const todayColombia = getColombiaDate();
                 if (exitDate < todayColombia) {
                     showError('No se puede autorizar una salida para una fecha pasada');
@@ -3394,7 +3458,7 @@ function abrirReporte() {
 
                 const { data: existingAuths, error: existingError } = await supabase
                     .from('autorizaciones_personal')
-                    .select('id, motivo_id, hora_salida, fecha_salida, observaciones, usuario_autorizador_id')
+                    .select('id, motivo_id, hora_salida, fecha_salida, observaciones, usuario_autorizador_id, requiere_regreso, hora_regreso_estimada')
                     .eq('colaborador_id', staffId)
                     .eq('fecha_salida', exitDate)
                     .is('salida_efectiva', null)
@@ -3419,6 +3483,8 @@ function abrirReporte() {
                     document.getElementById('staffExitDate').value = record.fecha_salida;
                     document.getElementById('staffExitTime').value = record.hora_salida || '';
                     document.getElementById('staffObservations').value = record.observaciones || '';
+                    toggleStaffReturnFields(!!record.requiere_regreso);
+                    document.getElementById('staffReturnTime').value = record.hora_regreso_estimada || '';
                     currentStaffAuthId = record.id;
                     return;
                 }
@@ -3436,7 +3502,9 @@ function abrirReporte() {
                             fecha_salida: exitDate,
                             hora_salida: exitTime,
                             observaciones: observations || null,
-                            usuario_autorizador_id: currentUser.id
+                            usuario_autorizador_id: currentUser.id,
+                            requiere_regreso: hasReturn,
+                            hora_regreso_estimada: hasReturn ? returnTime : null
                         })
                         .eq('id', currentStaffAuthId);
                 } else {
@@ -3448,6 +3516,8 @@ function abrirReporte() {
                             usuario_autorizador_id: currentUser.id,
                             fecha_salida: exitDate,
                             hora_salida: exitTime,
+                            requiere_regreso: hasReturn,
+                            hora_regreso_estimada: hasReturn ? returnTime : null,
                             observaciones: observations || null,
                             fecha_creacion: colombiaDateTime,
                             autorizada: true
@@ -3468,7 +3538,9 @@ function abrirReporte() {
                         staffId,
                         reasonId,
                         exitDate,
-                        exitTime
+                         exitTime,
+                        requiresReturn: hasReturn,
+                        returnTime: hasReturn ? returnTime : null
                     }, true);
 
                     showSuccess(`✅ Autorización actualizada para ${staffName}`);
@@ -3477,7 +3549,9 @@ function abrirReporte() {
                         staffId,
                         reasonId,
                         exitDate,
-                        exitTime
+                        exitTime,
+                        requiresReturn: hasReturn,
+                        returnTime: hasReturn ? returnTime : null
                     }, true);
 
                     showSuccess(`✅ Autorización creada para ${staffName}`);
@@ -3507,14 +3581,37 @@ function abrirReporte() {
             currentExitAuthId = null;
         }
 
-         function resetStaffAuthorizationForm() {
+        function resetStaffAuthorizationForm() {
             const form = document.getElementById('staffAuthorizeForm');
             if (!form) return;
 
             form.reset();
             const todayColombia = getColombiaDate();
             document.getElementById('staffExitDate').value = todayColombia;
+            toggleStaffReturnFields(false);
             currentStaffAuthId = null;
+        }
+
+        function toggleStaffReturnFields(forceValue) {
+            const checkbox = document.getElementById('staffHasReturn');
+            const returnGroup = document.getElementById('staffReturnTimeGroup');
+            const returnInput = document.getElementById('staffReturnTime');
+
+            const shouldShow = typeof forceValue === 'boolean'
+                ? forceValue
+                : (checkbox ? checkbox.checked : false);
+
+            if (checkbox && typeof forceValue === 'boolean') {
+                checkbox.checked = forceValue;
+            }
+
+            if (returnGroup) {
+                returnGroup.style.display = shouldShow ? 'block' : 'none';
+            }
+
+            if (!shouldShow && returnInput) {
+                returnInput.value = '';
+            }
         }
 
         async function searchStudent() {
@@ -3753,7 +3850,6 @@ function abrirReporte() {
                     .select('*')
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
-                    .is('salida_efectiva', null)
                     .order('hora_salida', { ascending: true });
 
                 if (error) {
@@ -3922,19 +4018,24 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-                if (!authorizations || authorizations.length === 0) {
+                 const records = authorizations || [];
+                const pendingExitAuths = records.filter(auth => !auth.salida_efectiva);
+                const pendingReturnAuths = records.filter(auth => auth.salida_efectiva && auth.requiere_regreso && !auth.regreso_efectivo);
+
+                if (pendingExitAuths.length === 0 && pendingReturnAuths.length === 0) {
                     pendingList.innerHTML = `
-                        <div class="verification-card" style="background: linear-gradient(135deg, #8e44ad, #6c3483);">
-                            <h3>✅ Sin salidas pendientes del personal</h3>
-                            <p><strong>No hay registros para hoy (${formatDate(todayColombia)})</strong></p>
+                        <div class="verification-card staff-card" style="background: #C69C72;">
+                            <h3>✅ Sin pendientes del personal</h3>
+                            <p><strong>No hay salidas ni regresos por confirmar hoy (${formatDate(todayColombia)})</strong></p>
                         </div>
                     `;
                     return;
                 }
 
-                const staffIds = [...new Set(authorizations.map(auth => auth.colaborador_id))];
-                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id).filter(Boolean))];
-                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+                const relevantAuths = [...pendingExitAuths, ...pendingReturnAuths];
+                const staffIds = [...new Set(relevantAuths.map(auth => auth.colaborador_id))];
+                const reasonIds = [...new Set(relevantAuths.map(auth => auth.motivo_id).filter(Boolean))];
+                const userIds = [...new Set(relevantAuths.map(auth => auth.usuario_autorizador_id))];
 
                 const [staffResult, reasonsResult, usersResult] = await Promise.all([
                     supabase
@@ -3967,41 +4068,87 @@ function abrirReporte() {
                 });
 
                 const currentTime = getColombiaTime();
-                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(142, 68, 173, 0.15); padding: 20px; border-radius: 10px;">
+                const totalPending = pendingExitAuths.length + pendingReturnAuths.length;
+                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(198, 156, 114, 0.25); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas de personal pendientes de confirmación: <strong>${authorizations.length}</strong></p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Gestiones pendientes del personal: <strong>${totalPending}</strong> (Salidas: ${pendingExitAuths.length} • Regresos: ${pendingReturnAuths.length})</p>
                 </div>`;
 
-                authorizations.forEach(auth => {
-                    const staff = staffMap[auth.colaborador_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
+                if (pendingExitAuths.length > 0) {
+                    html += '<h4 style="color: #2c3e50; margin: 25px 0 15px 0;">🚶‍♀️ Salidas por confirmar</h4>';
+                    pendingExitAuths.forEach(auth => {
+                        const staff = staffMap[auth.colaborador_id];
+                        const reason = reasonMap[auth.motivo_id];
+                        const user = userMap[auth.usuario_autorizador_id];
+                        const expectedReturn = auth.requiere_regreso
+                            ? (auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida')
+                            : null;
 
-                    html += `
-                        <div class="verification-card authorized">
-                            <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
-                            <div class="verification-card-content">
-                                <div class="verification-card-info">
-                                    <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
-                                    <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                        html += `
+                            <div class="verification-card staff-card">
+                                <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
+                                <div class="verification-card-content">
+                                    <div class="verification-card-info">
+                                        <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
+                                        <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                                    </div>
+                                    <div class="verification-card-info">
+                                        <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
+                                        <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
+                                        ${auth.requiere_regreso ? `<p><strong>🔁 Hora de regreso:</strong> <span class="info-value">${sanitizeHtml(expectedReturn)}</span></p>` : ''}
+                                    </div>
                                 </div>
-                                <div class="verification-card-info">
-                                    <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
-                                    <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
+                                 <div class="verification-card-footer">
+                                    <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                    ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
+                                    ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                    ${auth.requiere_regreso ? `<p style="margin-top: 10px; font-weight: 600;">🔁 Se debe registrar el regreso cuando vuelva el colaborador.</p>` : ''}
+                                    <button class="btn btn-success" onclick="confirmStaffExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                        ✅ CONFIRMAR SALIDA
+                                    </button>
                                 </div>
                             </div>
-                            <div class="verification-card-footer">
-                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
-                                ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
-                                <button class="btn btn-success" onclick="confirmStaffExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
-                                    ✅ CONFIRMAR SALIDA
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
+                             `;
+                    });
+                }
 
+                if (pendingReturnAuths.length > 0) {
+                    html += '<h4 style="color: #2c3e50; margin: 35px 0 15px 0;">🔁 Regresos por registrar</h4>';
+                    pendingReturnAuths.forEach(auth => {
+                        const staff = staffMap[auth.colaborador_id];
+                        const reason = reasonMap[auth.motivo_id];
+                        const user = userMap[auth.usuario_autorizador_id];
+                        const exitTime = auth.salida_efectiva ? formatDateTime(auth.salida_efectiva) : formatTime(auth.hora_salida);
+                        const expectedReturn = auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida';
+
+                        html += `
+                            <div class="verification-card staff-card return-pending">
+                                <h3>🔁 PENDIENTE REGISTRAR REGRESO</h3>
+                                <div class="verification-card-content">
+                                    <div class="verification-card-info">
+                                        <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
+                                        <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                                    </div>
+                                    <div class="verification-card-info">
+                                        <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
+                                        <p><strong>✅ Salida confirmada:</strong> <span class="info-value">${sanitizeHtml(exitTime)}</span></p>
+                                        <p><strong>🔁 Hora de regreso:</strong> <span class="info-value">${sanitizeHtml(expectedReturn)}</span></p>
+                                    </div>
+                                </div>
+                                <div class="verification-card-footer">
+                                    <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                    ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
+                                    ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                    <p style="margin-top: 10px; font-weight: 600;">📝 Registra la hora exacta de regreso al confirmar.</p>
+                                    <button class="btn btn-success" onclick="confirmStaffReturn(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                        ✅ REGISTRAR REGRESO
+                                    </button>
+                                </div>
+                            </div>
+                                `;
+                    });
+                }
+                    
                 pendingList.innerHTML = html;
 
             } catch (error) {
@@ -4123,64 +4270,87 @@ function abrirReporte() {
                     timeZone: 'America/Bogota'
                 });
 
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from('autorizaciones_personal')
                     .update({
                         salida_efectiva: colombiaDateTime,
                         vigilante_id: currentUser.id
                     })
-                    .eq('id', authId);
+                    .eq('id', authId)
+                    .select('requiere_regreso, hora_regreso_estimada')
+                    .single();
 
                 if (error) throw error;
 
                 await logSecurityEvent('update', 'Salida de personal confirmada', {
                     authId,
-                    vigilanteId: currentUser.id
+                    vigilanteId: currentUser.id,
+                    requiresReturn: data?.requiere_regreso || false
                 }, true);
 
                 const colombiaTime = getColombiaTime();
-                showSuccess(`Salida del personal confirmada exitosamente a las ${colombiaTime}`);
-
-                const confirmButton = document.querySelector(`button[onclick="confirmStaffExit(${authId})"]`);
-                if (confirmButton) {
-                    const card = confirmButton.closest('.verification-card');
-                    if (card) {
-                        card.classList.remove('authorized');
-                        card.classList.add('verified');
-
-                        const titleElement = card.querySelector('h3');
-                        if (titleElement) {
-                            titleElement.textContent = '✅ SALIDA CONFIRMADA';
-                        }
-
-                        const footerElement = confirmButton.closest('.verification-card-footer');
-                        if (footerElement) {
-                            const observationsHtml = footerElement.querySelector('.verification-card-obs')?.outerHTML || '';
-                            footerElement.innerHTML = `
-                                ${observationsHtml}
-                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
-                                    <p style="color: white; font-weight: bold; margin: 0;">
-                                        ✅ SALIDA CONFIRMADA<br>
-                                        <small>Hora: ${colombiaTime} - Vigilante: ${sanitizeHtml(currentUser.nombre)}</small>
-                                    </p>
-                                </div>
-                            `;
-                        }
-                    }
+                 let successMessage = `Salida del personal confirmada exitosamente a las ${colombiaTime}.`;
+                if (data?.requiere_regreso) {
+                    const expectedReturn = data.hora_regreso_estimada ? formatTime(data.hora_regreso_estimada) : 'sin hora estimada';
+                    successMessage += ` Regreso pendiente${data.hora_regreso_estimada ? ` a las ${expectedReturn}` : ''}.`;
                 }
+                showSuccess(successMessage);
 
-                if (currentUser.rol.nombre === 'vigilante') {
-                    setTimeout(async () => {
-                        await loadPendingStaffExits();
-                    }, 2000);
-                }
+                await loadPendingStaffExits();
 
-            } catch (error) {
+                        } catch (error) {
                 await logSecurityEvent('error', 'Error al confirmar salida de personal', {
                     authId,
                     error: error.message.substring(0, 200)
                 }, false);
                 showError('Error al confirmar la salida: ' + error.message);
+            }
+        }
+
+                        async function confirmStaffReturn(authId) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
+                    timeZone: 'America/Bogota'
+                });
+
+                const { data, error } = await supabase
+                    .from('autorizaciones_personal')
+                    .update({
+                        regreso_efectivo: colombiaDateTime,
+                        vigilante_regreso_id: currentUser.id
+                    })
+                    .eq('id', authId)
+                    .select('hora_regreso_estimada, salida_efectiva')
+                    .single();
+
+                if (error) throw error;
+
+                await logSecurityEvent('update', 'Regreso de personal confirmado', {
+                    authId,
+                    vigilanteId: currentUser.id
+                }, true);
+
+                const colombiaTime = getColombiaTime();
+                let successMessage = `Regreso del personal registrado a las ${colombiaTime}.`;
+                if (data?.hora_regreso_estimada) {
+                    successMessage += ` Hora estimada de regreso: ${formatTime(data.hora_regreso_estimada)}.`;
+                }
+            showSuccess(successMessage);
+
+                await loadPendingStaffExits();
+                    
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al confirmar regreso de personal', {
+                    authId,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al registrar el regreso: ' + error.message);
             }
         }
 
