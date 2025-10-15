@@ -2776,9 +2776,14 @@ function abrirReporte() {
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
                 `;
             } else if (role === 'talento_humano') {
+                const staffReportButton = email === 'gadministrativa@colgemelli.edu.co'
+                    ? `<button class="btn" onclick="abrirReportePersonal()">👥 Reporte Personal</button>`
+                    : '';
+                    
                 navButtons.innerHTML = `
                     <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">Autorizar Personal</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
+                    ${staffReportButton}
                 `;
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
