@@ -3850,6 +3850,7 @@ function abrirReporte() {
                     .select('*')
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
+                    .is('salida_efectiva', null)
                     .order('hora_salida', { ascending: true });
 
                 if (error) {
