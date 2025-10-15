@@ -54,6 +54,21 @@ create table if not exists public.autorizaciones_personal (
     vigilante_regreso_id bigint references public.usuarios(id)
 );
 
+-- Ensure recently added tracking columns exist even if the table was created before
+-- they were introduced in the application. The IF NOT EXISTS guard allows the script
+-- to be applied safely on already updated databases without raising errors.
+alter table if exists public.autorizaciones_personal
+    add column if not exists requiere_regreso boolean default false;
+
+alter table if exists public.autorizaciones_personal
+    add column if not exists hora_regreso_estimada time;
+
+alter table if exists public.autorizaciones_personal
+    add column if not exists regreso_efectivo timestamp with time zone;
+
+alter table if exists public.autorizaciones_personal
+    add column if not exists vigilante_regreso_id bigint references public.usuarios(id);
+
 create index if not exists idx_autorizaciones_personal_fecha
     on public.autorizaciones_personal (fecha_salida);
 
