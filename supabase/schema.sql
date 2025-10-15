@@ -43,11 +43,15 @@ create table if not exists public.autorizaciones_personal (
     usuario_autorizador_id bigint not null references public.usuarios(id),
     fecha_salida date not null,
     hora_salida time not null,
+    requiere_regreso boolean default false,
+    hora_regreso_estimada time,
     observaciones text,
     autorizada boolean default true,
     fecha_creacion timestamp with time zone default now(),
     salida_efectiva timestamp with time zone,
-    vigilante_id bigint references public.usuarios(id)
+    vigilante_id bigint references public.usuarios(id),
+    regreso_efectivo timestamp with time zone,
+    vigilante_regreso_id bigint references public.usuarios(id)
 );
 
 create index if not exists idx_autorizaciones_personal_fecha
