@@ -1216,6 +1216,20 @@
             transition: border-color 0.3s;
         }
 
+            .toggle-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: #34495e;
+        }
+
+        .toggle-input input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: #C69C72;
+        }
+
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
@@ -1563,6 +1577,33 @@
             border-left-color: #2ecc71;
             background: linear-gradient(135deg, #2ecc71, #27ae60);
             color: white;
+        }
+
+         .verification-card.staff-card {
+            background: #C69C72;
+            border-left: 6px solid #8F6A45;
+            color: #2c3e50;
+        }
+
+        .verification-card.staff-card .verification-card-content {
+            background: rgba(255,255,255,0.35);
+        }
+
+        .verification-card.staff-card .verification-card-obs {
+            background: rgba(255,255,255,0.45);
+        }
+
+        .verification-card.staff-card .btn {
+            background: #8F6A45;
+            color: white;
+        }
+
+        .verification-card.staff-card .btn:hover {
+            background: #7a5939;
+        }
+
+        .verification-card.staff-card.return-pending {
+            background: linear-gradient(135deg, #C69C72, #b4875d);
         }
 
         .verification-card.verified {
