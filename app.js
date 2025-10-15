@@ -4013,7 +4013,7 @@ function abrirReporte() {
                     .select('*')
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
-                    .is('salida_efectiva', null)
+                    .or('salida_efectiva.is.null,and(requiere_regreso.eq.true,regreso_efectivo.is.null)')
                     .order('hora_salida', { ascending: true });
 
                 if (error) throw error;
