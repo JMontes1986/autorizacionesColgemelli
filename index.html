@@ -119,6 +119,39 @@
 <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
 </form>
 </div>
+<!-- Sección para Autorizar Salidas del Personal -->
+<div class="section" id="authorizeStaffSectionDiv">
+    <h2>👥 Autorizar Salida de Personal</h2>
+    <form id="staffAuthorizeForm">
+        <div class="grid">
+            <div class="form-group">
+                <label for="staffSelect">1. Seleccionar Colaborador: *</label>
+                <select id="staffSelect" required="">
+                    <option value="">Seleccionar colaborador...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="staffReasonSelect">2. Motivo: *</label>
+                <select id="staffReasonSelect" required="">
+                    <option value="">Seleccionar motivo...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="staffExitDate">3. Fecha de Salida: *</label>
+                <input id="staffExitDate" required="" type="date"/>
+            </div>
+            <div class="form-group">
+                <label for="staffExitTime">4. Hora de Salida: *</label>
+                <input id="staffExitTime" required="" type="time"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="staffObservations">Observaciones adicionales:</label>
+            <textarea id="staffObservations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
+        </div>
+        <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida del Personal</button>
+    </form>
+</div>
 <!-- Sección para Verificar Salidas (Vigilante) -->
 <div class="section" id="verifySectionDiv">
 <h2>🔍 Control de Salidas - Vigilancia</h2>
@@ -142,27 +175,20 @@
 </div>
 </div>
 </div>
-<!-- Lista de estudiantes con salidas pendientes -->
+<!-- Lista de estudiantes y personal con salidas pendientes -->
 <div id="pendingExitsSection">
 <h3 style="color: #2c3e50; margin: 20px 0 15px 0;">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
-<div id="pendingExitsList">
-<!-- Ejemplo de tarjeta con foto -->
-<div class="verification-card">
-<img alt="Foto estudiante" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;"/>
-<h3>Nombre Estudiante</h3>
-<div class="verification-card-content">
-<div class="verification-card-info">
-<p><strong>Grado:</strong> 10</p>
-<p><strong>Motivo:</strong> Cita médica</p>
-<p><strong>Hora:</strong> 10:30 am</p>
-</div>
-</div>
-<button class="btn btn-success">✅ Confirmar Salida</button>
-</div>
-<div class="card" style="text-align: center; padding: 30px;">
-<p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
-</div>
-</div>
+    <div id="pendingExitsList">
+        <div class="card" style="text-align: center; padding: 30px;">
+            <p style="color: #666;">Cargando estudiantes con salidas pendientes...</p>
+        </div>
+    </div>
+    <h3 style="color: #2c3e50; margin: 30px 0 15px 0;">👥 Personal del Colegio con Salidas Pendientes para Hoy</h3>
+    <div id="pendingStaffList">
+        <div class="card" style="text-align: center; padding: 30px;">
+            <p style="color: #666;">Cargando salidas del personal...</p>
+        </div>
+    </div>
 </div>
 </div>
 <!-- Sección de Llegadas Tarde -->
@@ -463,12 +489,13 @@
 <table class="table" id="historyTable">
 <thead>
 <tr>
-<th style="min-width: 150px;">Estudiante</th>
-<th style="min-width: 120px;">Grado</th>
+<th style="min-width: 120px;">Tipo</th>
+<th style="min-width: 180px;">Persona</th>
+<th style="min-width: 150px;">Detalle</th>
 <th style="min-width: 140px;">Motivo</th>
 <th style="min-width: 110px;">Fecha Salida</th>
 <th style="min-width: 100px;">Hora Salida</th>
-<th style="min-width: 140px;">Autorizado por</th>
+<th style="min-width: 160px;">Autorizado por</th>
 <th style="min-width: 160px;">Estado</th>
 </tr>
 </thead>
