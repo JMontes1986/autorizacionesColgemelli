@@ -781,7 +781,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
 
         async function loadMyConfirmedExits() {
             const confirmedList = document.getElementById('myConfirmedList');
-            
+                
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
@@ -790,25 +790,35 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 }
 
                 confirmedList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando mis confirmaciones...</p></div>';
-                
+                    
                 const todayColombia = getColombiaDate();
                 console.log(`📋 Cargando salidas confirmadas por ${currentUser.nombre} para Colombia:`, todayColombia);
-                
-                // Obtener autorizaciones confirmadas por el vigilante actual
-                const { data: myConfirmations, error } = await supabase
-                    .from('autorizaciones_salida')
-                    .select('*')
-                    .eq('fecha_salida', todayColombia)
-                    .eq('vigilante_id', currentUser.id)
-                    .not('salida_efectiva', 'is', null)
-                    .order('salida_efectiva', { ascending: false });
 
-                if (error) {
-                    console.error('❌ Error al cargar mis confirmaciones:', error);
-                    throw error;
-                }
+                const [studentResponse, staffResponse] = await Promise.all([
+                    supabase
+                        .from('autorizaciones_salida')
+                        .select('*')
+                        .eq('fecha_salida', todayColombia)
+                        .eq('vigilante_id', currentUser.id)
+                        .not('salida_efectiva', 'is', null)
+                        .order('salida_efectiva', { ascending: false }),
+                    supabase
+                        .from('autorizaciones_personal')
+                        .select('*')
+                        .eq('fecha_salida', todayColombia)
+                        .eq('vigilante_id', currentUser.id)
+                        .not('salida_efectiva', 'is', null)
+                        .order('salida_efectiva', { ascending: false })
+                ]);
 
-                if (!myConfirmations || myConfirmations.length === 0) {
+                if (studentResponse.error) throw studentResponse.error;
+                if (staffResponse.error) throw staffResponse.error;
+
+                const myConfirmations = studentResponse.data || [];
+                const myStaffConfirmations = staffResponse.data || [];
+                const totalRecords = myConfirmations.length + myStaffConfirmations.length;
+                    
+                 if (totalRecords === 0) {
                     const currentTime = getColombiaTime();
                     confirmedList.innerHTML = `
                         <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
@@ -821,30 +831,39 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     return;
                 }
 
-                console.log('📊 Mis confirmaciones encontradas:', myConfirmations.length);
+                 console.log('📊 Confirmaciones encontradas:', {
+                    estudiantes: myConfirmations.length,
+                    personal: myStaffConfirmations.length
+                });
 
-                // Obtener información adicional de estudiantes, motivos y usuarios
+               
                 const studentIds = [...new Set(myConfirmations.map(auth => auth.estudiante_id))];
-                const reasonIds = [...new Set(myConfirmations.map(auth => auth.motivo_id))];
-                const userIds = [...new Set(myConfirmations.map(auth => auth.usuario_autorizador_id))];
+                 const staffIds = [...new Set(myStaffConfirmations.map(auth => auth.colaborador_id))];
+                const reasonIds = [...new Set([
+                    ...myConfirmations.map(auth => auth.motivo_id),
+                    ...myStaffConfirmations.map(auth => auth.motivo_id)
+                ].filter(Boolean))];
+                const userIds = [...new Set([
+                    ...myConfirmations.map(auth => auth.usuario_autorizador_id),
+                    ...myStaffConfirmations.map(auth => auth.usuario_autorizador_id)
+                ])];
 
-                const [studentsResult, reasonsResult, usersResult] = await Promise.all([
-                    supabase
-                        .from('estudiantes')
-                        .select('id, nombre, apellidos, grado:grados(nombre), foto_url')
-                        .in('id', studentIds),
-                    supabase
-                        .from('motivos')
-                        .select('id, nombre')
-                        .in('id', reasonIds),
-                    supabase
-                        .from('usuarios')
-                        .select('id, nombre, email')
-                        .in('id', userIds)
+                const [studentsResult, staffResult, reasonsResult, usersResult] = await Promise.all([
+                    studentIds.length > 0
+                        ? supabase.from('estudiantes').select('id, nombre, apellidos, grado:grados(nombre), foto_url').in('id', studentIds)
+                        : Promise.resolve({ data: [] }),
+                    staffIds.length > 0
+                        ? supabase.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', staffIds)
+                        : Promise.resolve({ data: [] }),
+                    reasonIds.length > 0
+                        ? supabase.from('motivos').select('id, nombre').in('id', reasonIds)
+                        : Promise.resolve({ data: [] }),
+                    userIds.length > 0
+                        ? supabase.from('usuarios').select('id, nombre, email').in('id', userIds)
+                        : Promise.resolve({ data: [] })
                 ]);
-
-                // Crear mapas para búsqueda rápida
                 const studentMap = {};
+                const staffMap = {};
                 const reasonMap = {};
                 const userMap = {};
 
@@ -852,6 +871,10 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     studentMap[student.id] = student;
                 });
 
+                staffResult.data?.forEach(staff => {
+                    staffMap[staff.id] = staff;
+                });
+                    
                 reasonsResult.data?.forEach(reason => {
                     reasonMap[reason.id] = reason;
                 });
@@ -860,13 +883,12 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     userMap[user.id] = user;
                 });
 
-                // Generar HTML para cada confirmación
                 const currentTime = getColombiaTime();
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas confirmadas por mí: <strong>${myConfirmations.length}</strong></p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas confirmadas por mí: <strong>${totalRecords}</strong> (Estudiantes: ${myConfirmations.length} • Personal: ${myStaffConfirmations.length})</p>
                 </div>`;
-                
+                    
                 myConfirmations.forEach(auth => {
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
@@ -874,39 +896,53 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
 
                     html += `
                         <div class="verification-card verified">
-                            <h3>✅ SALIDA CONFIRMADA POR MÍ</h3>
-                            
+                            <h3>✅ SALIDA DE ESTUDIANTE CONFIRMADA</h3>
                             <div class="verification-card-content">
                                 <div class="verification-card-info">
-                                    <p>
-                                        <strong>👨‍🎓 Estudiante:</strong>
-                                        <span class="info-value">${student ? sanitizeHtml(`${student.nombre} ${student.apellidos}`) : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🎓 Grado:</strong>
-                                        <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span>
-                                    </p>
+                                    <p><strong>👨‍🎓 Estudiante:</strong> <span class="info-value">${student ? sanitizeHtml(`${student.nombre} ${student.apellidos}`) : 'No encontrado'}</span></p>
+                                    <p><strong>🎓 Grado:</strong> <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span></p>
                                 </div>
                                 <div class="verification-card-info">
-                                    <p>
-                                        <strong>📝 Motivo de Salida:</strong>
-                                        <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🕐 Hora Autorizada:</strong>
-                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
-                                    </p>
+                                    <p><strong>📝 Motivo de Salida:</strong> <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span></p>
+                                    <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
                                 </div>
                             </div>
-                            
                             <div class="verification-card-footer">
                                 <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                ${auth.observaciones ? `
-                                    <div class="verification-card-obs">
-                                        <strong>📝 Observaciones:</strong><br>
-                                        ${sanitizeHtml(auth.observaciones)}
-                                    </div>
-                                ` : ''}
+                                ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
+                                        <small>Confirmada por: ${sanitizeHtml(currentUser.nombre)}</small>
+                                    </p>
+                                </div>
+                                
+                            </div>
+                    `;
+                });
+
+                myStaffConfirmations.forEach(auth => {
+                    const staff = staffMap[auth.colaborador_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card verified">
+                            <h3>✅ SALIDA DE PERSONAL CONFIRMADA</h3>
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
+                                    <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
+                                    <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
+                                </div>
+                            </div>
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
+                                ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
                                 <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
                                     <p style="color: white; font-weight: bold; margin: 0;">
                                         ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
@@ -923,9 +959,9 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
 
             } catch (error) {
                 console.error('❌ Error general:', error);
-                await logSecurityEvent('error', 'Error al cargar confirmaciones del vigilante', { 
+                await logSecurityEvent('error', 'Error al cargar confirmaciones del vigilante', {
                     vigilanteId: currentUser.id,
-                    error: error.message.substring(0, 200) 
+                    error: error.message.substring(0, 200)
                 }, false);
                 confirmedList.innerHTML = `
                     <div class="verification-card not-authorized">
@@ -1490,6 +1526,7 @@ function abrirReporte() {
         let currentUser = null;
         let currentEditingId = null;
         let currentExitAuthId = null;
+        let currentStaffAuthId = null;
         let sessionToken = null;
         let loginAttempts = 0;
         let lastLoginAttempt = null;
@@ -1597,6 +1634,12 @@ function abrirReporte() {
             if (!password || !hash) return false;
             
             try {
+                 if (hash.startsWith('sha256$')) {
+                    const digest = hash.substring(7);
+                    const computed = CryptoJS.SHA256(password).toString();
+                    return computed === digest;
+                }
+                
                 // Si es el formato nuevo (salt:iterations:encrypted)
                 if (hash.includes(':')) {
                     const parts = hash.split(':');
@@ -2658,9 +2701,15 @@ function abrirReporte() {
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
+                    <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">Autorizar Personal</button>
                     <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
+                `;
+            } else if (role === 'talento_humano') {
+                navButtons.innerHTML = `
+                    <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">Autorizar Personal</button>
+                    <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 navButtons.innerHTML = `
@@ -2715,7 +2764,9 @@ function abrirReporte() {
             }
             
             // Mostrar la primera sección disponible
-            if (email === 'vigilancia@colgemelli.edu.co') {
+            if (role === 'talento_humano') {
+                showSection('authorizeStaffSectionDiv');
+            } else if (email === 'vigilancia@colgemelli.edu.co') {
                 showSection('verifySectionDiv'); // este usuario comienza en Control de Salidas
             } else if (role === 'vigilante') {
                 showSection('dashboardSectionDiv'); // Vigilancia comienza con dashboard
@@ -2761,6 +2812,7 @@ function abrirReporte() {
                 if (currentUser && (currentUser.rol.nombre === 'vigilante' || permitidos.includes(currentUser.email))) {
                     loadPendingExits();
                 }
+                loadPendingStaffExits();
             } else if (sectionId === 'lateArrivalSectionDiv') {
                 const gradeSel = document.getElementById('lateGradeSelect');
                 const form = document.getElementById('lateArrivalForm');
@@ -2797,16 +2849,27 @@ function abrirReporte() {
 
         async function loadInitialData() {
             try {
-                await loadStudents();
+                const role = currentUser?.rol?.nombre;
+                    
                 await loadReasons();
-                await loadGrades();
+                
+                if (role === 'talento_humano') {
+                    await loadStaffMembers();
+                } else {
+                    await loadStudents();
+                    await loadGrades();
+                    if (role === 'administrador') {
+                        await loadStaffMembers();
+                    }
+                }
+
                 await loadRoles();
                 
-                if (currentUser.rol.nombre === 'administrador') {
+                if (role === 'administrador') {
                     await loadUsers();
                     await loadSecurityStats();
                 }
-                
+                    
                 setupEventListeners();
                 
             } catch (error) {
@@ -2820,6 +2883,11 @@ function abrirReporte() {
         function setupEventListeners() {
             document.getElementById('authorizeForm').addEventListener('submit', authorizeExit);
             
+            const staffForm = document.getElementById('staffAuthorizeForm');
+            if (staffForm) {
+                staffForm.addEventListener('submit', authorizeStaffExit);
+            }
+                
             const studentSearchInput = document.getElementById('studentSearch');
             if (studentSearchInput) {
                 studentSearchInput.addEventListener('input', () => {
@@ -2835,6 +2903,10 @@ function abrirReporte() {
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             document.getElementById('historyDate').value = todayColombia;
+            const staffExitDate = document.getElementById('staffExitDate');
+            if (staffExitDate) {
+                staffExitDate.value = todayColombia;
+            }
             // document.getElementById('logDateFrom').value = todayColombia;
             // document.getElementById('logDateTo').value = todayColombia;
             
@@ -2876,8 +2948,41 @@ function abrirReporte() {
                 
             } catch (error) {
                 console.error('Error loading students:', error);
-                await logSecurityEvent('error', 'Error al cargar estudiantes', { 
-                    error: error.message.substring(0, 200) 
+                await logSecurityEvent('error', 'Error al cargar estudiantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadStaffMembers() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: staff, error } = await supabase
+                    .from('personal_colegio')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('staffSelect');
+                if (!select) return;
+
+                select.innerHTML = '<option value="">Seleccionar colaborador...</option>';
+
+                (staff || []).forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    const cedulaText = member.cedula ? ` - CC ${member.cedula}` : '';
+                    option.textContent = `${member.nombre} (${member.cargo})${cedulaText}`;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error loading staff members:', error);
+                await logSecurityEvent('error', 'Error al cargar personal', {
+                    error: error.message.substring(0, 200)
                 }, false);
             }
         }
@@ -2895,14 +3000,28 @@ function abrirReporte() {
                 if (error) throw error;
 
                 const select = document.getElementById('reasonSelect');
-                select.innerHTML = '<option value="">Seleccionar motivo...</option>';
-                
-                reasons.forEach(reason => {
-                    const option = document.createElement('option');
-                    option.value = reason.id;
-                    option.textContent = sanitizeHtml(reason.nombre);
-                    select.appendChild(option);
-                });
+                if (select) {
+                    select.innerHTML = '<option value="">Seleccionar motivo...</option>';
+
+                    reasons.forEach(reason => {
+                        const option = document.createElement('option');
+                        option.value = reason.id;
+                        option.textContent = sanitizeHtml(reason.nombre);
+                        select.appendChild(option);
+                    });
+                }
+
+                const staffReasonSelect = document.getElementById('staffReasonSelect');
+                if (staffReasonSelect) {
+                    staffReasonSelect.innerHTML = '<option value="">Seleccionar motivo...</option>';
+
+                    reasons.forEach(reason => {
+                        const option = document.createElement('option');
+                        option.value = reason.id;
+                        option.textContent = sanitizeHtml(reason.nombre);
+                        staffReasonSelect.appendChild(option);
+                    });
+                }
 
                 updateReasonsTable(reasons);
                 
@@ -3095,7 +3214,7 @@ function abrirReporte() {
 
         async function authorizeExit(e) {
             e.preventDefault();
-            
+                
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
@@ -3246,16 +3365,156 @@ function abrirReporte() {
             }
         }
 
+         async function authorizeStaffExit(e) {
+            e.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const staffId = document.getElementById('staffSelect').value;
+                const reasonId = document.getElementById('staffReasonSelect').value;
+                const exitDate = document.getElementById('staffExitDate').value;
+                const exitTime = document.getElementById('staffExitTime').value;
+                const observations = sanitizeHtml(document.getElementById('staffObservations').value.trim());
+
+                if (!staffId || !reasonId || !exitDate || !exitTime) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                const todayColombia = getColombiaDate();
+                if (exitDate < todayColombia) {
+                    showError('No se puede autorizar una salida para una fecha pasada');
+                    return;
+                }
+
+                const { data: existingAuths, error: existingError } = await supabase
+                    .from('autorizaciones_personal')
+                    .select('id, motivo_id, hora_salida, fecha_salida, observaciones, usuario_autorizador_id')
+                    .eq('colaborador_id', staffId)
+                    .eq('fecha_salida', exitDate)
+                    .is('salida_efectiva', null)
+                    .order('fecha_creacion', { ascending: false })
+                    .limit(1);
+
+                if (existingError) throw existingError;
+
+                if (existingAuths && existingAuths.length > 0) {
+                    const record = existingAuths[0];
+                    const { data: userInfo } = await supabase
+                        .from('usuarios')
+                        .select('nombre')
+                        .eq('id', record.usuario_autorizador_id)
+                        .single();
+
+                    const message = `El colaborador ya tiene una salida pendiente a las ${formatTime(record.hora_salida)}. Autorizado por ${userInfo?.nombre || 'usuario'}. Se cargaron los datos para editar.`;
+                    showWarning(message);
+                    sendNotification('Salida pendiente existente', message);
+
+                    document.getElementById('staffReasonSelect').value = record.motivo_id || '';
+                    document.getElementById('staffExitDate').value = record.fecha_salida;
+                    document.getElementById('staffExitTime').value = record.hora_salida || '';
+                    document.getElementById('staffObservations').value = record.observaciones || '';
+                    currentStaffAuthId = record.id;
+                    return;
+                }
+
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
+                    timeZone: 'America/Bogota'
+                });
+
+                let dbAction;
+                if (currentStaffAuthId) {
+                    dbAction = supabase
+                        .from('autorizaciones_personal')
+                        .update({
+                            motivo_id: reasonId,
+                            fecha_salida: exitDate,
+                            hora_salida: exitTime,
+                            observaciones: observations || null,
+                            usuario_autorizador_id: currentUser.id
+                        })
+                        .eq('id', currentStaffAuthId);
+                } else {
+                    dbAction = supabase
+                        .from('autorizaciones_personal')
+                        .insert([{
+                            colaborador_id: staffId,
+                            motivo_id: reasonId,
+                            usuario_autorizador_id: currentUser.id,
+                            fecha_salida: exitDate,
+                            hora_salida: exitTime,
+                            observaciones: observations || null,
+                            fecha_creacion: colombiaDateTime,
+                            autorizada: true
+                        }]);
+                }
+
+                const { error } = await dbAction;
+                if (error) throw error;
+
+                const staffSelect = document.getElementById('staffSelect');
+                const staffName = staffSelect.options[staffSelect.selectedIndex]?.text || 'Colaborador';
+                const reasonSelect = document.getElementById('staffReasonSelect');
+                const reasonName = reasonSelect.options[reasonSelect.selectedIndex]?.text || '';
+
+                if (currentStaffAuthId) {
+                    await logSecurityEvent('update', 'Autorización de salida de personal actualizada', {
+                        authId: currentStaffAuthId,
+                        staffId,
+                        reasonId,
+                        exitDate,
+                        exitTime
+                    }, true);
+
+                    showSuccess(`✅ Autorización actualizada para ${staffName}`);
+                } else {
+                    await logSecurityEvent('create', 'Autorización de salida de personal creada', {
+                        staffId,
+                        reasonId,
+                        exitDate,
+                        exitTime
+                    }, true);
+
+                    showSuccess(`✅ Autorización creada para ${staffName}`);
+                }
+
+                sendNotification('Salida autorizada', `${staffName} - ${reasonName}`);
+                resetStaffAuthorizationForm();
+                await loadPendingStaffExits();
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al guardar autorización de personal', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al guardar la autorización: ' + error.message);
+            }
+        }
+
         function resetAuthorizationForm() {
             document.getElementById('authorizeForm').reset();
-            
+                
             const studentSelect = document.getElementById('studentSelect');
             studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
             studentSelect.disabled = true;
-            
+                
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             currentExitAuthId = null;
+        }
+
+         function resetStaffAuthorizationForm() {
+            const form = document.getElementById('staffAuthorizeForm');
+            if (!form) return;
+
+            form.reset();
+            const todayColombia = getColombiaDate();
+            document.getElementById('staffExitDate').value = todayColombia;
+            currentStaffAuthId = null;
         }
 
         async function searchStudent() {
@@ -3476,7 +3735,7 @@ function abrirReporte() {
 
         async function loadPendingExits() {
             const pendingList = document.getElementById('pendingExitsList');
-            
+                
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
@@ -3638,6 +3897,131 @@ function abrirReporte() {
             }
         }
 
+        async function loadPendingStaffExits() {
+            const pendingList = document.getElementById('pendingStaffList');
+            if (!pendingList) return;
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando salidas del personal...</p></div>';
+
+                const todayColombia = getColombiaDate();
+
+                const { data: authorizations, error } = await supabase
+                    .from('autorizaciones_personal')
+                    .select('*')
+                    .eq('fecha_salida', todayColombia)
+                    .eq('autorizada', true)
+                    .is('salida_efectiva', null)
+                    .order('hora_salida', { ascending: true });
+
+                if (error) throw error;
+
+                if (!authorizations || authorizations.length === 0) {
+                    pendingList.innerHTML = `
+                        <div class="verification-card" style="background: linear-gradient(135deg, #8e44ad, #6c3483);">
+                            <h3>✅ Sin salidas pendientes del personal</h3>
+                            <p><strong>No hay registros para hoy (${formatDate(todayColombia)})</strong></p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const staffIds = [...new Set(authorizations.map(auth => auth.colaborador_id))];
+                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id).filter(Boolean))];
+                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+
+                const [staffResult, reasonsResult, usersResult] = await Promise.all([
+                    supabase
+                        .from('personal_colegio')
+                        .select('id, nombre, cargo, cedula')
+                        .in('id', staffIds),
+                    reasonIds.length > 0
+                        ? supabase.from('motivos').select('id, nombre').in('id', reasonIds)
+                        : Promise.resolve({ data: [] }),
+                    supabase
+                        .from('usuarios')
+                        .select('id, nombre, email')
+                        .in('id', userIds)
+                ]);
+
+                const staffMap = {};
+                const reasonMap = {};
+                const userMap = {};
+
+                staffResult.data?.forEach(member => {
+                    staffMap[member.id] = member;
+                });
+
+                reasonsResult.data?.forEach(reason => {
+                    reasonMap[reason.id] = reason;
+                });
+
+                usersResult.data?.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                const currentTime = getColombiaTime();
+                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(142, 68, 173, 0.15); padding: 20px; border-radius: 10px;">
+                    <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas de personal pendientes de confirmación: <strong>${authorizations.length}</strong></p>
+                </div>`;
+
+                authorizations.forEach(auth => {
+                    const staff = staffMap[auth.colaborador_id];
+                    const reason = reasonMap[auth.motivo_id];
+                    const user = userMap[auth.usuario_autorizador_id];
+
+                    html += `
+                        <div class="verification-card authorized">
+                            <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
+                                    <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
+                                    <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
+                                </div>
+                            </div>
+                            <div class="verification-card-footer">
+                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
+                                ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
+                                ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                <button class="btn btn-success" onclick="confirmStaffExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
+                                    ✅ CONFIRMAR SALIDA
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                pendingList.innerHTML = html;
+
+            } catch (error) {
+                console.error('❌ Error al cargar salidas del personal:', error);
+                await logSecurityEvent('error', 'Error al cargar salidas de personal', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                pendingList.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ Error al cargar</h3>
+                        <p>No se pudieron cargar las salidas del personal</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button class="btn btn-secondary" onclick="loadPendingStaffExits()" style="margin-top: 10px;">
+                            🔄 Intentar de nuevo
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
         async function confirmExit(authId) {
             try {
                 if (!validateSession()) {
@@ -3722,6 +4106,79 @@ function abrirReporte() {
                 await logSecurityEvent('error', 'Error al confirmar salida', { 
                     authId,
                     error: error.message.substring(0, 200) 
+                }, false);
+                showError('Error al confirmar la salida: ' + error.message);
+            }
+        }
+
+        async function confirmStaffExit(authId) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
+                    timeZone: 'America/Bogota'
+                });
+
+                const { error } = await supabase
+                    .from('autorizaciones_personal')
+                    .update({
+                        salida_efectiva: colombiaDateTime,
+                        vigilante_id: currentUser.id
+                    })
+                    .eq('id', authId);
+
+                if (error) throw error;
+
+                await logSecurityEvent('update', 'Salida de personal confirmada', {
+                    authId,
+                    vigilanteId: currentUser.id
+                }, true);
+
+                const colombiaTime = getColombiaTime();
+                showSuccess(`Salida del personal confirmada exitosamente a las ${colombiaTime}`);
+
+                const confirmButton = document.querySelector(`button[onclick="confirmStaffExit(${authId})"]`);
+                if (confirmButton) {
+                    const card = confirmButton.closest('.verification-card');
+                    if (card) {
+                        card.classList.remove('authorized');
+                        card.classList.add('verified');
+
+                        const titleElement = card.querySelector('h3');
+                        if (titleElement) {
+                            titleElement.textContent = '✅ SALIDA CONFIRMADA';
+                        }
+
+                        const footerElement = confirmButton.closest('.verification-card-footer');
+                        if (footerElement) {
+                            const observationsHtml = footerElement.querySelector('.verification-card-obs')?.outerHTML || '';
+                            footerElement.innerHTML = `
+                                ${observationsHtml}
+                                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
+                                    <p style="color: white; font-weight: bold; margin: 0;">
+                                        ✅ SALIDA CONFIRMADA<br>
+                                        <small>Hora: ${colombiaTime} - Vigilante: ${sanitizeHtml(currentUser.nombre)}</small>
+                                    </p>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+
+                if (currentUser.rol.nombre === 'vigilante') {
+                    setTimeout(async () => {
+                        await loadPendingStaffExits();
+                    }, 2000);
+                }
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al confirmar salida de personal', {
+                    authId,
+                    error: error.message.substring(0, 200)
                 }, false);
                 showError('Error al confirmar la salida: ' + error.message);
             }
@@ -4492,41 +4949,65 @@ function abrirReporte() {
                 }
 
                 console.log('🔍 Cargando historial...');
-                
-                let query = supabase
+                    const role = currentUser?.rol?.nombre;
+
+                let studentQuery = supabase
                     .from('autorizaciones_salida')
                     .select('*')
                     .order('fecha_creacion', { ascending: false });
 
+                let staffQuery = supabase
+                    .from('autorizaciones_personal')
+                    .select('*')
+                    .order('fecha_creacion', { ascending: false });
+                    
                 if (!all) {
                     const date = document.getElementById('historyDate').value;
                     if (date) {
-                        console.log('🗓️ Filtrando por fecha:', date);
-                        query = query.eq('fecha_salida', date);
+                         console.log('🗓️ Filtrando por fecha específica:', date);
+                        studentQuery = studentQuery.eq('fecha_salida', date);
+                        staffQuery = staffQuery.eq('fecha_salida', date);
                     } else {
                         const todayColombia = getColombiaDate();
                         const thirtyDaysAgo = new Date(todayColombia);
                         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                         const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
                         console.log('🗓️ Filtrando últimos 30 días desde:', dateLimit, 'hasta:', todayColombia);
-                        query = query.gte('fecha_salida', dateLimit);
+                        studentQuery = studentQuery.gte('fecha_salida', dateLimit);
+                        staffQuery = staffQuery.gte('fecha_salida', dateLimit);
                     }
                 }
 
-                const { data: authorizations, error } = await query;
+               const [studentResult, staffResult] = await Promise.all([
+                    role === 'talento_humano' ? Promise.resolve({ data: [] }) : studentQuery,
+                    staffQuery
+                ]);
 
-                if (error) {
-                    console.error('❌ Error en consulta de historial:', error);
-                    showError('Error al cargar el historial: ' + error.message);
-                    return;
+                if (studentResult.error) {
+                    console.error('❌ Error en historial de estudiantes:', studentResult.error);
+                    throw studentResult.error;
+                }
+                if (staffResult.error) {
+                    console.error('❌ Error en historial de personal:', staffResult.error);
+                    throw staffResult.error;
                 }
 
-                if (!authorizations || authorizations.length === 0) {
-                    console.log('📊 No se encontraron autorizaciones');
+               const studentAuths = role === 'talento_humano' ? [] : (studentResult.data || []);
+                const staffAuths = staffResult.data || [];
+                const combinedRecords = [
+                    ...studentAuths.map(record => ({ ...record, tipo: 'estudiante' })),
+                    ...staffAuths.map(record => ({ ...record, tipo: 'personal' }))
+                ].sort((a, b) => {
+                    const dateA = new Date(a.fecha_creacion || `${a.fecha_salida}T00:00:00`);
+                    const dateB = new Date(b.fecha_creacion || `${b.fecha_salida}T00:00:00`);
+                    return dateB - dateA;
+                });
+
+                if (combinedRecords.length === 0) {
                     const tbody = document.querySelector('#historyTable tbody');
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" style="text-align: center; color: #666; padding: 20px;">
+                              <td colspan="8" style="text-align: center; color: #666; padding: 20px;">
                                 No se encontraron registros para el período seleccionado<br>
                                 <small>Zona horaria: Colombia (UTC-5)</small>
                             </td>
@@ -4536,37 +5017,46 @@ function abrirReporte() {
                     return;
                 }
 
-                console.log('📊 Autorizaciones encontradas:', authorizations.length);
+                const studentIds = [...new Set(studentAuths.map(auth => auth.estudiante_id))];
+                const staffIds = [...new Set(staffAuths.map(auth => auth.colaborador_id))];
+                const reasonIds = [...new Set([
+                    ...studentAuths.map(auth => auth.motivo_id),
+                    ...staffAuths.map(auth => auth.motivo_id)
+                ].filter(Boolean))];
+                const userIds = [...new Set([
+                    ...studentAuths.map(auth => auth.usuario_autorizador_id),
+                    ...staffAuths.map(auth => auth.usuario_autorizador_id)
+                ])];
 
-                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
-                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
-                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
-
-                console.log('👥 IDs únicos - Estudiantes:', studentIds.length, 'Motivos:', reasonIds.length, 'Usuarios:', userIds.length);
-
-                const [studentsResult, reasonsResult, usersResult] = await Promise.all([
-                    supabase
-                        .from('estudiantes')
-                        .select(`
-                            id, nombre, apellidos,
-                            grado:grados(nombre)
-                        `)
-                        .in('id', studentIds),
-                    supabase
-                        .from('motivos')
-                        .select('id, nombre')
-                        .in('id', reasonIds),
-                    supabase
-                        .from('usuarios')
-                        .select('id, nombre')
-                        .in('id', userIds)
+                const [studentsResult, staffMembersResult, reasonsResult, usersResult] = await Promise.all([
+                    studentIds.length > 0
+                        ? supabase
+                            .from('estudiantes')
+                            .select('id, nombre, apellidos, grado:grados(nombre)')
+                            .in('id', studentIds)
+                        : Promise.resolve({ data: [] }),
+                    staffIds.length > 0
+                        ? supabase
+                            .from('personal_colegio')
+                            .select('id, nombre, cargo, cedula')
+                            .in('id', staffIds)
+                        : Promise.resolve({ data: [] }),
+                    reasonIds.length > 0
+                        ? supabase
+                            .from('motivos')
+                            .select('id, nombre')
+                            .in('id', reasonIds)
+                        : Promise.resolve({ data: [] }),
+                    userIds.length > 0
+                        ? supabase
+                            .from('usuarios')
+                            .select('id, nombre')
+                            .in('id', userIds)
+                        : Promise.resolve({ data: [] })
                 ]);
 
-                if (studentsResult.error) console.error('Error estudiantes:', studentsResult.error);
-                if (reasonsResult.error) console.error('Error motivos:', reasonsResult.error);
-                if (usersResult.error) console.error('Error usuarios:', usersResult.error);
-
                 const studentMap = {};
+                const staffMap = {};
                 const reasonMap = {};
                 const userMap = {};
 
@@ -4574,6 +5064,10 @@ function abrirReporte() {
                     studentMap[student.id] = student;
                 });
 
+                 staffMembersResult.data?.forEach(member => {
+                    staffMap[member.id] = member;
+                });
+                    
                 reasonsResult.data?.forEach(reason => {
                     reasonMap[reason.id] = reason;
                 });
@@ -4582,46 +5076,64 @@ function abrirReporte() {
                     userMap[user.id] = user;
                 });
 
-                console.log('📋 Mapas creados - Estudiantes:', Object.keys(studentMap).length, 'Motivos:', Object.keys(reasonMap).length, 'Usuarios:', Object.keys(userMap).length);
-
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
-                
-                authorizations.forEach(record => {
-                    const student = studentMap[record.estudiante_id];
+
+                combinedRecords.forEach(record => {
+                    const isStaff = record.tipo === 'personal';
+                    const persona = isStaff ? staffMap[record.colaborador_id] : studentMap[record.estudiante_id];
                     const reason = reasonMap[record.motivo_id];
                     const user = userMap[record.usuario_autorizador_id];
 
+                    const personaNombre = isStaff
+                        ? (persona ? sanitizeHtml(persona.nombre) : 'Personal no encontrado')
+                        : (persona ? `${sanitizeHtml(persona.nombre)} ${sanitizeHtml(persona.apellidos)}` : 'Estudiante no encontrado');
+
+                    let detalleTexto;
+                    if (isStaff) {
+                        if (persona) {
+                            const cargo = persona.cargo ? sanitizeHtml(persona.cargo) : 'Cargo no registrado';
+                            const cedula = persona.cedula ? ` • CC ${sanitizeHtml(persona.cedula)}` : '';
+                            detalleTexto = `${cargo}${cedula}`;
+                        } else {
+                            detalleTexto = 'Información no disponible';
+                        }
+                    } else {
+                        detalleTexto = persona?.grado?.nombre ? sanitizeHtml(persona.grado.nombre) : 'Grado no encontrado';
+                    }
+
+                    const estadoHtml = record.salida_efectiva
+                        ? `✅ Confirmada<br><small style="color: #666;">Hora: ${formatDateTime(record.salida_efectiva)}</small>`
+                        : '⏳ Pendiente';
+
+                    const observacionesHtml = record.observaciones
+                        ? `<br><small style="color: #666;">Obs: ${sanitizeHtml(record.observaciones)}</small>`
+                        : '';
+
                     const row = tbody.insertRow();
                     row.innerHTML = `
-                        <td>${student ? `${sanitizeHtml(student.nombre)} ${sanitizeHtml(student.apellidos)}` : 'Estudiante no encontrado'}</td>
-                        <td>${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'Grado no encontrado'}</td>
+                         <td>${isStaff ? 'Personal' : 'Estudiante'}</td>
+                        <td>${personaNombre}</td>
+                        <td>${detalleTexto}</td>
                         <td>${reason?.nombre ? sanitizeHtml(reason.nombre) : 'Motivo no encontrado'}</td>
                         <td>${formatDate(record.fecha_salida)}</td>
                         <td>${formatTime(record.hora_salida)}</td>
                         <td>${user?.nombre ? sanitizeHtml(user.nombre) : 'Usuario no encontrado'}</td>
-                        <td>
-                            <span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">
-                                ${record.salida_efectiva ? '✅ Confirmada' : '⏳ Pendiente'}
-                            </span>
-                            ${record.salida_efectiva ? `<br><small style="color: #666;">Hora: ${formatDateTime(record.salida_efectiva)}</small>` : ''}
-                            ${record.observaciones ? `<br><small style="color: #666;">Obs: ${sanitizeHtml(record.observaciones)}</small>` : ''}
-                        </td>
+                         <td><span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">${estadoHtml}</span>${observacionesHtml}</td>
                     `;
                 });
 
                 const currentTime = getColombiaTime();
-                showSuccess(`Historial cargado: ${authorizations.length} registros (${currentTime} - Colombia)`);
+                showSuccess(`Historial cargado: ${combinedRecords.length} registros (${currentTime} - Colombia)`);
                 console.log('✅ Historial cargado exitosamente');
                 
-                // Configurar scroll después de cargar los datos
                 setTimeout(() => {
                     setupTableScroll();
                 }, 100);
-                
+                    
             } catch (error) {
                 console.error('❌ Error general en loadHistory:', error);
-                await logSecurityEvent('error', 'Error al cargar historial', { 
+                await logSecurityEvent('error', 'Error al cargar historial', {
                     error: error.message.substring(0, 200) 
                 }, false);
                 showError('Error al cargar el historial: ' + error.message);
@@ -4646,25 +5158,45 @@ function abrirReporte() {
                 const todayColombia = getColombiaDate();
                 const currentTime = getColombiaTime();
                 
-                const [totalAuthResult, totalStudentsResult, totalUsersResult, totalReasonsResult, totalGradesResult, todayAuthResult, lastAuthResult] = await Promise.all([
+                const [
+                    totalAuthResult,
+                    totalStaffAuthResult,
+                    totalStudentsResult,
+                    totalStaffResult,
+                    totalUsersResult,
+                    totalReasonsResult,
+                    totalGradesResult,
+                    todayAuthResult,
+                    todayStaffResult,
+                    lastAuthResult,
+                    lastStaffResult
+                ] = await Promise.all([
                     supabase.from('autorizaciones_salida').select('*'),
+                    supabase.from('autorizaciones_personal').select('*'),
                     supabase.from('estudiantes').select('*'),
+                    supabase.from('personal_colegio').select('*'),
                     supabase.from('usuarios').select('*'),
                     supabase.from('motivos').select('*'),
                     supabase.from('grados').select('*'),
                     supabase.from('autorizaciones_salida').select('*').eq('fecha_salida', todayColombia),
-                    supabase.from('autorizaciones_salida').select('*').order('fecha_creacion', { ascending: false }).limit(5)
+                    supabase.from('autorizaciones_personal').select('*').eq('fecha_salida', todayColombia),
+                    supabase.from('autorizaciones_salida').select('*').order('fecha_creacion', { ascending: false }).limit(5),
+                    supabase.from('autorizaciones_personal').select('*').order('fecha_creacion', { ascending: false }).limit(5)
                 ]);
                 
                 let html = '<ul style="text-align: left;">';
                 html += `<li><strong>🕐 Hora actual Colombia:</strong> ${formatDate(todayColombia)} ${currentTime} (UTC-5)</li>`;
-                html += `<li><strong>📊 Total autorizaciones:</strong> ${totalAuthResult.data?.length || 0} ${totalAuthResult.error ? '❌ Error: ' + totalAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>📊 Total autorizaciones estudiantes:</strong> ${totalAuthResult.data?.length || 0} ${totalAuthResult.error ? '❌ Error: ' + totalAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>👥 Total autorizaciones personal:</strong> ${totalStaffAuthResult.data?.length || 0} ${totalStaffAuthResult.error ? '❌ Error: ' + totalStaffAuthResult.error.message : '✅'}</li>`;
                 html += `<li><strong>👨‍🎓 Total estudiantes:</strong> ${totalStudentsResult.data?.length || 0} ${totalStudentsResult.error ? '❌ Error: ' + totalStudentsResult.error.message : '✅'}</li>`;
+                html += `<li><strong>👥 Total colaboradores:</strong> ${totalStaffResult.data?.length || 0} ${totalStaffResult.error ? '❌ Error: ' + totalStaffResult.error.message : '✅'}</li>`;
                 html += `<li><strong>👥 Total usuarios:</strong> ${totalUsersResult.data?.length || 0} ${totalUsersResult.error ? '❌ Error: ' + totalUsersResult.error.message : '✅'}</li>`;
                 html += `<li><strong>📝 Total motivos:</strong> ${totalReasonsResult.data?.length || 0} ${totalReasonsResult.error ? '❌ Error: ' + totalReasonsResult.error.message : '✅'}</li>`;
                 html += `<li><strong>🎓 Total grados:</strong> ${totalGradesResult.data?.length || 0} ${totalGradesResult.error ? '❌ Error: ' + totalGradesResult.error.message : '✅'}</li>`;
-                html += `<li><strong>📅 Autorizaciones hoy (${formatDate(todayColombia)}):</strong> ${todayAuthResult.data?.length || 0} ${todayAuthResult.error ? '❌ Error: ' + todayAuthResult.error.message : '✅'}</li>`;
-                html += `<li><strong>🕐 Últimas 5 autorizaciones:</strong> ${lastAuthResult.data?.length || 0} ${lastAuthResult.error ? '❌ Error: ' + lastAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>📅 Autorizaciones estudiantes hoy (${formatDate(todayColombia)}):</strong> ${todayAuthResult.data?.length || 0} ${todayAuthResult.error ? '❌ Error: ' + todayAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>📅 Autorizaciones personal hoy (${formatDate(todayColombia)}):</strong> ${todayStaffResult.data?.length || 0} ${todayStaffResult.error ? '❌ Error: ' + todayStaffResult.error.message : '✅'}</li>`;
+                html += `<li><strong>🕐 Últimas 5 autorizaciones estudiantes:</strong> ${lastAuthResult.data?.length || 0} ${lastAuthResult.error ? '❌ Error: ' + lastAuthResult.error.message : '✅'}</li>`;
+                html += `<li><strong>🕐 Últimas 5 autorizaciones personal:</strong> ${lastStaffResult.data?.length || 0} ${lastStaffResult.error ? '❌ Error: ' + lastStaffResult.error.message : '✅'}</li>`;
                 
                 if (lastAuthResult.data && lastAuthResult.data.length > 0) {
                     html += '<li><strong>📋 Detalles de últimas autorizaciones:</strong><br>';
@@ -4674,7 +5206,16 @@ function abrirReporte() {
                     });
                     html += '</li>';
                 }
-
+                    
+                if (lastStaffResult.data && lastStaffResult.data.length > 0) {
+                    html += '<li><strong>📋 Detalles de últimas autorizaciones de personal:</strong><br>';
+                    lastStaffResult.data.forEach((auth, index) => {
+                        const fechaCreacion = auth.fecha_creacion ? formatDateTime(auth.fecha_creacion) : 'N/A';
+                        html += `&nbsp;&nbsp;${index + 1}. ID: ${auth.id}, Colaborador ID: ${auth.colaborador_id}, Fecha salida: ${auth.fecha_salida}, Autorizada: ${auth.autorizada ? 'Sí' : 'No'}, Creada: ${fechaCreacion}<br>`;
+                    });
+                    html += '</li>';
+                }
+                    
                 if (totalAuthResult.data && totalAuthResult.data.length > 0) {
                     const sampleAuth = totalAuthResult.data[0];
                     html += '<li><strong>🔍 Estructura de autorización (muestra):</strong><br>';
@@ -4682,6 +5223,13 @@ function abrirReporte() {
                     html += '</li>';
                 }
                 
+                if (totalStaffAuthResult.data && totalStaffAuthResult.data.length > 0) {
+                    const sampleStaff = totalStaffAuthResult.data[0];
+                    html += '<li><strong>🔍 Estructura de autorización personal (muestra):</strong><br>';
+                    html += `&nbsp;&nbsp;Columnas disponibles: ${Object.keys(sampleStaff).join(', ')}<br>`;
+                    html += '</li>';
+                }
+                    
                 html += '</ul>';
                 
                 debugContent.innerHTML = html;
