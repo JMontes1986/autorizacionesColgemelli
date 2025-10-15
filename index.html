@@ -144,6 +144,17 @@
                 <label for="staffExitTime">4. Hora de Salida: *</label>
                 <input id="staffExitTime" required="" type="time"/>
             </div>
+            <div class="form-group">
+                <label for="staffHasReturn">5. ¿Tiene hora de regreso?</label>
+                <div class="toggle-input">
+                    <input id="staffHasReturn" type="checkbox" />
+                    <span>Marcar si se debe registrar la hora de regreso</span>
+                </div>
+            </div>
+            <div class="form-group" id="staffReturnTimeGroup" style="display: none;">
+                <label for="staffReturnTime">6. Hora estimada de regreso:</label>
+                <input id="staffReturnTime" type="time" />
+            </div>
         </div>
         <div class="form-group">
             <label for="staffObservations">Observaciones adicionales:</label>
