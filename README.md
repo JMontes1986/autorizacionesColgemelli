@@ -264,7 +264,11 @@ de lo contrario los `insert` fallarán.
 ### Tabla `autorizaciones_personal`
 1. Registra las autorizaciones de salida del personal creadas por Talento Humano.
 2. Asegúrate de ejecutar las políticas y la creación de tabla presentes en la carpeta `supabase/`.
-
+Cuando la aplicación usa únicamente la clave anónima de Supabase, las políticas
+   `autorizaciones_personal_read_anon`, `autorizaciones_personal_insert_anon` y
+   `autorizaciones_personal_update_anon` permiten consultar, crear y confirmar salidas
+   siempre que los identificadores de usuarios y colaboradores apunten a registros activos.
+   
 ### Rol `talento_humano`
 * El script de esquema inserta el rol y el usuario `gadministrativa@colgemelli.edu.co` con acceso exclusivo para gestionar salidas del personal.
 * Las contraseñas se almacenan con un prefijo `sha256$`, soportado por `verifyPassword` en `app.js`.
