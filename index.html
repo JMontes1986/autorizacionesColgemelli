@@ -116,7 +116,10 @@
 <label for="observations">Observaciones adicionales:</label>
 <textarea id="observations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
 </div>
-<button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
+<div class="form-actions">
+    <button class="btn btn-success" style="font-size: 18px; padding: 15px 30px;" type="submit">✅ Autorizar Salida</button>
+    <button class="btn btn-secondary" id="cancelEditExitBtn" style="display: none; margin-left: 10px;" type="button">↩️ Cancelar edición</button>
+</div>
 </form>
 </div>
 <!-- Sección para Autorizar Salidas del Personal -->
