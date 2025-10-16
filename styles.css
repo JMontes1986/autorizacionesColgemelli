@@ -1913,3 +1913,9 @@ body.report {
 .toast-error { background: #dc3545; }
 .toast-warning { background: #ffc107; color: #333; }
 .toast-info { background: #17a2b8; }
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
