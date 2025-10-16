@@ -400,7 +400,9 @@
                 console.log('📊 Cargando actividad reciente...');
 
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
-                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+                const userIds = [...new Set(authorizations
+                    .flatMap(auth => [auth.usuario_autorizador_id, auth.usuario_modifico_id])
+                    .filter(Boolean))];
                 const vigilanteIds = [...new Set(authorizations.filter(auth => auth.vigilante_id).map(auth => auth.vigilante_id))];
                 const allUserIds = [...new Set([...userIds, ...vigilanteIds])];
 
@@ -908,6 +910,15 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
+                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
+                    const modificationHtml = auth.detalle_modificaciones ? `
+                        <div class="verification-card-update">
+                            <strong>🔄 Cambios recientes${modifier ? ` por ${sanitizeHtml(modifier.nombre)}` : ''}</strong>
+                            <span class="change-details">${sanitizeHtml(auth.detalle_modificaciones)}</span>
+                            ${modificationDate ? `<small>Actualizado el ${modificationDate}</small>` : ''}
+                        </div>
+                    ` : '';
 
                     html += `
                         <div class="verification-card verified">
@@ -925,6 +936,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                             <div class="verification-card-footer">
                                 <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
                                 ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
+                                ${modificationHtml}
                                 <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
                                     <p style="color: white; font-weight: bold; margin: 0;">
                                         ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
@@ -1583,6 +1595,7 @@ function abrirReporte() {
         let currentUser = null;
         let currentEditingId = null;
         let currentExitAuthId = null;
+        let currentExitOriginalData = null;
         let currentStaffAuthId = null;
         let currentExitLockedStudentId = null;
         let currentExitLockedGradeId = null;
@@ -3423,6 +3436,13 @@ function abrirReporte() {
                         document.getElementById('exitDate').value = record.fecha_salida;
                         document.getElementById('exitTime').value = record.hora_salida || '';
                         document.getElementById('observations').value = record.observaciones || '';
+                         const reasonSelectElement = document.getElementById('reasonSelect');
+                        currentExitOriginalData = {
+                            motivo_id: record.motivo_id,
+                            hora_salida: record.hora_salida,
+                            observaciones: record.observaciones || '',
+                            motivo_nombre: getOptionTextByValue(reasonSelectElement, record.motivo_id) || ''
+                        };
                         currentExitAuthId = record.id;
                         currentExitLockedStudentId = studentId;
                         currentExitLockedGradeId = gradeId;
@@ -3448,22 +3468,88 @@ function abrirReporte() {
                     }
                 }
 
-                let dbAction;
+                let dbResult;
                 if (currentExitAuthId) {
-                    dbAction = supabase
+                    const updatePayload = {
+                        motivo_id: reasonId,
+                        fecha_salida: exitDate,
+                        hora_salida: exitTime,
+                        observaciones: observations || null,
+                        usuario_autorizador_id: currentUser.id
+                    };
+
+                    if (exitEditUser) {
+                        let originalData = currentExitOriginalData;
+
+                        if (!originalData) {
+                            const { data: fetchedRecord, error: fetchError } = await supabase
+                                .from('autorizaciones_salida')
+                                .select('motivo_id, hora_salida, observaciones')
+                                .eq('id', currentExitAuthId)
+                                .single();
+
+                            if (!fetchError && fetchedRecord) {
+                                originalData = fetchedRecord;
+                            } else if (fetchError) {
+                                console.error('Error obteniendo autorización para comparar cambios:', fetchError.message);
+                            }
+                        }
+
+                        if (originalData) {
+                            const changes = [];
+                            const reasonSelectElement = document.getElementById('reasonSelect');
+
+                            const normalizeTimeValue = value => {
+                                if (!value) return '';
+                                return value.toString().substring(0, 5);
+                            };
+                            const describeTime = value => value ? `${value}` : 'Sin hora definida';
+
+                            const previousTime = normalizeTimeValue(originalData.hora_salida);
+                            const newTimeValue = normalizeTimeValue(exitTime);
+                            if (previousTime !== newTimeValue) {
+                                changes.push(`Hora modificada: ${describeTime(previousTime)} → ${describeTime(newTimeValue)}`);
+                            }
+
+                            const previousReasonId = originalData.motivo_id;
+                            if (String(previousReasonId || '') !== String(reasonId)) {
+                                const previousReasonName = originalData.motivo_nombre
+                                    || getOptionTextByValue(reasonSelectElement, previousReasonId)
+                                    || 'Motivo anterior no disponible';
+                                const newReasonName = getOptionTextByValue(reasonSelectElement, reasonId)
+                                    || 'Motivo actualizado';
+                                changes.push(`Motivo modificado: ${previousReasonName} → ${newReasonName}`);
+                            }
+
+                            const normalizeObservation = value => (value || '').trim();
+                            const summarizeObservation = value => {
+                                if (!value) return 'Sin observación';
+                                const cleaned = value.replace(/\s+/g, ' ').trim();
+                                return cleaned.length > 120 ? `${cleaned.substring(0, 117)}...` : cleaned;
+                            };
+
+                            const previousObservation = normalizeObservation(originalData.observaciones);
+                            const newObservation = normalizeObservation(observations);
+                            if (previousObservation !== newObservation) {
+                                changes.push(`Observación actualizada: ${summarizeObservation(previousObservation)} → ${summarizeObservation(newObservation)}`);
+                            }
+
+                            if (changes.length > 0) {
+                                updatePayload.detalle_modificaciones = changes.join(' | ');
+                                updatePayload.ultima_modificacion = colombiaDateTime;
+                                updatePayload.usuario_modifico_id = currentUser.id;
+                            }
+                        }
+                    }
+
+                    dbResult = await supabase
                         .from('autorizaciones_salida')
-                        .update({
-                            motivo_id: reasonId,
-                            fecha_salida: exitDate,
-                            hora_salida: exitTime,
-                            observaciones: observations || null,
-                            usuario_autorizador_id: currentUser.id
-                        })
+                            .update(updatePayload)
                         .eq('id', currentExitAuthId);
                 } else {
-                    dbAction = supabase
+                    dbResult = await supabase
                         .from('autorizaciones_salida')
-                        .insert([{
+                        .insert([{ 
                             estudiante_id: studentId,
                             motivo_id: reasonId,
                             usuario_autorizador_id: currentUser.id,
@@ -3475,7 +3561,7 @@ function abrirReporte() {
                         }]);
                 }
 
-                const { data, error } = await dbAction;
+                const { data, error } = dbResult;
 
                 if (error) throw error;
 
@@ -3691,6 +3777,7 @@ function abrirReporte() {
             currentExitAuthId = null;
             currentExitLockedStudentId = null;
             currentExitLockedGradeId = null;
+            currentExitOriginalData = null;
         }
 
         function resetStaffAuthorizationForm() {
@@ -3810,7 +3897,9 @@ function abrirReporte() {
                 }
 
                 const reasonIds = [...new Set(matchingAuth.map(auth => auth.motivo_id))];
-                const userIds = [...new Set(matchingAuth.map(auth => auth.usuario_autorizador_id))];
+                const userIds = [...new Set(matchingAuth
+                    .flatMap(auth => [auth.usuario_autorizador_id, auth.usuario_modifico_id])
+                    .filter(Boolean))];
 
                 const [reasonsResult, usersResult] = await Promise.all([
                     supabase.from('motivos').select('id, nombre').in('id', reasonIds),
@@ -3842,6 +3931,15 @@ function abrirReporte() {
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
+                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
+                    const modificationHtml = auth.detalle_modificaciones ? `
+                        <div class="verification-card-update">
+                            <strong>🔄 Cambios recientes${modifier ? ` por ${sanitizeHtml(modifier.nombre)}` : ''}</strong>
+                            <span class="change-details">${sanitizeHtml(auth.detalle_modificaciones)}</span>
+                            ${modificationDate ? `<small>Actualizado el ${modificationDate}</small>` : ''}
+                        </div>
+                    ` : '';
 
                     let cardClass, titleText, footerHtml;
                     
@@ -3857,6 +3955,7 @@ function abrirReporte() {
                                         ${sanitizeHtml(auth.observaciones)}
                                     </div>
                                 ` : ''}
+                                ${modificationHtml}
                                 <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-top: 15px;">
                                     <p style="color: white; font-weight: bold; margin: 0;">
                                         ✅ CONFIRMADA: ${formatDateTime(auth.salida_efectiva)}<br>
@@ -3885,6 +3984,7 @@ function abrirReporte() {
                                         ${sanitizeHtml(auth.observaciones)}
                                     </div>
                                 ` : ''}
+                                ${modificationHtml}
                                 <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
                                     ✅ CONFIRMAR SALIDA
                                 </button>
@@ -3987,7 +4087,9 @@ function abrirReporte() {
 
                 const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
                 const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
-                const userIds = [...new Set(authorizations.map(auth => auth.usuario_autorizador_id))];
+                const userIds = [...new Set(authorizations
+                    .flatMap(auth => [auth.usuario_autorizador_id, auth.usuario_modifico_id])
+                    .filter(Boolean))];
 
                 const [studentsResult, reasonsResult, usersResult] = await Promise.all([
                     supabase
@@ -4030,6 +4132,15 @@ function abrirReporte() {
                     const student = studentMap[auth.estudiante_id];
                     const reason = reasonMap[auth.motivo_id];
                     const user = userMap[auth.usuario_autorizador_id];
+                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
+                    const modificationHtml = auth.detalle_modificaciones ? `
+                        <div class="verification-card-update">
+                            <strong>🔄 Cambios recientes${modifier ? ` por ${sanitizeHtml(modifier.nombre)}` : ''}</strong>
+                            <span class="change-details">${sanitizeHtml(auth.detalle_modificaciones)}</span>
+                            ${modificationDate ? `<small>Actualizado el ${modificationDate}</small>` : ''}
+                        </div>
+                    ` : '';
 
                      let cardClass = 'authorized';
                     const authEmail = (user?.email || '').toLowerCase();
@@ -4077,6 +4188,7 @@ function abrirReporte() {
                                         ${sanitizeHtml(auth.observaciones)}
                                     </div>
                                 ` : ''}
+                                ${modificationHtml}
                                 <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
                                     ✅ CONFIRMAR SALIDA
                                 </button>
