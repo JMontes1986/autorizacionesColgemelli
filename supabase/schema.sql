@@ -76,6 +76,17 @@ create index if not exists idx_autorizaciones_personal_colaborador
     on public.autorizaciones_personal (colaborador_id);
 
 
+-- Seguimiento de modificaciones en autorizaciones de estudiantes
+alter table if exists public.autorizaciones_salida
+    add column if not exists ultima_modificacion timestamp with time zone;
+
+alter table if exists public.autorizaciones_salida
+    add column if not exists usuario_modifico_id bigint references public.usuarios(id);
+
+alter table if exists public.autorizaciones_salida
+    add column if not exists detalle_modificaciones text;
+
+
 -- Rol de Talento Humano
 insert into public.roles (nombre, descripcion)
 select 'talento_humano', 'Talento Humano'
