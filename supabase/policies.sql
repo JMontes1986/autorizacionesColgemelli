@@ -46,6 +46,20 @@ with check (
     auth.role() <> 'anon'
 );
 
+-- Allow the dashboard (which uses the anon key) to register late arrivals
+create policy "llegadas_tarde_insert_anon" on public.llegadas_tarde
+for insert
+with check (
+    auth.role() = 'anon'
+    and registrado_por is not null
+    and exists (
+        select 1
+        from public.usuarios u
+        where u.id = registrado_por
+          and u.activo = true
+    )
+);
+
 create policy "llegadas_tarde_update" on public.llegadas_tarde
 for update
 with check (
