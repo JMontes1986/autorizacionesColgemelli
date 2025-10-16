@@ -126,6 +126,14 @@ with check (
     auth.role() <> 'anon'
 );
 
+-- Allow anonymous users to insert audit logs before authentication
+create policy "audit_logs_insert_anon" on public.audit_logs
+for insert
+with check (
+    auth.role() = 'anon'
+    and usuario_id is null
+);
+
 -- Enable RLS on table personal_colegio
 alter table public.personal_colegio enable row level security;
 
