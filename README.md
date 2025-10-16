@@ -238,9 +238,9 @@ El archivo [`supabase/policies.sql`](supabase/policies.sql) contiene estas instr
 Para permitir el acceso de solo lectura al dashboard sin autenticación,
    se agregó la política `llegadas_tarde_read_anon` que autoriza
    `auth.role() = 'anon'`.
-Si la aplicación se ejecuta solo con la clave anónima y sin autenticación,
-debés adaptar la política o habilitar el inicio de sesión en Supabase;
-de lo contrario los `insert` fallarán.
+Además, la política `llegadas_tarde_insert_anon` habilita los registros
+   de llegadas tarde desde el dashboard (que usa la clave pública) siempre
+   que el campo `registrado_por` apunte a un usuario activo.
 ### Tabla `autorizaciones_salida`
 1. Habilita RLS:
    ```sql
