@@ -33,6 +33,12 @@ describe('authorizeExit duplicate check', () => {
     global.sanitizeHtml = s => s;
     global.sendNotification = jest.fn();
     global.resetAuthorizationForm = jest.fn();
+    global.isExitEditUser = jest.fn(() => false);
+    global.lockStudentSelection = jest.fn();
+    global.getOptionTextByValue = jest.fn(() => null);
+    global.currentExitLockedStudentId = null;
+    global.currentExitLockedGradeId = null;
+    global.currentExitAuthId = null;
 
     const mockInsert = jest.fn().mockResolvedValue({ data: null, error: null });
 
