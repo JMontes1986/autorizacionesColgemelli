@@ -1544,7 +1544,50 @@
             font-style: italic;
         }
 
-        @media (max-width: 768px) {
+        .verification-card-update {
+            background: rgba(255,255,255,0.18);
+            border-left: 4px solid rgba(52,152,219,0.6);
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-top: 12px;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.5;
+            color: inherit;
+        }
+
+        .verification-card-update strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .verification-card-update .change-details {
+            display: block;
+        }
+
+        .verification-card-update small {
+            display: block;
+            opacity: 0.85;
+            margin-top: 6px;
+        }
+
+        .verification-card.authorized .verification-card-update,
+        .verification-card.verified .verification-card-update,
+        .verification-card.authorized-enfermeria .verification-card-update {
+            border-left-color: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        .verification-card.authorized-convivencia .verification-card-update,
+        .verification-card.authorized-formativa .verification-card-update {
+            background: rgba(255,255,255,0.85);
+            color: #2c3e50;
+            border-left-color: rgba(52,152,219,0.6);
+        }
+
+         @media (max-width: 768px) {
             .verification-card-content {
                 grid-template-columns: 1fr;
                 gap: 15px;
