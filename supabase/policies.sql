@@ -156,16 +156,78 @@ using (
     auth.role() <> 'anon'
 );
 
+-- Allow anonymous dashboard access to read staff authorizations
+create policy "autorizaciones_personal_read_anon" on public.autorizaciones_personal
+for select
+using (
+    auth.role() = 'anon'
+);
+
 create policy "autorizaciones_personal_insert" on public.autorizaciones_personal
 for insert
 with check (
     auth.role() <> 'anon'
 );
 
+-- Allow the dashboard (anon key) to register staff exits when linked to valid users
+create policy "autorizaciones_personal_insert_anon" on public.autorizaciones_personal
+for insert
+with check (
+    auth.role() = 'anon'
+    and usuario_autorizador_id is not null
+    and exists (
+        select 1
+        from public.usuarios u
+        where u.id = usuario_autorizador_id
+          and u.activo = true
+    )
+    and colaborador_id is not null
+    and exists (
+        select 1
+        from public.personal_colegio pc
+        where pc.id = colaborador_id
+          and pc.activo = true
+    )
+);
+
 create policy "autorizaciones_personal_update" on public.autorizaciones_personal
 for update
 with check (
     auth.role() <> 'anon'
+);
+
+-- Allow anonymous dashboard workflows to update confirmations with valid user references
+create policy "autorizaciones_personal_update_anon" on public.autorizaciones_personal
+for update
+with check (
+    auth.role() = 'anon'
+    and (
+        usuario_autorizador_id is null
+        or exists (
+            select 1
+            from public.usuarios u
+            where u.id = usuario_autorizador_id
+              and u.activo = true
+        )
+    )
+    and (
+        vigilante_id is null
+        or exists (
+            select 1
+            from public.usuarios u
+            where u.id = vigilante_id
+              and u.activo = true
+        )
+    )
+    and (
+        vigilante_regreso_id is null
+        or exists (
+            select 1
+            from public.usuarios u
+            where u.id = vigilante_regreso_id
+              and u.activo = true
+        )
+    )
 );
 
 create policy "autorizaciones_personal_delete" on public.autorizaciones_personal
