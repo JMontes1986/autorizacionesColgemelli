@@ -1574,12 +1574,18 @@ function abrirReporte() {
         const SUPABASE_URL = envExists ? window.process.env.SUPABASE_URL : '';
         const SUPABASE_ANON_KEY = envExists ? window.process.env.SUPABASE_ANON_KEY : '';
         const STORAGE_BUCKET = 'autorizaciones';
-        
+        const EXIT_EDIT_USERS = [
+            'convivencia@colgemelli.edu.co',
+            'sistemas@colgemelli.edu.co'
+        ];
+
         let supabase;
         let currentUser = null;
         let currentEditingId = null;
         let currentExitAuthId = null;
         let currentStaffAuthId = null;
+        let currentExitLockedStudentId = null;
+        let currentExitLockedGradeId = null;
         let sessionToken = null;
         let loginAttempts = 0;
         let lastLoginAttempt = null;
@@ -3299,6 +3305,49 @@ function abrirReporte() {
         }
 
 
+         // ========================================
+        // UTILIDADES PARA EDICIÓN DE AUTORIZACIONES
+        // ========================================
+
+        function isExitEditUser() {
+            return currentUser && EXIT_EDIT_USERS.includes(currentUser.email);
+        }
+
+        function lockStudentSelection(lock) {
+            const gradeSelect = document.getElementById('gradeSelect');
+            const studentSelect = document.getElementById('studentSelect');
+            const cancelBtn = document.getElementById('cancelEditExitBtn');
+
+            if (gradeSelect) {
+                gradeSelect.disabled = !!lock;
+            }
+
+            if (studentSelect) {
+                if (lock) {
+                    studentSelect.disabled = true;
+                } else {
+                    const shouldDisable = !gradeSelect || !gradeSelect.value;
+                    studentSelect.disabled = shouldDisable;
+                }
+            }
+
+            if (cancelBtn) {
+                cancelBtn.style.display = lock ? 'inline-block' : 'none';
+            }
+        }
+
+        function getOptionTextByValue(selectElement, value) {
+            if (!selectElement || value === undefined || value === null) return null;
+            const options = Array.from(selectElement.options || []);
+            const match = options.find(option => option.value === String(value));
+            return match ? match.text : null;
+        }
+
+        function cancelExitEdit() {
+            resetAuthorizationForm();
+            showSuccess('Edición cancelada. Puedes seleccionar otro estudiante.', 'loginInfo');
+        }
+
         // ========================================
         // FUNCIONES DE AUTORIZACIÓN Y VERIFICACIÓN (COPIADAS CON MEJORAS)
         // ========================================
@@ -3313,12 +3362,13 @@ function abrirReporte() {
                     return;
                 }
                 
-                const gradeId = document.getElementById('gradeSelect').value;
-                const studentId = document.getElementById('studentSelect').value;
+                let gradeId = document.getElementById('gradeSelect').value;
+                let studentId = document.getElementById('studentSelect').value;
                 const reasonId = document.getElementById('reasonSelect').value;
                 const exitDate = document.getElementById('exitDate').value;
                 const exitTime = document.getElementById('exitTime').value;
                 const observations = sanitizeHtml(document.getElementById('observations').value.trim());
+                const exitEditUser = isExitEditUser();
 
                 // Validaciones de seguridad
                 if (!gradeId || !studentId || !reasonId || !exitDate || !exitTime) {
@@ -3374,15 +3424,31 @@ function abrirReporte() {
                         document.getElementById('exitTime').value = record.hora_salida || '';
                         document.getElementById('observations').value = record.observaciones || '';
                         currentExitAuthId = record.id;
+                        currentExitLockedStudentId = studentId;
+                        currentExitLockedGradeId = gradeId;
+                        if (exitEditUser) {
+                            lockStudentSelection(true);
+                        } else {
+                            lockStudentSelection(false);
+                        }
                         return;
                     }
                 }
-        
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
+                    
+                 const colombiaDateTime = new Date().toLocaleString('sv-SE', {
                     timeZone: 'America/Bogota' 
                 });
                 
-                 let dbAction;
+                 if (currentExitAuthId && exitEditUser) {
+                    if (currentExitLockedGradeId) {
+                        gradeId = currentExitLockedGradeId;
+                    }
+                    if (currentExitLockedStudentId) {
+                        studentId = currentExitLockedStudentId;
+                    }
+                }
+
+                let dbAction;
                 if (currentExitAuthId) {
                     dbAction = supabase
                         .from('autorizaciones_salida')
@@ -3415,8 +3481,15 @@ function abrirReporte() {
 
                 const gradeSelect = document.getElementById('gradeSelect');
                 const studentSelect = document.getElementById('studentSelect');
-                const gradeName = gradeSelect.options[gradeSelect.selectedIndex].text;
-                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+                 let gradeName = gradeSelect?.options?.[gradeSelect.selectedIndex]?.text || '';
+                let studentName = studentSelect?.options?.[studentSelect.selectedIndex]?.text || '';
+
+                if (currentExitAuthId && exitEditUser) {
+                    const lockedGradeName = getOptionTextByValue(gradeSelect, currentExitLockedGradeId);
+                    const lockedStudentName = getOptionTextByValue(studentSelect, currentExitLockedStudentId);
+                    if (lockedGradeName) gradeName = lockedGradeName;
+                    if (lockedStudentName) studentName = lockedStudentName;
+                }
 
                   if (currentExitAuthId) {
                     await logSecurityEvent('update', 'Autorización de salida actualizada', {
@@ -3607,12 +3680,17 @@ function abrirReporte() {
             document.getElementById('authorizeForm').reset();
                 
             const studentSelect = document.getElementById('studentSelect');
-            studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
-            studentSelect.disabled = true;
+            if (studentSelect) {
+                studentSelect.innerHTML = '<option value="">Primero selecciona un grado...</option>';
+            }
+
+            lockStudentSelection(false);
                 
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
             currentExitAuthId = null;
+            currentExitLockedStudentId = null;
+            currentExitLockedGradeId = null;
         }
 
         function resetStaffAuthorizationForm() {
@@ -6089,7 +6167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         observer1.observe(seccionVerificar, { childList: true, subtree: true });
       }
       const observer2 = new MutationObserver(() => {
-        document.querySelectorAll('.btn-editar, .btn-eliminar').forEach(btn => btn.style.display = 'none');
+        document.querySelectorAll('.btn-eliminar').forEach(btn => btn.style.display = 'none');
       });
       if (seccionControl) {
         observer2.observe(seccionControl, { childList: true, subtree: true });
@@ -6150,7 +6228,8 @@ function attachEventHandlers() {
     ['#showDetailedViewBtn', showDetailedView],
     ['#debugDashboardBtn', debugDashboard],
     ['#loadLogsBtn', loadSecurityLogs],
-    ['#exportLogsBtn', exportLogs]
+    ['#exportLogsBtn', exportLogs],
+    ['#cancelEditExitBtn', cancelExitEdit]
   ];
   clickHandlers.forEach(([sel, handler]) => {
     const el = document.querySelector(sel);
