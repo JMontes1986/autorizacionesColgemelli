@@ -3682,9 +3682,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
-                    timeZone: 'America/Bogota'
-                });
+                const colombiaDateTime = getColombiaDateTime();
 
                 let dbAction;
                 if (currentStaffAuthId) {
@@ -4402,9 +4400,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', { 
-                    timeZone: 'America/Bogota' 
-                });
+                const colombiaDateTime = getColombiaDateTime();
 
                 const { data, error } = await supabase
                     .from('autorizaciones_salida')
@@ -4498,9 +4494,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
-                    timeZone: 'America/Bogota'
-                });
+                const colombiaDateTime = getColombiaDateTime();
 
                 const { data, error } = await supabase
                     .from('autorizaciones_personal')
@@ -4568,9 +4562,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const colombiaDateTime = new Date().toLocaleString('sv-SE', {
-                    timeZone: 'America/Bogota'
-                });
+                const colombiaDateTime = getColombiaDateTime();
 
                 const { data, error } = await supabase
                     .from('autorizaciones_personal')
