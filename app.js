@@ -4503,10 +4503,14 @@ function abrirReporte() {
                     })
                     .eq('id', authId)
                     .select('requiere_regreso, hora_regreso_estimada')
-                    .single();
+                    .maybeSingle();
 
                 if (error) throw error;
 
+                if (!data) {
+                    throw new Error('La autorización de salida del colaborador no está disponible o no se pudo actualizar.');
+                }
+                    
                 await logSecurityEvent('update', 'Salida de personal confirmada', {
                     authId,
                     vigilanteId: currentUser.id,
@@ -4552,9 +4556,13 @@ function abrirReporte() {
                     })
                     .eq('id', authId)
                     .select('hora_regreso_estimada, salida_efectiva')
-                    .single();
+                    .maybeSingle();
 
                 if (error) throw error;
+
+                if (!data) {
+                    throw new Error('La autorización de regreso del colaborador no está disponible o no se pudo actualizar.');
+                }
 
                 await logSecurityEvent('update', 'Regreso de personal confirmado', {
                     authId,
