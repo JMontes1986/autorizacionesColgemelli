@@ -4507,27 +4507,42 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-                if (!data) {
-                    throw new Error('La autorización de salida del colaborador no está disponible o no se pudo actualizar.');
+               let authorizationData = data;
+
+                if (!authorizationData) {
+                    const { data: fetchedData, error: fetchError } = await supabase
+                        .from('autorizaciones_personal')
+                        .select('requiere_regreso, hora_regreso_estimada')
+                        .eq('id', authId)
+                        .maybeSingle();
+
+                    if (fetchError) throw fetchError;
+
+                    if (!fetchedData) {
+                        showError('No se encontró la autorización de salida del colaborador. Verifica que siga disponible.');
+                        return;
+                    }
+
+                    authorizationData = fetchedData;
                 }
                     
                 await logSecurityEvent('update', 'Salida de personal confirmada', {
                     authId,
                     vigilanteId: currentUser.id,
-                    requiresReturn: data?.requiere_regreso || false
+                    requiresReturn: authorizationData?.requiere_regreso || false
                 }, true);
 
                 const colombiaTime = getColombiaTime();
                  let successMessage = `Salida del personal confirmada exitosamente a las ${colombiaTime}.`;
-                if (data?.requiere_regreso) {
-                    const expectedReturn = data.hora_regreso_estimada ? formatTime(data.hora_regreso_estimada) : 'sin hora estimada';
-                    successMessage += ` Regreso pendiente${data.hora_regreso_estimada ? ` a las ${expectedReturn}` : ''}.`;
+                if (authorizationData?.requiere_regreso) {
+                    const expectedReturn = authorizationData.hora_regreso_estimada ? formatTime(authorizationData.hora_regreso_estimada) : 'sin hora estimada';
+                    successMessage += ` Regreso pendiente${authorizationData.hora_regreso_estimada ? ` a las ${expectedReturn}` : ''}.`;
                 }
                 showSuccess(successMessage);
 
                 await loadPendingStaffExits();
 
-                        } catch (error) {
+                } catch (error) {
                 await logSecurityEvent('error', 'Error al confirmar salida de personal', {
                     authId,
                     error: error.message.substring(0, 200)
@@ -4536,7 +4551,7 @@ function abrirReporte() {
             }
         }
 
-                        async function confirmStaffReturn(authId) {
+                async function confirmStaffReturn(authId) {
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
@@ -4560,8 +4575,23 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-                if (!data) {
-                    throw new Error('La autorización de regreso del colaborador no está disponible o no se pudo actualizar.');
+                 let authorizationData = data;
+
+                if (!authorizationData) {
+                    const { data: fetchedData, error: fetchError } = await supabase
+                        .from('autorizaciones_personal')
+                        .select('hora_regreso_estimada, salida_efectiva')
+                        .eq('id', authId)
+                        .maybeSingle();
+
+                    if (fetchError) throw fetchError;
+
+                    if (!fetchedData) {
+                        showError('No se encontró la autorización de regreso del colaborador. Verifica que siga disponible.');
+                        return;
+                    }
+
+                    authorizationData = fetchedData;
                 }
 
                 await logSecurityEvent('update', 'Regreso de personal confirmado', {
@@ -4571,10 +4601,10 @@ function abrirReporte() {
 
                 const colombiaTime = getColombiaTime();
                 let successMessage = `Regreso del personal registrado a las ${colombiaTime}.`;
-                if (data?.hora_regreso_estimada) {
-                    successMessage += ` Hora estimada de regreso: ${formatTime(data.hora_regreso_estimada)}.`;
+                 if (authorizationData?.hora_regreso_estimada) {
+                    successMessage += ` Hora estimada de regreso: ${formatTime(authorizationData.hora_regreso_estimada)}.`;
                 }
-            showSuccess(successMessage);
+                    showSuccess(successMessage);
 
                 await loadPendingStaffExits();
                     
