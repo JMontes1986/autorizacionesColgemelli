@@ -4310,7 +4310,7 @@ function abrirReporte() {
                             : null;
 
                         html += `
-                            <div class="verification-card staff-card">
+                            <div class="verification-card staff-card" data-auth-id="${auth.id}" data-card-type="exit">
                                 <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
                                 <div class="verification-card-content">
                                     <div class="verification-card-info">
@@ -4347,7 +4347,7 @@ function abrirReporte() {
                         const expectedReturn = auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida';
 
                         html += `
-                            <div class="verification-card staff-card return-pending">
+                            <div class="verification-card staff-card return-pending" data-auth-id="${auth.id}" data-card-type="return">
                                 <h3>🔁 PENDIENTE REGISTRAR REGRESO</h3>
                                 <div class="verification-card-content">
                                     <div class="verification-card-info">
@@ -4483,6 +4483,13 @@ function abrirReporte() {
             }
         }
 
+         function removePendingStaffCard(authId, cardType) {
+            const card = document.querySelector(`.staff-card[data-auth-id="${authId}"][data-card-type="${cardType}"]`);
+            if (card) {
+                card.remove();
+            }
+        }
+
         async function confirmStaffExit(authId) {
             try {
                 if (!validateSession()) {
@@ -4507,7 +4514,7 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-               let authorizationData = data;
+              let authorizationData = data;
 
                 if (!authorizationData) {
                     const { data: fetchedData, error: fetchError } = await supabase
@@ -4533,13 +4540,15 @@ function abrirReporte() {
                 }, true);
 
                 const colombiaTime = getColombiaTime();
-                 let successMessage = `Salida del personal confirmada exitosamente a las ${colombiaTime}.`;
+                let successMessage = `Salida del personal confirmada exitosamente a las ${colombiaTime}.`;
                 if (authorizationData?.requiere_regreso) {
                     const expectedReturn = authorizationData.hora_regreso_estimada ? formatTime(authorizationData.hora_regreso_estimada) : 'sin hora estimada';
                     successMessage += ` Regreso pendiente${authorizationData.hora_regreso_estimada ? ` a las ${expectedReturn}` : ''}.`;
                 }
                 showSuccess(successMessage);
 
+                removePendingStaffCard(authId, 'exit');
+                    
                 await loadPendingStaffExits();
 
                 } catch (error) {
@@ -4551,7 +4560,7 @@ function abrirReporte() {
             }
         }
 
-                async function confirmStaffReturn(authId) {
+        async function confirmStaffReturn(authId) {
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
@@ -4575,7 +4584,7 @@ function abrirReporte() {
 
                 if (error) throw error;
 
-                 let authorizationData = data;
+                let authorizationData = data;
 
                 if (!authorizationData) {
                     const { data: fetchedData, error: fetchError } = await supabase
@@ -4601,10 +4610,12 @@ function abrirReporte() {
 
                 const colombiaTime = getColombiaTime();
                 let successMessage = `Regreso del personal registrado a las ${colombiaTime}.`;
-                 if (authorizationData?.hora_regreso_estimada) {
+                if (authorizationData?.hora_regreso_estimada) {
                     successMessage += ` Hora estimada de regreso: ${formatTime(authorizationData.hora_regreso_estimada)}.`;
                 }
-                    showSuccess(successMessage);
+                showSuccess(successMessage);
+
+                removePendingStaffCard(authId, 'return');
 
                 await loadPendingStaffExits();
                     
