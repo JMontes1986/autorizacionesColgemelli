@@ -42,7 +42,7 @@ create table if not exists public.autorizaciones_personal (
     motivo_id bigint references public.motivos(id),
     usuario_autorizador_id bigint not null references public.usuarios(id),
     fecha_salida date not null,
-    hora_salida time not null,
+    hora_salida time,
     requiere_regreso boolean default false,
     hora_regreso_estimada time,
     observaciones text,
@@ -62,6 +62,9 @@ alter table if exists public.autorizaciones_personal
 
 alter table if exists public.autorizaciones_personal
     add column if not exists hora_regreso_estimada time;
+
+alter table if exists public.autorizaciones_personal
+    alter column hora_salida drop not null;
 
 alter table if exists public.autorizaciones_personal
     add column if not exists regreso_efectivo timestamp with time zone;
