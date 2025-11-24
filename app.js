@@ -3634,7 +3634,7 @@ function abrirReporte() {
                 const returnTime = document.getElementById('staffReturnTime')?.value || '';
 
                 if (!staffId || !reasonId || !exitDate || !exitTime) {
-                    showError('Por favor, completa todos los campos obligatorios');
+                    showError('Por favor, completa todos los campos obligatorios (incluye la hora de salida o llegada)');
                     return;
                 }
 
@@ -3645,7 +3645,7 @@ function abrirReporte() {
                     
                 const todayColombia = getColombiaDate();
                 if (exitDate < todayColombia) {
-                    showError('No se puede autorizar una salida para una fecha pasada');
+                    showError('No se puede autorizar un registro para una fecha pasada');
                     return;
                 }
 
@@ -3668,7 +3668,7 @@ function abrirReporte() {
                         .eq('id', record.usuario_autorizador_id)
                         .single();
 
-                    const message = `El colaborador ya tiene una salida pendiente a las ${formatTime(record.hora_salida)}. Autorizado por ${userInfo?.nombre || 'usuario'}. Se cargaron los datos para editar.`;
+                    const message = `El colaborador ya tiene un registro pendiente a las ${formatTime(record.hora_salida)}. Autorizado por ${userInfo?.nombre || 'usuario'}. Se cargaron los datos para editar.`;
                     showWarning(message);
                     sendNotification('Salida pendiente existente', message);
 
