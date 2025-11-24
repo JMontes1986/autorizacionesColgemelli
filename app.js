@@ -3633,8 +3633,8 @@ function abrirReporte() {
                 const hasReturn = document.getElementById('staffHasReturn')?.checked || false;
                 const returnTime = document.getElementById('staffReturnTime')?.value || '';
 
-                if (!staffId || !reasonId || !exitDate || !exitTime) {
-                    showError('Por favor, completa todos los campos obligatorios (incluye la hora de salida o llegada)');
+                if (!staffId || !reasonId || !exitDate) {
+                    showError('Por favor, completa los campos obligatorios del registro del personal.');
                     return;
                 }
 
@@ -3691,7 +3691,7 @@ function abrirReporte() {
                         .update({
                             motivo_id: reasonId,
                             fecha_salida: exitDate,
-                            hora_salida: exitTime,
+                            hora_salida: exitTime || null,
                             observaciones: observations || null,
                             usuario_autorizador_id: currentUser.id,
                             requiere_regreso: hasReturn,
@@ -3706,7 +3706,7 @@ function abrirReporte() {
                             motivo_id: reasonId,
                             usuario_autorizador_id: currentUser.id,
                             fecha_salida: exitDate,
-                            hora_salida: exitTime,
+                            hora_salida: exitTime || null,
                             requiere_regreso: hasReturn,
                             hora_regreso_estimada: hasReturn ? returnTime : null,
                             observaciones: observations || null,
