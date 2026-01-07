@@ -4874,7 +4874,7 @@ function abrirReporte() {
         // FUNCIONES DE MODALES CON SEGURIDAD
         // ========================================
 
-        function openModal(modalId) {
+        function openModal(modalId, options = {}) {
             if (!validateSession()) {
                 showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
                 logout();
@@ -4882,19 +4882,23 @@ function abrirReporte() {
             }
 
             document.getElementById(modalId).style.display = 'block';
-            currentEditingId = null;
+            const { resetForm = true } = options;
+
+            if (resetForm) {
+                currentEditingId = null;
             
             if (modalId === 'studentModal') {
-                document.getElementById('studentForm').reset();
-            } else if (modalId === 'userModal') {
-                document.getElementById('userForm').reset();
-                document.getElementById('passwordNote').textContent = '(obligatorio para nuevos usuarios)';
-                document.getElementById('userPassword').required = true;
-                document.getElementById('userPasswordStrength').style.display = 'none';
-            } else if (modalId === 'reasonModal') {
-                document.getElementById('reasonForm').reset();
-            } else if (modalId === 'gradeModal') {
-                document.getElementById('gradeForm').reset();
+                    document.getElementById('studentForm').reset();
+                } else if (modalId === 'userModal') {
+                    document.getElementById('userForm').reset();
+                    document.getElementById('passwordNote').textContent = '(obligatorio para nuevos usuarios)';
+                    document.getElementById('userPassword').required = true;
+                    document.getElementById('userPasswordStrength').style.display = 'none';
+                } else if (modalId === 'reasonModal') {
+                    document.getElementById('reasonForm').reset();
+                } else if (modalId === 'gradeModal') {
+                    document.getElementById('gradeForm').reset();
+                }
             }
             
             renewSession();
@@ -5706,7 +5710,7 @@ function abrirReporte() {
                 document.getElementById('studentDocument').value = student.documento || '';
                 document.getElementById('studentGrade').value = student.grado_id;
                 
-                openModal('studentModal');
+                openModal('studentModal', { resetForm: false });
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de estudiante', { 
@@ -5773,7 +5777,7 @@ function abrirReporte() {
                 document.getElementById('userPassword').required = false;
                 document.getElementById('userPasswordStrength').style.display = 'none';
                 
-                openModal('userModal');
+                openModal('userModal', { resetForm: false });
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de usuario', { 
@@ -5839,7 +5843,7 @@ function abrirReporte() {
                 document.getElementById('reasonName').value = reason.nombre;
                 document.getElementById('reasonDescription').value = reason.descripcion || '';
                 
-                openModal('reasonModal');
+                openModal('reasonModal', { resetForm: false });
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de motivo', { 
@@ -5900,7 +5904,7 @@ function abrirReporte() {
                 document.getElementById('gradeName').value = grade.nombre;
                 document.getElementById('gradeLevel').value = grade.nivel;
                 
-                openModal('gradeModal');
+                openModal('gradeModal', { resetForm: false });
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de grado', { 
