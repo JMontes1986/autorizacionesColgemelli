@@ -2063,6 +2063,10 @@ function abrirReporte() {
             generateCaptcha();
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            generateCaptcha();
+        });
+
         // ========================================
         // FUNCIONES DE AUDITORÍA MEJORADAS
         // ========================================
@@ -2468,7 +2472,11 @@ function abrirReporte() {
             const statusElement = document.getElementById('connectionStatus');
             const iconElement = document.getElementById('connectionIcon');
             const textElement = document.getElementById('connectionText');
-            
+
+            if (!statusElement || !iconElement || !textElement) {
+                return;
+            }
+                
             if (connected) {
                 statusElement.className = 'connection-status connected';
                 iconElement.textContent = '🟢';
@@ -6134,10 +6142,7 @@ function abrirReporte() {
             // Iniciar conexión a Supabase en cuanto las librerías estén listas
             console.log('🔗 Iniciando conexión a Supabase...');
             initSupabase();
-
-            // Generar primera pregunta aritmética
-            generateCaptcha();
-        });
+          });
 
         // Limpiar recursos al cerrar la página
         window.addEventListener('beforeunload', function() {
