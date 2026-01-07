@@ -1573,7 +1573,45 @@ function abrirReporte() {
             quickActions.appendChild(scrollTopBtn);
             document.body.appendChild(quickActions);
         }
-        
+
+        // Inicializar indicador de conexión tan pronto esté disponible
+        function bootstrapConnectionStatus() {
+            const textElement = document.getElementById('connectionText');
+            if (!textElement) return;
+            if (textElement.textContent.trim() === 'Verificando conexión...') {
+                updateConnectionStatus(false, 'Conectando...');
+            }
+        }
+
+        function waitForSupabaseReady(timeoutMs = 8000) {
+            return new Promise(resolve => {
+                if (window.supabase) {
+                    resolve(true);
+                    return;
+                }
+
+                const startedAt = Date.now();
+                const intervalId = setInterval(() => {
+                    if (window.supabase) {
+                        clearInterval(intervalId);
+                        resolve(true);
+                        return;
+                    }
+
+                    if (Date.now() - startedAt >= timeoutMs) {
+                        clearInterval(intervalId);
+                        resolve(false);
+                    }
+                }, 200);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootstrapConnectionStatus, { once: true });
+        } else {
+            bootstrapConnectionStatus();
+        }
+
         // Configuración de Supabase
         let envExists = false;
         if (typeof window !== 'undefined' && window.process && window.process.env) {
@@ -2204,6 +2242,14 @@ function abrirReporte() {
             try {
                 console.log('🔄 Inicializando Supabase con medidas de seguridad...');
                 
+                const supabaseReady = await waitForSupabaseReady();
+                if (!supabaseReady) {
+                    updateConnectionStatus(false, 'Supabase no disponible');
+                    updateSecurityIndicator('error', 'Supabase no cargado');
+                    console.error('❌ Supabase no se cargó correctamente');
+                    return false;
+                }
+                    
                 if (!window.supabase) {
                     console.error('❌ window.supabase no está disponible');
                     throw new Error('Supabase no está cargado');
