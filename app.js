@@ -3428,6 +3428,7 @@ function abrirReporte() {
                 const select = document.getElementById('visitorGuardSelect');
                 if (!select) return;
 
+                // Si hay un usuario actual, establecerlo automáticamente
                 if (currentUser?.id) {
                     select.innerHTML = '';
                     const option = document.createElement('option');
@@ -3435,11 +3436,12 @@ function abrirReporte() {
                     option.textContent = sanitizeHtml(currentUser.nombre || 'Vigilante en turno');
                     select.appendChild(option);
                     select.value = currentUser.id;
-                    select.disabled = true;
+                    select.disabled = true; // Deshabilitar el select para que no se pueda cambiar
                     return;
                 }
-                    
-                const { data: users, error } = await supabase
+                
+                // Si por alguna razón no hay usuario actual, cargar todos los vigilantes
+                const { data: users, error } = await supabaseClient
                     .from('usuarios')
                     .select('id, nombre, email, rol:roles(nombre)')
                     .eq('activo', true)
@@ -3675,9 +3677,14 @@ function abrirReporte() {
             form.dataset.visitorId = '';
             const visitorDate = document.getElementById('visitorDate');
             if (visitorDate) visitorDate.value = getColombiaDate();
+
+            // Establecer el vigilante actual automáticamente
             if (currentUser?.id) {
                 const guardSelect = document.getElementById('visitorGuardSelect');
-                if (guardSelect) guardSelect.value = currentUser.id;
+                if (guardSelect) {
+                    guardSelect.value = currentUser.id;
+                    guardSelect.disabled = true;
+                }
             }
             resetVisitorHistory();
             resetVisitorObservations();
