@@ -3301,7 +3301,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: statuses, error } = await supabase
+                const { data: statuses, error } = await supabaseClient
                     .from('estados_visitante')
                     .select('*')
                     .eq('activo', true)
