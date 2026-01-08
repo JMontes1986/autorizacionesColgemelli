@@ -3534,73 +3534,54 @@ function abrirReporte() {
                     resetVisitorHistory();
                     return;
                 }
-
-                const fullSelect = `
-                    id,
-                    fecha,
-                    hora,
-                    motivo,
-                    observaciones,
-                    salida_efectiva,
-                    salida_observaciones,
-                    created_at,
-                    vigilante_id,
-                    salida_vigilante_id,
-                    area:areas_visitante(nombre),
-                    estado:estados_visitante(nombre),
-                    vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre),
-                    salida_vigilante:usuarios!ingresos_visitantes_salida_vigilante_id_fkey(nombre)
-                `;
-
-                const fallbackSelect = `
-                    id,
-                    fecha,
-                    hora,
-                    motivo,
-                    observaciones,
-                    salida_efectiva,
-                    salida_observaciones,
-                    created_at,
-                    vigilante_id,
-                    salida_vigilante_id,
-                    area:areas_visitante(nombre),
-                    estado:estados_visitante(nombre)
-                `;
-
-                const minimalSelect = `
-                    id,
-                    fecha,
-                    hora,
-                    motivo,
-                    observaciones,
-                    salida_efectiva,
-                    salida_observaciones,
-                    created_at,
-                    vigilante_id,
-                    salida_vigilante_id,
-                    area_id,
-                    estado_id
-                `;
-
-                const minimalSelectWithoutCreatedAt = `
-                    id,
-                    fecha,
-                    hora,
-                    motivo,
-                    observaciones,
-                    salida_efectiva,
-                    salida_observaciones,
-                    vigilante_id,
-                    salida_vigilante_id,
-                    area_id,
-                    estado_id
-                `;
-                    
+                                    
                 const selectAttempts = [
-                    { label: 'full', select: fullSelect, orderColumn: 'created_at' },
-                    { label: 'fallback', select: fallbackSelect, orderColumn: 'created_at' },
-                    { label: 'minimal', select: minimalSelect, orderColumn: 'created_at' },
-                    { label: 'minimal-fecha', select: minimalSelectWithoutCreatedAt, orderColumn: 'fecha' }
+                    {
+                        label: 'full',
+                        select: `
+                            id,
+                            fecha,
+                            hora,
+                            motivo,
+                            observaciones,
+                            salida_efectiva,
+                            salida_observaciones,
+                            created_at,
+                            vigilante_id,
+                            salida_vigilante_id,
+                            area_id,
+                            estado_id
+                        `,
+                        orderColumn: 'created_at'
+                    },
+                    {
+                        label: 'fallback',
+                        select: `
+                            id,
+                            fecha,
+                            hora,
+                            motivo,
+                            observaciones,
+                            salida_efectiva,
+                            salida_observaciones,
+                            vigilante_id,
+                            salida_vigilante_id,
+                            area_id,
+                            estado_id
+                        `,
+                        orderColumn: 'fecha'
+                    },
+                    {
+                        label: 'minimal',
+                        select: `
+                            id,
+                            fecha,
+                            hora,
+                            motivo,
+                            observaciones
+                        `,
+                        orderColumn: 'fecha'
+                    }
                 ];
 
                 let data = null;
@@ -3629,7 +3610,67 @@ function abrirReporte() {
                     throw lastError;
                 }
 
-                renderVisitorHistory(data || []);
+                const historyRecords = data || [];
+                if (!historyRecords.length) {
+                    renderVisitorHistory([]);
+                    return;
+                }
+
+                const areaIds = new Set();
+                const statusIds = new Set();
+                const guardIds = new Set();
+
+                historyRecords.forEach(record => {
+                    if (record.area_id) areaIds.add(record.area_id);
+                    if (record.estado_id) statusIds.add(record.estado_id);
+                    if (record.vigilante_id) guardIds.add(record.vigilante_id);
+                    if (record.salida_vigilante_id) guardIds.add(record.salida_vigilante_id);
+                });
+
+                const [areasResult, statusResult, guardsResult] = await Promise.all([
+                    areaIds.size
+                        ? supabaseClient
+                            .from('areas_visitante')
+                            .select('id, nombre')
+                            .in('id', [...areaIds])
+                        : Promise.resolve({ data: [], error: null }),
+                    statusIds.size
+                        ? supabaseClient
+                            .from('estados_visitante')
+                            .select('id, nombre')
+                            .in('id', [...statusIds])
+                        : Promise.resolve({ data: [], error: null }),
+                    guardIds.size
+                        ? supabaseClient
+                            .from('usuarios')
+                            .select('id, nombre')
+                            .in('id', [...guardIds])
+                        : Promise.resolve({ data: [], error: null })
+                ]);
+
+                if (areasResult.error) {
+                    console.warn('Error loading visitor areas for history:', areasResult.error);
+                }
+                if (statusResult.error) {
+                    console.warn('Error loading visitor statuses for history:', statusResult.error);
+                }
+                if (guardsResult.error) {
+                    console.warn('Error loading visitor guards for history:', guardsResult.error);
+                }
+
+                const areaMap = new Map((areasResult.data || []).map(area => [area.id, area]));
+                const statusMap = new Map((statusResult.data || []).map(status => [status.id, status]));
+                const guardMap = new Map((guardsResult.data || []).map(guard => [guard.id, guard]));
+
+                const enrichedHistory = historyRecords.map(record => ({
+                    ...record,
+                    area: record.area_id ? areaMap.get(record.area_id) || null : null,
+                    estado: record.estado_id ? statusMap.get(record.estado_id) || null : null,
+                    vigilante: record.vigilante_id ? guardMap.get(record.vigilante_id) || null : null,
+                    salida_vigilante: record.salida_vigilante_id ? guardMap.get(record.salida_vigilante_id) || null : null
+                }));
+
+                renderVisitorHistory(enrichedHistory);
             } catch (error) {
                 console.error('Error loading visitor history:', error);
                 showError('Error al cargar el historial del visitante.', 'visitorError');
@@ -3800,20 +3841,38 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: visitorData, error: visitorError } = await supabaseClient
-                    .from('visitantes')
-                    .upsert({
-                        documento: documentId,
-                        nombre: name,
-                        perfil_id: profileId,
-                        activo: true
-                    }, { onConflict: 'documento' })
-                    .select('id')
-                    .single();
+                const form = document.getElementById('visitorEntryForm');
+                let visitorId = form?.dataset.visitorId || '';
 
-                if (visitorError) throw visitorError;
+                if (!visitorId) {
+                    const { data: existingVisitor, error: lookupError } = await supabaseClient
+                        .from('visitantes')
+                        .select('id')
+                        .eq('documento', documentId)
+                        .maybeSingle();
 
-                const visitorId = visitorData?.id;
+                    if (lookupError) throw lookupError;
+
+                    visitorId = existingVisitor?.id || '';
+                }
+
+                if (!visitorId) {
+                    const { data: visitorData, error: visitorError } = await supabaseClient
+                        .from('visitantes')
+                        .insert({
+                            documento: documentId,
+                            nombre: name,
+                            perfil_id: profileId,
+                            activo: true
+                        })
+                        .select('id')
+                        .single();
+
+                    if (visitorError) throw visitorError;
+
+                    visitorId = visitorData?.id;
+                }
+
                 if (!visitorId) {
                     throw new Error('No se pudo registrar el visitante.');
                 }
@@ -3845,7 +3904,6 @@ function abrirReporte() {
                     if (obsError) throw obsError;
                 }
 
-                const form = document.getElementById('visitorEntryForm');
                 if (form) {
                     form.dataset.visitorId = visitorId;
                 }
