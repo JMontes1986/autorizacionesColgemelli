@@ -4016,9 +4016,13 @@ function abrirReporte() {
 
                 const warningHtml = !visitorExitTrackingAvailable
                     ? `
-                        <div class="verification-card not-authorized" style="margin-bottom: 20px;">
-                            <h3>⚠️ Salidas de visitantes no disponibles</h3>
-                            <p>No se encontró la columna <strong>salida_efectiva</strong> en la base de datos. Actualiza el esquema para habilitar el control de salidas.</p>
+                        <div class="verification-card not-authorized exit-warning" style="margin-bottom: 20px;">
+                            <h3><span class="warning-icon">⚠️</span> Salidas de visitantes no disponibles</h3>
+                            <p>El control de salidas está deshabilitado porque falta la columna <strong>salida_efectiva</strong>.</p>
+                            <ul>
+                                <li>Agrega la columna en la tabla <strong>ingresos_visitantes</strong>.</li>
+                                <li>Luego recarga la página para habilitar los botones de salida.</li>
+                            </ul>
                         </div>
                     `
                     : '';
