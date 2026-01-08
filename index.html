@@ -205,6 +205,80 @@
     </div>
 </div>
 </div>
+<!-- Sección de Registro de Visitantes Externos -->
+<div class="section" id="visitorEntrySectionDiv">
+<h2>🧾 Registro de Visitantes Externos</h2>
+<form id="visitorEntryForm">
+<div class="grid">
+    <div class="form-group">
+        <label for="visitorDate">Fecha *</label>
+        <input id="visitorDate" required="" type="date"/>
+    </div>
+    <div class="form-group">
+        <label for="visitorGuardSelect">Vigilante en turno *</label>
+        <select id="visitorGuardSelect" required="">
+            <option value="">Selecciona al vigilante</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="visitorProfileSelect">Perfil visitante *</label>
+        <select id="visitorProfileSelect" required="">
+            <option value="">Selecciona el perfil del visitante</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="visitorName">Nombre *</label>
+        <input id="visitorName" maxlength="120" oninput="validateNameInput(this)" required="" type="text"/>
+    </div>
+    <div class="form-group">
+        <label for="visitorDocument">Documento de identidad *</label>
+        <input id="visitorDocument" maxlength="20" oninput="validateDocumentInput(this)" required="" type="text"/>
+    </div>
+    <div class="form-group">
+        <label for="visitorReason">Motivo *</label>
+        <textarea id="visitorReason" maxlength="300" oninput="validateTextInput(this)" required="" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="visitorAreaSelect">Área visitante *</label>
+        <select id="visitorAreaSelect" required="">
+            <option value="">Buscar elementos</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="visitorStatusSelect">Estado del visitante *</label>
+        <select id="visitorStatusSelect" required="">
+            <option value="">Buscar elementos</option>
+        </select>
+    </div>
+</div>
+<div class="form-group">
+    <label for="visitorObservations">Observaciones</label>
+    <textarea id="visitorObservations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones adicionales sobre la visita..." rows="3"></textarea>
+</div>
+<div class="login-messages" id="visitorMessages" style="margin-top: 15px;">
+    <div class="alert alert-error notification-card" id="visitorError" style="visibility: hidden;"></div>
+    <div class="alert alert-success notification-card" id="visitorInfo" style="visibility: hidden;"></div>
+</div>
+<div class="form-actions">
+    <button class="btn btn-success" type="submit">✅ Registrar ingreso</button>
+    <button class="btn btn-secondary" id="visitorResetBtn" type="button">🧹 Limpiar</button>
+</div>
+</form>
+<div class="visitor-details">
+    <div class="card visitor-history">
+        <h3>Historial de ingresos</h3>
+        <div id="visitorHistoryList">
+            <p style="color: #666;">Ingresa el documento para consultar el historial.</p>
+        </div>
+    </div>
+    <div class="card visitor-observations">
+        <h3>Observaciones del personal</h3>
+        <div id="visitorObservationList">
+            <p style="color: #666;">Ingresa el documento para ver observaciones registradas.</p>
+        </div>
+    </div>
+</div>
+</div>
 <!-- Sección de Llegadas Tarde -->
 <div class="section" id="lateArrivalSectionDiv">
 <h2>⏰ Registro de Llegadas Tarde</h2>
