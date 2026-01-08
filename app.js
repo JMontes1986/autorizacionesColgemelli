@@ -1606,6 +1606,7 @@ function abrirReporte() {
         let sessionTimeout = null;
         let lastActivityTime = null;
         let rolesCache = [];
+        let visitorExitTrackingAvailable = true;
 
         // Configuración de seguridad
         const MAX_LOGIN_ATTEMPTS = 5;
@@ -3936,24 +3937,72 @@ function abrirReporte() {
 
                  pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando personal externo...</p></div>';
                     
-                const { data: entries, error } = await supabaseClient
-                    .from('ingresos_visitantes')
-                    .select(`
-                        id,
-                        fecha,
-                        hora,
-                        motivo,
-                        observaciones,
-                        salida_efectiva,
-                        visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
-                        area:areas_visitante(nombre),
-                        estado:estados_visitante(nombre),
-                        vigilante:usuarios(nombre)
-                    `)
-                    .is('salida_efectiva', null)
-                    .order('created_at', { ascending: false });
+                visitorExitTrackingAvailable = true;
+                const selectAttempts = [
+                    {
+                        label: 'withExitTracking',
+                        select: `
+                            id,
+                            fecha,
+                            hora,
+                            motivo,
+                            observaciones,
+                            salida_efectiva,
+                            visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
+                            area:areas_visitante(nombre),
+                            estado:estados_visitante(nombre),
+                            vigilante:usuarios(nombre)
+                        `,
+                        applyFilter: query => query.is('salida_efectiva', null)
+                    },
+                    {
+                        label: 'withoutExitTracking',
+                        select: `
+                            id,
+                            fecha,
+                            hora,
+                            motivo,
+                            observaciones,
+                            visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
+                            area:areas_visitante(nombre),
+                            estado:estados_visitante(nombre),
+                            vigilante:usuarios(nombre)
+                        `,
+                        applyFilter: query => query
+                    }
+                ];
 
-                if (error) throw error;
+                let entries = null;
+                let lastError = null;
+
+                for (const attempt of selectAttempts) {
+                    let query = supabaseClient
+                        .from('ingresos_visitantes')
+                        .select(attempt.select)
+                        .order('created_at', { ascending: false });
+
+                    query = attempt.applyFilter(query);
+
+                    const { data, error } = await query;
+
+                    if (error) {
+                        lastError = error;
+                        if (attempt.label === 'withExitTracking' && /salida_efectiva/i.test(error.message || '')) {
+                            visitorExitTrackingAvailable = false;
+                            console.warn('Exit tracking column missing for visitors, retrying without salida_efectiva.');
+                            continue;
+                        }
+                        throw error;
+                    }
+
+                    entries = data;
+                    lastError = null;
+                    break;
+                }
+
+                if (lastError) {
+                    throw lastError;
+                }
 
                if (!entries || entries.length === 0) {
                     pendingList.innerHTML = `
@@ -3965,6 +4014,15 @@ function abrirReporte() {
                     return;
                 }
 
+                const warningHtml = !visitorExitTrackingAvailable
+                    ? `
+                        <div class="verification-card not-authorized" style="margin-bottom: 20px;">
+                            <h3>⚠️ Salidas de visitantes no disponibles</h3>
+                            <p>No se encontró la columna <strong>salida_efectiva</strong> en la base de datos. Actualiza el esquema para habilitar el control de salidas.</p>
+                        </div>
+                    `
+                    : '';
+                    
                 const html = entries.map(entry => {
                     const visitorName = entry.visitante?.nombre ? sanitizeHtml(entry.visitante.nombre) : 'Sin nombre';
                     const visitorDocument = entry.visitante?.documento ? sanitizeHtml(entry.visitante.documento) : 'Sin documento';
@@ -3977,6 +4035,7 @@ function abrirReporte() {
                     const entryReason = entry.motivo ? sanitizeHtml(entry.motivo) : 'Sin motivo';
                     const entryObservations = entry.observaciones ? sanitizeHtml(entry.observaciones) : '';
                     const obsId = `visitor-exit-observations-${entry.id}`;
+                    const exitDisabled = !visitorExitTrackingAvailable;
 
                     return `
                         <div class="verification-card" style="margin-bottom: 20px;">
@@ -3998,16 +4057,16 @@ function abrirReporte() {
                             ${entryObservations ? `<div class="verification-card-obs"><strong>📝 Observaciones ingreso:</strong><br>${entryObservations}</div>` : ''}
                             <div class="form-group" style="margin-top: 15px;">
                                 <label for="${obsId}">Observaciones de salida (opcional)</label>
-                                <textarea id="${obsId}" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="2"></textarea>
+                                <textarea id="${obsId}" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="2" ${exitDisabled ? 'disabled' : ''}></textarea>
                             </div>
-                            <button class="btn btn-success" onclick="confirmVisitorExit(${entry.id})" style="font-size: 16px; padding: 12px 30px; margin-top: 10px;">
-                                ✅ Registrar salida
+                            <button class="btn btn-success" onclick="confirmVisitorExit(${entry.id})" style="font-size: 16px; padding: 12px 30px; margin-top: 10px;" ${exitDisabled ? 'disabled' : ''}>
+                                ${exitDisabled ? '⚠️ Salida no disponible' : '✅ Registrar salida'}
                             </button>
                         </div>
                     `;
                 }).join('');
 
-                pendingList.innerHTML = html;
+                pendingList.innerHTML = warningHtml + html;
             } catch (error) {
                 console.error('Error loading pending visitor exits:', error);
                 showError('Error al cargar personal externo en el colegio: ' + error.message, 'visitorExitError');
@@ -4026,7 +4085,7 @@ function abrirReporte() {
             }
         }
 
-                async function confirmVisitorExit(entryId) {
+        async function confirmVisitorExit(entryId) {
             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorExitError');
@@ -4034,6 +4093,11 @@ function abrirReporte() {
                     return;
                 }
 
+                if (!visitorExitTrackingAvailable) {
+                    showError('No se puede registrar la salida: falta la columna salida_efectiva en la base de datos.', 'visitorExitError');
+                    return;
+                }
+                    
                 const observationField = document.getElementById(`visitor-exit-observations-${entryId}`);
                 const observations = observationField?.value.trim() || null;
                     
