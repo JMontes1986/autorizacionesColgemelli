@@ -3951,7 +3951,7 @@ function abrirReporte() {
                             visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
                             area:areas_visitante(nombre),
                             estado:estados_visitante(nombre),
-                            vigilante:usuarios(nombre)
+                            vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre)
                         `,
                         applyFilter: query => query.is('salida_efectiva', null)
                     },
@@ -3966,7 +3966,7 @@ function abrirReporte() {
                             visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
                             area:areas_visitante(nombre),
                             estado:estados_visitante(nombre),
-                            vigilante:usuarios(nombre)
+                            vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre)
                         `,
                         applyFilter: query => query
                     }
