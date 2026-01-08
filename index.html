@@ -323,6 +323,10 @@
 <button id="btnAdminUsers" class="btn" onclick="showAdminSection('users')">Gestionar Usuarios</button>
 <button id="btnAdminReasons" class="btn" onclick="showAdminSection('reasons')">Gestionar Motivos</button>
 <button id="btnAdminGrades" class="btn" onclick="showAdminSection('grades')">Gestionar Grados</button>
+<button id="btnAdminGuards" class="btn" onclick="showAdminSection('guards')">Gestionar Vigilantes</button>
+<button id="btnAdminVisitorProfiles" class="btn" onclick="showAdminSection('visitorProfiles')">Perfiles de Visitante</button>
+<button id="btnAdminVisitorAreas" class="btn" onclick="showAdminSection('visitorAreas')">Áreas de Visita</button>
+<button id="btnAdminVisitorStatuses" class="btn" onclick="showAdminSection('visitorStatuses')">Estados de Visitante</button>
 <button id="btnAdminSecurity" class="btn btn-warning" onclick="showAdminSection('security')">🔒 Seguridad y Logs</button>
 </div>
 <div class="admin-subsection" id="adminStudents" style="display: none;">
@@ -387,6 +391,71 @@
 <tr>
 <th style="min-width: 120px;">Nombre</th>
 <th style="min-width: 100px;">Nivel</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminGuards" style="display: none;">
+<h3>🛡️ Gestión de Vigilantes</h3>
+<button class="btn btn-success" onclick="openModal('guardModal')">Agregar Vigilante</button>
+<div class="table-wrapper">
+<table class="table" id="guardsTable">
+<thead>
+<tr>
+<th style="min-width: 160px;">Nombre</th>
+<th style="min-width: 200px;">Email</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorProfiles" style="display: none;">
+<h3>🧾 Perfiles de Visitante</h3>
+<button class="btn btn-success" onclick="openModal('visitorProfileModal')">Agregar Perfil</button>
+<div class="table-wrapper">
+<table class="table" id="visitorProfilesTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorAreas" style="display: none;">
+<h3>🏫 Áreas de Visita</h3>
+<button class="btn btn-success" onclick="openModal('visitorAreaModal')">Agregar Área</button>
+<div class="table-wrapper">
+<table class="table" id="visitorAreasTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorStatuses" style="display: none;">
+<h3>📌 Estados de Visitante</h3>
+<button class="btn btn-success" onclick="openModal('visitorStatusModal')">Agregar Estado</button>
+<div class="table-wrapper">
+<table class="table" id="visitorStatusesTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
 <th style="min-width: 80px;">Estado</th>
 <th style="min-width: 160px;">Acciones</th>
 </tr>
@@ -707,6 +776,74 @@
 </div>
 <button class="btn btn-success" type="submit">Guardar</button>
 <button id="cancelGradeModal" class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="guardModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('guardModal')">×</span>
+<h2>Agregar/Editar Vigilante</h2>
+<form id="guardForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="guardName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Email: *</label>
+<input id="guardEmail" maxlength="100" oninput="validateEmailInput(this)" required="" type="email"/>
+</div>
+<div class="form-group">
+<label>Contraseña: <span id="guardPasswordNote">(obligatorio para nuevos vigilantes)</span></label>
+<div class="input-with-icon">
+<input id="guardPassword" maxlength="50" oninput="validatePasswordInput(this)" type="password"/>
+<span class="toggle-password">👁️</span>
+</div>
+<div class="password-strength" id="guardPasswordStrength" style="display: none;"></div>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelGuardModal" class="btn btn-secondary" onclick="closeModal('guardModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorProfileModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorProfileModal')">×</span>
+<h2>Agregar/Editar Perfil de Visitante</h2>
+<form id="visitorProfileForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorProfileName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorProfileModal" class="btn btn-secondary" onclick="closeModal('visitorProfileModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorAreaModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorAreaModal')">×</span>
+<h2>Agregar/Editar Área de Visita</h2>
+<form id="visitorAreaForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorAreaName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorAreaModal" class="btn btn-secondary" onclick="closeModal('visitorAreaModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorStatusModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorStatusModal')">×</span>
+<h2>Agregar/Editar Estado de Visitante</h2>
+<form id="visitorStatusForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorStatusName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorStatusModal" class="btn btn-secondary" onclick="closeModal('visitorStatusModal')" type="button">Cancelar</button>
 </form>
 </div>
 </div>
