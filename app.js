@@ -3548,7 +3548,7 @@ function abrirReporte() {
                         created_at,
                         area:areas_visitante(nombre),
                         estado:estados_visitante(nombre),
-                        vigilante:usuarios(nombre),
+                        vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre),
                         salida_vigilante:usuarios!ingresos_visitantes_salida_vigilante_id_fkey(nombre)
                     `)
                     .eq('visitante_id', visitorId)
