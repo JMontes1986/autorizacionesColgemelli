@@ -3535,12 +3535,6 @@ function abrirReporte() {
                     return;
                 }
 
-                const baseQuery = supabaseClient
-                    .from('ingresos_visitantes')
-                    .eq('visitante_id', visitorId)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-
                 const fullSelect = `
                     id,
                     fecha,
@@ -3569,13 +3563,47 @@ function abrirReporte() {
                     estado:estados_visitante(nombre)
                 `;
 
-                let { data, error } = await baseQuery.select(fullSelect);
+                const minimalSelect = `
+                    id,
+                    fecha,
+                    hora,
+                    motivo,
+                    observaciones,
+                    salida_efectiva,
+                    salida_observaciones,
+                    created_at
+                `;
+                    
+                const selectAttempts = [
+                    { label: 'full', select: fullSelect },
+                    { label: 'fallback', select: fallbackSelect },
+                    { label: 'minimal', select: minimalSelect }
+                ];
 
-                if (error) {
-                    console.warn('Error loading visitor history with guards, retrying without guard data:', error);
-                    const fallback = await baseQuery.select(fallbackSelect);
-                    if (fallback.error) throw fallback.error;
-                    data = fallback.data;
+                let data = null;
+                let lastError = null;
+
+                for (const attempt of selectAttempts) {
+                    const { data: attemptData, error } = await supabaseClient
+                        .from('ingresos_visitantes')
+                        .select(attempt.select)
+                        .eq('visitante_id', visitorId)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+
+                    if (error) {
+                        lastError = error;
+                        console.warn(`Error loading visitor history (${attempt.label}), retrying:`, error);
+                        continue;
+                    }
+
+                    data = attemptData;
+                    lastError = null;
+                    break;
+                }
+
+                if (lastError) {
+                    throw lastError;
                 }
 
                 renderVisitorHistory(data || []);
