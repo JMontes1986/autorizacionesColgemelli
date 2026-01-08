@@ -3123,11 +3123,7 @@ function abrirReporte() {
                 visitorForm.addEventListener('submit', saveVisitorEntry);
             }
 
-            const visitorExitForm = document.getElementById('visitorExitForm');
-            if (visitorExitForm) {
-                visitorExitForm.addEventListener('submit', registerVisitorExit);
-            }
-                
+                            
             const visitorResetBtn = document.getElementById('visitorResetBtn');
             if (visitorResetBtn) {
                 visitorResetBtn.addEventListener('click', resetVisitorForm);
@@ -3927,8 +3923,9 @@ function abrirReporte() {
             }
         }
 
-        async function registerVisitorExit(event) {
-            event.preventDefault();
+        async function loadPendingVisitorExits() {
+            const pendingList = document.getElementById('pendingVisitorExitList');
+            if (!pendingList) return;
 
             try {
                 if (!validateSession()) {
@@ -3937,67 +3934,124 @@ function abrirReporte() {
                     return;
                 }
 
-                const documentId = document.getElementById('visitorExitDocument')?.value.trim();
-                const observations = document.getElementById('visitorExitObservations')?.value.trim();
-
-                if (!documentId) {
-                    showError('Ingresa el documento del visitante para registrar la salida.', 'visitorExitError');
-                    return;
-                }
-
-                const { data: visitor, error: visitorError } = await supabaseClient
-                    .from('visitantes')
-                    .select('id, nombre')
-                    .eq('documento', documentId)
-                    .maybeSingle();
-
-                if (visitorError) throw visitorError;
-
-                if (!visitor) {
-                    showError('No se encontró un visitante con ese documento.', 'visitorExitError');
-                    return;
-                }
-
-                const { data: entry, error: entryError } = await supabaseClient
+                 pendingList.innerHTML = '<div class="card" style="text-align: center; padding: 20px;"><p style="color: #666;">🔄 Cargando personal externo...</p></div>';
+                    
+                const { data: entries, error } = await supabaseClient
                     .from('ingresos_visitantes')
-                    .select('id, visitante_id')
-                    .eq('visitante_id', visitor.id)
+                    .select(`
+                        id,
+                        fecha,
+                        hora,
+                        motivo,
+                        observaciones,
+                        salida_efectiva,
+                        visitante:visitantes(id, nombre, documento, perfil:perfiles_visitante(nombre)),
+                        area:areas_visitante(nombre),
+                        estado:estados_visitante(nombre),
+                        vigilante:usuarios(nombre)
+                    `)
                     .is('salida_efectiva', null)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+                    .order('created_at', { ascending: false });
 
-                if (entryError) throw entryError;
+                if (error) throw error;
 
-                if (!entry) {
-                    showWarning('No hay ingresos pendientes de salida para este visitante.', 'visitorExitError');
+               if (!entries || entries.length === 0) {
+                    pendingList.innerHTML = `
+                        <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
+                            <h3>✅ Sin personal externo pendiente</h3>
+                            <p><strong>No hay personas externas dentro del colegio</strong></p>
+                        </div>
+                    `;
                     return;
                 }
 
+                const html = entries.map(entry => {
+                    const visitorName = entry.visitante?.nombre ? sanitizeHtml(entry.visitante.nombre) : 'Sin nombre';
+                    const visitorDocument = entry.visitante?.documento ? sanitizeHtml(entry.visitante.documento) : 'Sin documento';
+                    const visitorProfile = entry.visitante?.perfil?.nombre ? sanitizeHtml(entry.visitante.perfil.nombre) : 'Sin perfil';
+                    const areaText = entry.area?.nombre ? sanitizeHtml(entry.area.nombre) : 'Sin área';
+                    const statusText = entry.estado?.nombre ? sanitizeHtml(entry.estado.nombre) : 'Sin estado';
+                    const guardText = entry.vigilante?.nombre ? sanitizeHtml(entry.vigilante.nombre) : 'Sin vigilante';
+                    const entryTime = entry.hora ? formatTime(entry.hora) : 'Hora no registrada';
+                    const entryDate = entry.fecha ? formatDate(entry.fecha) : 'Fecha no registrada';
+                    const entryReason = entry.motivo ? sanitizeHtml(entry.motivo) : 'Sin motivo';
+                    const entryObservations = entry.observaciones ? sanitizeHtml(entry.observaciones) : '';
+                    const obsId = `visitor-exit-observations-${entry.id}`;
+
+                    return `
+                        <div class="verification-card" style="margin-bottom: 20px;">
+                            <h3>👤 ${visitorName}</h3>
+                            <div class="verification-card-content">
+                                <div class="verification-card-info">
+                                    <p><strong>🧾 Documento:</strong> <span class="info-value">${visitorDocument}</span></p>
+                                    <p><strong>🏷️ Perfil:</strong> <span class="info-value">${visitorProfile}</span></p>
+                                    <p><strong>📍 Área:</strong> <span class="info-value">${areaText}</span></p>
+                                    <p><strong>📌 Estado:</strong> <span class="info-value">${statusText}</span></p>
+                                </div>
+                                <div class="verification-card-info">
+                                    <p><strong>🗓️ Ingreso:</strong> <span class="info-value">${entryDate}</span></p>
+                                    <p><strong>🕐 Hora de ingreso:</strong> <span class="info-value">${entryTime}</span></p>
+                                    <p><strong>📝 Motivo:</strong> <span class="info-value">${entryReason}</span></p>
+                                    <p><strong>🛡️ Vigilante:</strong> <span class="info-value">${guardText}</span></p>
+                                </div>
+                            </div>
+                            ${entryObservations ? `<div class="verification-card-obs"><strong>📝 Observaciones ingreso:</strong><br>${entryObservations}</div>` : ''}
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="${obsId}">Observaciones de salida (opcional)</label>
+                                <textarea id="${obsId}" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="2"></textarea>
+                            </div>
+                            <button class="btn btn-success" onclick="confirmVisitorExit(${entry.id})" style="font-size: 16px; padding: 12px 30px; margin-top: 10px;">
+                                ✅ Registrar salida
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                pendingList.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading pending visitor exits:', error);
+                showError('Error al cargar personal externo en el colegio: ' + error.message, 'visitorExitError');
+                await logSecurityEvent('error', 'Error al cargar salidas pendientes de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                pendingList.innerHTML = `
+                    <div class="verification-card not-authorized">
+                        <h3>❌ Error al cargar</h3>
+                        <p>No se pudo cargar el listado de personal externo.</p>
+                        <button class="btn btn-secondary" onclick="loadPendingVisitorExits()" style="margin-top: 10px;">
+                            🔄 Intentar de nuevo
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+                async function confirmVisitorExit(entryId) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorExitError');
+                    logout();
+                    return;
+                }
+
+                const observationField = document.getElementById(`visitor-exit-observations-${entryId}`);
+                const observations = observationField?.value.trim() || null;
+                    
                 const { error: updateError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .update({
                         salida_efectiva: getColombiaDateTime(),
-                        salida_observaciones: observations || null,
+                        salida_observaciones: observations,
                         salida_vigilante_id: currentUser?.id || null
                     })
-                    .eq('id', entry.id);
+                    .eq('id', entryId);
 
                 if (updateError) throw updateError;
 
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
-
-                const exitForm = document.getElementById('visitorExitForm');
-                if (exitForm) {
-                    exitForm.reset();
-                }
-
-                await Promise.all([
-                    loadVisitorHistory(visitor.id),
-                    loadVisitorObservations(visitor.id)
-                ]);
+                await loadPendingVisitorExits();
             } catch (error) {
-                console.error('Error registering visitor exit:', error);
+                console.error('Error confirming visitor exit:', error);
                 showError('Error al registrar la salida del visitante: ' + error.message, 'visitorExitError');
                 await logSecurityEvent('error', 'Error al registrar salida de visitante', {
                     error: error.message.substring(0, 200)
@@ -5112,6 +5166,8 @@ function abrirReporte() {
                         </button>
                     </div>
                 `;
+                } finally {
+                await loadPendingVisitorExits();
             }
         }
 
