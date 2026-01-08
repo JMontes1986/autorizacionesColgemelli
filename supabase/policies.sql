@@ -243,3 +243,235 @@ for delete
 using (
     auth.role() <> 'anon'
 );
+
+-- Enable RLS on visitor catalog tables
+alter table public.perfiles_visitante enable row level security;
+alter table public.areas_visitante enable row level security;
+alter table public.estados_visitante enable row level security;
+
+create policy "perfiles_visitante_read" on public.perfiles_visitante
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "perfiles_visitante_read_anon" on public.perfiles_visitante
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "perfiles_visitante_write" on public.perfiles_visitante
+for insert, update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "perfiles_visitante_delete" on public.perfiles_visitante
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "areas_visitante_read" on public.areas_visitante
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "areas_visitante_read_anon" on public.areas_visitante
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "areas_visitante_write" on public.areas_visitante
+for insert, update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "areas_visitante_delete" on public.areas_visitante
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "estados_visitante_read" on public.estados_visitante
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "estados_visitante_read_anon" on public.estados_visitante
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "estados_visitante_write" on public.estados_visitante
+for insert, update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "estados_visitante_delete" on public.estados_visitante
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+-- Enable RLS on visitantes
+alter table public.visitantes enable row level security;
+
+create policy "visitantes_read" on public.visitantes
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "visitantes_read_anon" on public.visitantes
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "visitantes_insert" on public.visitantes
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "visitantes_insert_anon" on public.visitantes
+for insert
+with check (
+    auth.role() = 'anon'
+    and documento is not null
+    and nombre is not null
+);
+
+create policy "visitantes_update" on public.visitantes
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "visitantes_update_anon" on public.visitantes
+for update
+with check (
+    auth.role() = 'anon'
+    and documento is not null
+    and nombre is not null
+);
+
+create policy "visitantes_delete" on public.visitantes
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+-- Enable RLS on ingresos_visitantes
+alter table public.ingresos_visitantes enable row level security;
+
+create policy "ingresos_visitantes_read" on public.ingresos_visitantes
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "ingresos_visitantes_read_anon" on public.ingresos_visitantes
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "ingresos_visitantes_insert" on public.ingresos_visitantes
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "ingresos_visitantes_insert_anon" on public.ingresos_visitantes
+for insert
+with check (
+    auth.role() = 'anon'
+    and vigilante_id is not null
+    and exists (
+        select 1
+        from public.usuarios u
+        where u.id = vigilante_id
+          and u.activo = true
+    )
+    and visitante_id is not null
+    and exists (
+        select 1
+        from public.visitantes v
+        where v.id = visitante_id
+          and v.activo = true
+    )
+);
+
+create policy "ingresos_visitantes_update" on public.ingresos_visitantes
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "ingresos_visitantes_delete" on public.ingresos_visitantes
+for delete
+using (
+    auth.role() <> 'anon'
+);
+
+-- Enable RLS on observaciones_visitante
+alter table public.observaciones_visitante enable row level security;
+
+create policy "observaciones_visitante_read" on public.observaciones_visitante
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+create policy "observaciones_visitante_read_anon" on public.observaciones_visitante
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "observaciones_visitante_insert" on public.observaciones_visitante
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "observaciones_visitante_insert_anon" on public.observaciones_visitante
+for insert
+with check (
+    auth.role() = 'anon'
+    and registrado_por is not null
+    and exists (
+        select 1
+        from public.usuarios u
+        where u.id = registrado_por
+          and u.activo = true
+    )
+    and visitante_id is not null
+    and exists (
+        select 1
+        from public.visitantes v
+        where v.id = visitante_id
+          and v.activo = true
+    )
+);
+
+create policy "observaciones_visitante_update" on public.observaciones_visitante
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "observaciones_visitante_delete" on public.observaciones_visitante
+for delete
+using (
+    auth.role() <> 'anon'
+);
