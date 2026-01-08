@@ -3123,6 +3123,11 @@ function abrirReporte() {
                 visitorForm.addEventListener('submit', saveVisitorEntry);
             }
 
+            const visitorExitForm = document.getElementById('visitorExitForm');
+            if (visitorExitForm) {
+                visitorExitForm.addEventListener('submit', registerVisitorExit);
+            }
+                
             const visitorResetBtn = document.getElementById('visitorResetBtn');
             if (visitorResetBtn) {
                 visitorResetBtn.addEventListener('click', resetVisitorForm);
@@ -3538,10 +3543,13 @@ function abrirReporte() {
                         hora,
                         motivo,
                         observaciones,
+                        salida_efectiva,
+                        salida_observaciones,
                         created_at,
                         area:areas_visitante(nombre),
                         estado:estados_visitante(nombre),
-                        vigilante:usuarios(nombre)
+                        vigilante:usuarios(nombre),
+                        salida_vigilante:usuarios!ingresos_visitantes_salida_vigilante_id_fkey(nombre)
                     `)
                     .eq('visitante_id', visitorId)
                     .order('created_at', { ascending: false })
@@ -3608,6 +3616,9 @@ function abrirReporte() {
                 const guardText = record.vigilante?.nombre ? sanitizeHtml(record.vigilante.nombre) : 'Sin vigilante';
                 const motivoText = record.motivo ? sanitizeHtml(record.motivo) : 'Sin motivo';
                 const obsText = record.observaciones ? sanitizeHtml(record.observaciones) : '';
+                const exitTime = record.salida_efectiva ? formatDateTime(record.salida_efectiva) : null;
+                const exitGuardText = record.salida_vigilante?.nombre ? sanitizeHtml(record.salida_vigilante.nombre) : '';
+                const exitObsText = record.salida_observaciones ? sanitizeHtml(record.salida_observaciones) : '';
                 return `
                     <div class="visitor-entry">
                         <div class="visitor-entry-header">
@@ -3618,6 +3629,8 @@ function abrirReporte() {
                         <div class="visitor-entry-meta"><strong>Motivo:</strong> ${motivoText}</div>
                         <div class="visitor-entry-meta"><strong>Vigilante:</strong> ${guardText}</div>
                         ${obsText ? `<div class="visitor-entry-meta"><strong>Observaciones:</strong> ${obsText}</div>` : ''}
+                        ${exitTime ? `<div class="visitor-entry-meta"><strong>Salida:</strong> ${exitTime}${exitGuardText ? ` · ${exitGuardText}` : ''}</div>` : '<div class="visitor-entry-meta"><strong>Salida:</strong> Pendiente</div>'}
+                        ${exitObsText ? `<div class="visitor-entry-meta"><strong>Observaciones salida:</strong> ${exitObsText}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -3779,6 +3792,84 @@ function abrirReporte() {
                 console.error('Error saving visitor entry:', error);
                 showError('Error al registrar el visitante: ' + error.message, 'visitorError');
                 await logSecurityEvent('error', 'Error al registrar visitante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function registerVisitorExit(event) {
+            event.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorExitError');
+                    logout();
+                    return;
+                }
+
+                const documentId = document.getElementById('visitorExitDocument')?.value.trim();
+                const observations = document.getElementById('visitorExitObservations')?.value.trim();
+
+                if (!documentId) {
+                    showError('Ingresa el documento del visitante para registrar la salida.', 'visitorExitError');
+                    return;
+                }
+
+                const { data: visitor, error: visitorError } = await supabaseClient
+                    .from('visitantes')
+                    .select('id, nombre')
+                    .eq('documento', documentId)
+                    .maybeSingle();
+
+                if (visitorError) throw visitorError;
+
+                if (!visitor) {
+                    showError('No se encontró un visitante con ese documento.', 'visitorExitError');
+                    return;
+                }
+
+                const { data: entry, error: entryError } = await supabaseClient
+                    .from('ingresos_visitantes')
+                    .select('id, visitante_id')
+                    .eq('visitante_id', visitor.id)
+                    .is('salida_efectiva', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (entryError) throw entryError;
+
+                if (!entry) {
+                    showWarning('No hay ingresos pendientes de salida para este visitante.', 'visitorExitError');
+                    return;
+                }
+
+                const { error: updateError } = await supabaseClient
+                    .from('ingresos_visitantes')
+                    .update({
+                        salida_efectiva: getColombiaDateTime(),
+                        salida_observaciones: observations || null,
+                        salida_vigilante_id: currentUser?.id || null
+                    })
+                    .eq('id', entry.id);
+
+                if (updateError) throw updateError;
+
+                showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
+
+                const exitForm = document.getElementById('visitorExitForm');
+                if (exitForm) {
+                    exitForm.reset();
+                }
+
+                await Promise.all([
+                    loadVisitorHistory(visitor.id),
+                    loadVisitorObservations(visitor.id)
+                ]);
+            } catch (error) {
+                console.error('Error registering visitor exit:', error);
+                showError('Error al registrar la salida del visitante: ' + error.message, 'visitorExitError');
+                await logSecurityEvent('error', 'Error al registrar salida de visitante', {
                     error: error.message.substring(0, 200)
                 }, false);
             }
