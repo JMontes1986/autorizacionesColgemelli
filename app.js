@@ -2790,6 +2790,7 @@ function abrirReporte() {
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">Autorizar Salidas</button>
                     <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">Autorizar Personal</button>
+                    <button class="btn" onclick="showSection('visitorEntrySectionDiv')">🧾 Visitantes</button>
                     <button class="btn" onclick="showSection('adminSectionDiv')">Administración</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Verificar Salidas</button>
@@ -2809,6 +2810,7 @@ function abrirReporte() {
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">📊 Dashboard</button>
                     <button class="btn" onclick="showSection('verifySectionDiv')">Control de Salidas</button>
+                    <button class="btn" onclick="showSection('visitorEntrySectionDiv')">🧾 Visitantes</button>
                     <button class="btn" onclick="showSection('historySectionDiv')">Historial</button>
                 `;
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
@@ -2926,6 +2928,10 @@ function abrirReporte() {
                     form.addEventListener('submit', saveLateArrival);
                     form.dataset.bound = 'true';
                 }
+                    } else if (sectionId === 'visitorEntrySectionDiv') {
+                loadVisitorCatalogs();
+                loadVisitorGuards();
+                resetVisitorForm();
             } else if (sectionId === 'dashboardSectionDiv') {
                 console.log('📊 Iniciando sección dashboard...');
                 
@@ -2971,6 +2977,11 @@ function abrirReporte() {
                     await loadUsers();
                     await loadSecurityStats();
                 }
+
+                if (document.getElementById('visitorEntryForm')) {
+                    await loadVisitorCatalogs();
+                    await loadVisitorGuards();
+                }
                     
                 setupEventListeners();
                 
@@ -2989,7 +3000,23 @@ function abrirReporte() {
             if (staffForm) {
                 staffForm.addEventListener('submit', authorizeStaffExit);
             }
-            
+
+            const visitorForm = document.getElementById('visitorEntryForm');
+            if (visitorForm) {
+                visitorForm.addEventListener('submit', saveVisitorEntry);
+            }
+
+            const visitorResetBtn = document.getElementById('visitorResetBtn');
+            if (visitorResetBtn) {
+                visitorResetBtn.addEventListener('click', resetVisitorForm);
+            }
+
+            const visitorDocument = document.getElementById('visitorDocument');
+            if (visitorDocument) {
+                visitorDocument.addEventListener('blur', handleVisitorDocumentLookup);
+                visitorDocument.addEventListener('change', handleVisitorDocumentLookup);
+            }
+                
             const staffHasReturn = document.getElementById('staffHasReturn');
             if (staffHasReturn) {
                 staffHasReturn.addEventListener('change', () => {
@@ -3017,7 +3044,11 @@ function abrirReporte() {
             if (staffExitDate) {
                 staffExitDate.value = todayColombia;
             }
-            // document.getElementById('logDateFrom').value = todayColombia;
+            const visitorDate = document.getElementById('visitorDate');
+            if (visitorDate) {
+                visitorDate.value = todayColombia;
+            }
+             // document.getElementById('logDateFrom').value = todayColombia;
             // document.getElementById('logDateTo').value = todayColombia;
             
             console.log('📅 Fecha actual Colombia establecida:', todayColombia);
@@ -3139,6 +3170,456 @@ function abrirReporte() {
                 console.error('Error loading reasons:', error);
                 await logSecurityEvent('error', 'Error al cargar motivos', { 
                     error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        // ========================================
+        // FUNCIONES DE VISITANTES EXTERNOS
+        // ========================================
+
+        async function loadVisitorCatalogs() {
+            await Promise.all([
+                loadVisitorProfiles(),
+                loadVisitorAreas(),
+                loadVisitorStatuses()
+            ]);
+        }
+
+        async function loadVisitorProfiles() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: profiles, error } = await supabase
+                    .from('perfiles_visitante')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('visitorProfileSelect');
+                if (select) {
+                    select.innerHTML = '<option value="">Selecciona el perfil del visitante</option>';
+                    (profiles || []).forEach(profile => {
+                        const option = document.createElement('option');
+                        option.value = profile.id;
+                        option.textContent = sanitizeHtml(profile.nombre);
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading visitor profiles:', error);
+                await logSecurityEvent('error', 'Error al cargar perfiles de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadVisitorAreas() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: areas, error } = await supabase
+                    .from('areas_visitante')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('visitorAreaSelect');
+                if (select) {
+                    select.innerHTML = '<option value="">Buscar elementos</option>';
+                    (areas || []).forEach(area => {
+                        const option = document.createElement('option');
+                        option.value = area.id;
+                        option.textContent = sanitizeHtml(area.nombre);
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading visitor areas:', error);
+                await logSecurityEvent('error', 'Error al cargar áreas de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadVisitorStatuses() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: statuses, error } = await supabase
+                    .from('estados_visitante')
+                    .select('*')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const select = document.getElementById('visitorStatusSelect');
+                if (select) {
+                    select.innerHTML = '<option value="">Buscar elementos</option>';
+                    (statuses || []).forEach(status => {
+                        const option = document.createElement('option');
+                        option.value = status.id;
+                        option.textContent = sanitizeHtml(status.nombre);
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading visitor statuses:', error);
+                await logSecurityEvent('error', 'Error al cargar estados de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadVisitorGuards() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: users, error } = await supabase
+                    .from('usuarios')
+                    .select('id, nombre, email, rol:roles(nombre)')
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const guards = (users || []).filter(user =>
+                    user.rol?.nombre === 'vigilante' || user.email === 'vigilancia@colgemelli.edu.co'
+                );
+
+                const select = document.getElementById('visitorGuardSelect');
+                if (!select) return;
+
+                select.innerHTML = '<option value="">Selecciona al vigilante</option>';
+                guards.forEach(guard => {
+                    const option = document.createElement('option');
+                    option.value = guard.id;
+                    option.textContent = sanitizeHtml(guard.nombre);
+                    select.appendChild(option);
+                });
+
+                if (currentUser?.id) {
+                    select.value = currentUser.id;
+                }
+            } catch (error) {
+                console.error('Error loading visitor guards:', error);
+                await logSecurityEvent('error', 'Error al cargar vigilantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function handleVisitorDocumentLookup() {
+            const documentInput = document.getElementById('visitorDocument');
+            const form = document.getElementById('visitorEntryForm');
+            if (!documentInput || !form) return;
+
+            const documento = documentInput.value.trim();
+            if (!documento) {
+                clearVisitorLookup();
+                return;
+            }
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorError');
+                    logout();
+                    return;
+                }
+
+                const { data: visitor, error } = await supabase
+                    .from('visitantes')
+                    .select('id, nombre, perfil_id')
+                    .eq('documento', documento)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (visitor) {
+                    form.dataset.visitorId = visitor.id;
+                    const nameInput = document.getElementById('visitorName');
+                    const profileSelect = document.getElementById('visitorProfileSelect');
+                    if (nameInput) nameInput.value = visitor.nombre || '';
+                    if (profileSelect && visitor.perfil_id) profileSelect.value = visitor.perfil_id;
+
+                    showSuccess('Visitante encontrado. Datos cargados.', 'visitorInfo');
+                    await Promise.all([
+                        loadVisitorHistory(visitor.id),
+                        loadVisitorObservations(visitor.id)
+                    ]);
+                } else {
+                    form.dataset.visitorId = '';
+                    showWarning('Visitante nuevo. Completa los datos para registrarlo.', 'visitorError');
+                    resetVisitorHistory();
+                    resetVisitorObservations();
+                }
+            } catch (error) {
+                console.error('Error searching visitor:', error);
+                showError('Error al buscar el visitante: ' + error.message, 'visitorError');
+                await logSecurityEvent('error', 'Error al buscar visitante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadVisitorHistory(visitorId) {
+            try {
+                if (!validateSession()) return;
+                if (!visitorId) {
+                    resetVisitorHistory();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('ingresos_visitantes')
+                    .select(`
+                        id,
+                        fecha,
+                        hora,
+                        motivo,
+                        observaciones,
+                        created_at,
+                        area:areas_visitante(nombre),
+                        estado:estados_visitante(nombre),
+                        vigilante:usuarios(nombre)
+                    `)
+                    .eq('visitante_id', visitorId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                renderVisitorHistory(data || []);
+            } catch (error) {
+                console.error('Error loading visitor history:', error);
+                showError('Error al cargar el historial del visitante.', 'visitorError');
+                await logSecurityEvent('error', 'Error al cargar historial de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        async function loadVisitorObservations(visitorId) {
+            try {
+                if (!validateSession()) return;
+                if (!visitorId) {
+                    resetVisitorObservations();
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('observaciones_visitante')
+                    .select(`
+                        id,
+                        observacion,
+                        created_at,
+                        registrado_por:usuarios(nombre)
+                    `)
+                    .eq('visitante_id', visitorId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                renderVisitorObservations(data || []);
+            } catch (error) {
+                console.error('Error loading visitor observations:', error);
+                showError('Error al cargar observaciones del visitante.', 'visitorError');
+                await logSecurityEvent('error', 'Error al cargar observaciones de visitantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        function renderVisitorHistory(records) {
+            const list = document.getElementById('visitorHistoryList');
+            if (!list) return;
+
+            if (!records.length) {
+                list.innerHTML = '<p style="color: #666;">No se encontraron ingresos previos.</p>';
+                return;
+            }
+
+            list.innerHTML = records.map(record => {
+                const dateText = formatDate(record.fecha);
+                const timeText = record.hora ? ` - 🕒 ${formatTime(record.hora)}` : '';
+                const areaText = record.area?.nombre ? sanitizeHtml(record.area.nombre) : 'Sin área';
+                const statusText = record.estado?.nombre ? sanitizeHtml(record.estado.nombre) : 'Sin estado';
+                const guardText = record.vigilante?.nombre ? sanitizeHtml(record.vigilante.nombre) : 'Sin vigilante';
+                const motivoText = record.motivo ? sanitizeHtml(record.motivo) : 'Sin motivo';
+                const obsText = record.observaciones ? sanitizeHtml(record.observaciones) : '';
+                return `
+                    <div class="visitor-entry">
+                        <div class="visitor-entry-header">
+                            <span>📅 ${dateText}${timeText}</span>
+                            <span>${statusText}</span>
+                        </div>
+                        <div class="visitor-entry-meta"><strong>Área:</strong> ${areaText}</div>
+                        <div class="visitor-entry-meta"><strong>Motivo:</strong> ${motivoText}</div>
+                        <div class="visitor-entry-meta"><strong>Vigilante:</strong> ${guardText}</div>
+                        ${obsText ? `<div class="visitor-entry-meta"><strong>Observaciones:</strong> ${obsText}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderVisitorObservations(records) {
+            const list = document.getElementById('visitorObservationList');
+            if (!list) return;
+
+            if (!records.length) {
+                list.innerHTML = '<p style="color: #666;">No hay observaciones registradas.</p>';
+                return;
+            }
+
+            list.innerHTML = records.map(record => {
+                const dateText = formatDateTime(record.created_at);
+                const author = record.registrado_por?.nombre ? sanitizeHtml(record.registrado_por.nombre) : 'Sin responsable';
+                return `
+                    <div class="visitor-observation">
+                        <div class="visitor-entry-header">
+                            <span>🗒️ ${sanitizeHtml(record.observacion)}</span>
+                        </div>
+                        <div class="visitor-entry-meta">📌 ${author} · ${dateText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function resetVisitorHistory() {
+            const list = document.getElementById('visitorHistoryList');
+            if (list) {
+                list.innerHTML = '<p style="color: #666;">No se encontraron ingresos previos.</p>';
+            }
+        }
+
+        function resetVisitorObservations() {
+            const list = document.getElementById('visitorObservationList');
+            if (list) {
+                list.innerHTML = '<p style="color: #666;">No hay observaciones registradas.</p>';
+            }
+        }
+
+        function clearVisitorLookup() {
+            const form = document.getElementById('visitorEntryForm');
+            if (form) {
+                form.dataset.visitorId = '';
+            }
+            resetVisitorHistory();
+            resetVisitorObservations();
+        }
+
+        function resetVisitorForm() {
+            const form = document.getElementById('visitorEntryForm');
+            if (!form) return;
+
+            form.reset();
+            form.dataset.visitorId = '';
+            const visitorDate = document.getElementById('visitorDate');
+            if (visitorDate) visitorDate.value = getColombiaDate();
+            if (currentUser?.id) {
+                const guardSelect = document.getElementById('visitorGuardSelect');
+                if (guardSelect) guardSelect.value = currentUser.id;
+            }
+            resetVisitorHistory();
+            resetVisitorObservations();
+        }
+
+        async function saveVisitorEntry(event) {
+            event.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorError');
+                    logout();
+                    return;
+                }
+
+                const date = document.getElementById('visitorDate')?.value;
+                const guardId = document.getElementById('visitorGuardSelect')?.value;
+                const profileId = document.getElementById('visitorProfileSelect')?.value;
+                const name = document.getElementById('visitorName')?.value.trim();
+                const documentId = document.getElementById('visitorDocument')?.value.trim();
+                const reason = document.getElementById('visitorReason')?.value.trim();
+                const areaId = document.getElementById('visitorAreaSelect')?.value;
+                const statusId = document.getElementById('visitorStatusSelect')?.value;
+                const observations = document.getElementById('visitorObservations')?.value.trim();
+
+                if (!date || !guardId || !profileId || !name || !documentId || !reason || !areaId || !statusId) {
+                    showError('Por favor, completa todos los campos obligatorios del registro del visitante.', 'visitorError');
+                    return;
+                }
+
+                const { data: visitorData, error: visitorError } = await supabase
+                    .from('visitantes')
+                    .upsert({
+                        documento: documentId,
+                        nombre: name,
+                        perfil_id: profileId,
+                        activo: true
+                    }, { onConflict: 'documento' })
+                    .select('id')
+                    .single();
+
+                if (visitorError) throw visitorError;
+
+                const visitorId = visitorData?.id;
+                if (!visitorId) {
+                    throw new Error('No se pudo registrar el visitante.');
+                }
+
+                const { error: entryError } = await supabase
+                    .from('ingresos_visitantes')
+                    .insert({
+                        visitante_id: visitorId,
+                        vigilante_id: guardId,
+                        fecha: date,
+                        hora: getColombiaTime(),
+                        motivo: reason,
+                        area_id: areaId,
+                        estado_id: statusId,
+                        observaciones: observations || null
+                    });
+
+                if (entryError) throw entryError;
+
+                if (observations && currentUser?.id) {
+                    const { error: obsError } = await supabase
+                        .from('observaciones_visitante')
+                        .insert({
+                            visitante_id: visitorId,
+                            observacion: observations,
+                            registrado_por: currentUser.id
+                        });
+
+                    if (obsError) throw obsError;
+                }
+
+                const form = document.getElementById('visitorEntryForm');
+                if (form) {
+                    form.dataset.visitorId = visitorId;
+                }
+
+                const reasonInput = document.getElementById('visitorReason');
+                if (reasonInput) reasonInput.value = '';
+                const observationsInput = document.getElementById('visitorObservations');
+                if (observationsInput) observationsInput.value = '';
+
+                showSuccess('Ingreso de visitante registrado correctamente.', 'visitorInfo');
+                await Promise.all([
+                    loadVisitorHistory(visitorId),
+                    loadVisitorObservations(visitorId)
+                ]);
+            } catch (error) {
+                console.error('Error saving visitor entry:', error);
+                showError('Error al registrar el visitante: ' + error.message, 'visitorError');
+                await logSecurityEvent('error', 'Error al registrar visitante', {
+                    error: error.message.substring(0, 200)
                 }, false);
             }
         }
