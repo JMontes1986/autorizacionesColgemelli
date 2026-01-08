@@ -3233,7 +3233,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: profiles, error } = await supabase
+                const { data: profiles, error } = await supabaseClient
                     .from('perfiles_visitante')
                     .select('*')
                     .eq('activo', true)
