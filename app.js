@@ -3535,27 +3535,48 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data, error } = await supabaseClient
+                const baseQuery = supabaseClient
                     .from('ingresos_visitantes')
-                    .select(`
-                        id,
-                        fecha,
-                        hora,
-                        motivo,
-                        observaciones,
-                        salida_efectiva,
-                        salida_observaciones,
-                        created_at,
-                        area:areas_visitante(nombre),
-                        estado:estados_visitante(nombre),
-                        vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre),
-                        salida_vigilante:usuarios!ingresos_visitantes_salida_vigilante_id_fkey(nombre)
-                    `)
                     .eq('visitante_id', visitorId)
                     .order('created_at', { ascending: false })
                     .limit(10);
 
-                if (error) throw error;
+                const fullSelect = `
+                    id,
+                    fecha,
+                    hora,
+                    motivo,
+                    observaciones,
+                    salida_efectiva,
+                    salida_observaciones,
+                    created_at,
+                    area:areas_visitante(nombre),
+                    estado:estados_visitante(nombre),
+                    vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre),
+                    salida_vigilante:usuarios!ingresos_visitantes_salida_vigilante_id_fkey(nombre)
+                `;
+
+                const fallbackSelect = `
+                    id,
+                    fecha,
+                    hora,
+                    motivo,
+                    observaciones,
+                    salida_efectiva,
+                    salida_observaciones,
+                    created_at,
+                    area:areas_visitante(nombre),
+                    estado:estados_visitante(nombre)
+                `;
+
+                let { data, error } = await baseQuery.select(fullSelect);
+
+                if (error) {
+                    console.warn('Error loading visitor history with guards, retrying without guard data:', error);
+                    const fallback = await baseQuery.select(fallbackSelect);
+                    if (fallback.error) throw fallback.error;
+                    data = fallback.data;
+                }
 
                 renderVisitorHistory(data || []);
             } catch (error) {
