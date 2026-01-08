@@ -79,6 +79,9 @@ create table if not exists public.ingresos_visitantes (
     area_id bigint references public.areas_visitante(id),
     estado_id bigint references public.estados_visitante(id),
     observaciones text,
+    salida_efectiva timestamp with time zone,
+    salida_observaciones text,
+    salida_vigilante_id bigint references public.usuarios(id),
     created_at timestamp with time zone default now()
 );
 
