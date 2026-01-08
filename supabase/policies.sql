@@ -261,8 +261,14 @@ using (
     auth.role() = 'anon'
 );
 
-create policy "perfiles_visitante_write" on public.perfiles_visitante
-for insert, update
+create policy "perfiles_visitante_insert" on public.perfiles_visitante
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "perfiles_visitante_update" on public.perfiles_visitante
+for update
 with check (
     auth.role() <> 'anon'
 );
@@ -285,8 +291,14 @@ using (
     auth.role() = 'anon'
 );
 
-create policy "areas_visitante_write" on public.areas_visitante
-for insert, update
+create policy "areas_visitante_insert" on public.areas_visitante
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "areas_visitante_update" on public.areas_visitante
+for update
 with check (
     auth.role() <> 'anon'
 );
@@ -309,8 +321,14 @@ using (
     auth.role() = 'anon'
 );
 
-create policy "estados_visitante_write" on public.estados_visitante
-for insert, update
+create policy "estados_visitante_insert" on public.estados_visitante
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
+create policy "estados_visitante_update" on public.estados_visitante
+for update
 with check (
     auth.role() <> 'anon'
 );
