@@ -1604,12 +1604,15 @@ function abrirReporte() {
         let lastLoginAttempt = null;
         let sessionStartTime = null;
         let sessionTimeout = null;
+        let lastActivityTime = null;
         let rolesCache = [];
 
         // Configuración de seguridad
         const MAX_LOGIN_ATTEMPTS = 5;
         const LOGIN_COOLDOWN = 300000; // 5 minutos
         const SESSION_TIMEOUT = 1800000; // 30 minutos
+        const IDLE_TIMEOUT = 600000; // 10 minutos
+        const SESSION_STORAGE_KEY = 'app_session_state';
         const CSRF_TOKEN = getOrCreateCSRFToken();
         const SECURE_HEADERS = {
             'X-Requested-With': 'XMLHttpRequest',
@@ -1959,6 +1962,82 @@ function abrirReporte() {
             return 'sess_' + Date.now() + '_' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
         }
 
+        function saveSessionState() {
+            if (!sessionToken || !sessionStartTime || !currentUser) {
+                return;
+            }
+
+            const sessionState = {
+                token: sessionToken,
+                startTime: sessionStartTime,
+                lastActivity: lastActivityTime || sessionStartTime,
+                user: {
+                    id: currentUser.id,
+                    nombre: currentUser.nombre,
+                    email: currentUser.email,
+                    rol: currentUser.rol
+                }
+            };
+
+            try {
+                localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionState));
+            } catch (error) {
+                console.warn('No fue posible persistir la sesión:', error);
+            }
+        }
+
+        function clearSessionState() {
+            try {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+            } catch (error) {
+                console.warn('No fue posible limpiar la sesión persistida:', error);
+            }
+        }
+
+        function restoreSessionState() {
+            let stored = null;
+
+            try {
+                stored = localStorage.getItem(SESSION_STORAGE_KEY);
+            } catch (error) {
+                console.warn('No fue posible leer la sesión persistida:', error);
+                return false;
+            }
+
+            if (!stored) return false;
+
+            let sessionState;
+            try {
+                sessionState = JSON.parse(stored);
+            } catch (error) {
+                clearSessionState();
+                return false;
+            }
+
+            if (!sessionState?.token || !sessionState?.startTime || !sessionState?.user) {
+                clearSessionState();
+                return false;
+            }
+
+            sessionToken = sessionState.token;
+            sessionStartTime = sessionState.startTime;
+            lastActivityTime = sessionState.lastActivity || sessionState.startTime;
+            currentUser = sessionState.user;
+
+            if (!validateSession()) {
+                clearSessionState();
+                sessionToken = null;
+                sessionStartTime = null;
+                lastActivityTime = null;
+                currentUser = null;
+                return false;
+            }
+
+            lastActivityTime = Date.now();
+            saveSessionState();
+            return true;
+        }
+
         function validateSession() {
             if (!sessionToken || !sessionStartTime) {
                 return false;
@@ -1968,13 +2047,19 @@ function abrirReporte() {
             if (now - sessionStartTime > SESSION_TIMEOUT) {
                 return false;
             }
-            
+
+            if (lastActivityTime && now - lastActivityTime > IDLE_TIMEOUT) {
+                return false;
+            }
+                
             return true;
         }
 
         function renewSession() {
             if (validateSession()) {
                 sessionStartTime = Date.now();
+                lastActivityTime = Date.now();
+                saveSessionState();
                 resetSessionTimeout();
                 return true;
             }
@@ -2383,6 +2468,7 @@ function abrirReporte() {
                 // Generar token de sesión seguro
                 sessionToken = generateSecureToken();
                 sessionStartTime = Date.now();
+                lastActivityTime = sessionStartTime;
                 currentUser = user;
                 
                 try {
@@ -2392,7 +2478,9 @@ function abrirReporte() {
                 } catch (storageError) {
                     console.warn('No fue posible persistir la sesión en localStorage:', storageError);
                 }
-                    
+
+                saveSessionState();
+                
                 // Registrar login exitoso
                 await logSecurityEvent('login', 'Login exitoso', {
                     userId: user.id, 
@@ -2433,7 +2521,9 @@ function abrirReporte() {
                 currentUser = null;
                 sessionToken = null;
                 sessionStartTime = null;
+                lastActivityTime = null;
                 clearTimeout(sessionTimeout);
+                clearSessionState();
                 
                 try {
                     localStorage.removeItem('correo');
@@ -2471,7 +2561,7 @@ function abrirReporte() {
             sessionTimeout = setTimeout(() => {
                 showError('Tu sesión ha expirado por inactividad');
                 logout();
-            }, SESSION_TIMEOUT);
+            }, IDLE_TIMEOUT);
         }
 
         // Resetear timeout en actividad del usuario
@@ -7385,7 +7475,12 @@ function abrirReporte() {
             
             // Iniciar conexión a Supabase en cuanto las librerías estén listas
             console.log('🔗 Iniciando conexión a Supabase...');
-            initSupabase();
+            initSupabase().then((connected) => {
+                if (connected && restoreSessionState()) {
+                    showDashboard();
+                    updateSecurityIndicator('secure', 'Sesión Activa');
+                }
+            });
 
             // Generar primera pregunta aritmética
             generateCaptcha();
@@ -7403,6 +7498,7 @@ function abrirReporte() {
             currentUser = null;
             sessionToken = null;
             sessionStartTime = null;
+            lastActivityTime = null;
         });
 
         // Detectar cambios de visibilidad de la página (seguridad adicional)
