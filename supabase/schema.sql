@@ -91,6 +91,10 @@ create index if not exists idx_ingresos_visitantes_fecha
 create index if not exists idx_ingresos_visitantes_visitante
     on public.ingresos_visitantes (visitante_id);
 
+-- Ensure the salida_efectiva column exists for legacy databases.
+alter table if exists public.ingresos_visitantes
+    add column if not exists salida_efectiva timestamp with time zone;
+
 create table if not exists public.observaciones_visitante (
     id bigserial primary key,
     visitante_id bigint not null references public.visitantes(id),
