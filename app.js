@@ -3975,6 +3975,18 @@ function abrirReporte() {
                 let entries = null;
                 let lastError = null;
 
+                const isMissingColumnError = (error, columnName) => {
+                    if (!error) return false;
+                    const messageParts = [error.message, error.details, error.hint]
+                        .filter(Boolean)
+                        .map(part => part.toString().toLowerCase());
+                    const combinedMessage = messageParts.join(' ');
+                    const column = columnName.toLowerCase();
+                    if (!combinedMessage.includes(column)) return false;
+                    if (error.code && ['42703', 'PGRST204'].includes(error.code)) return true;
+                    return /does not exist|undefined column|schema cache|no existe/.test(combinedMessage);
+                };
+                    
                 for (const attempt of selectAttempts) {
                     let query = supabaseClient
                         .from('ingresos_visitantes')
@@ -3987,7 +3999,7 @@ function abrirReporte() {
 
                     if (error) {
                         lastError = error;
-                        if (attempt.label === 'withExitTracking' && /salida_efectiva/i.test(error.message || '')) {
+                        if (attempt.label === 'withExitTracking' && isMissingColumnError(error, 'salida_efectiva')) {
                             visitorExitTrackingAvailable = false;
                             console.warn('Exit tracking column missing for visitors, retrying without salida_efectiva.');
                             continue;
