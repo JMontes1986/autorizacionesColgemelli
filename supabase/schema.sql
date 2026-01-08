@@ -35,6 +35,71 @@ create index if not exists idx_personal_colegio_activo
     on public.personal_colegio (activo);
 
 
+-- Catálogos para visitantes externos
+create table if not exists public.perfiles_visitante (
+    id bigserial primary key,
+    nombre text not null,
+    activo boolean default true,
+    created_at timestamp with time zone default now()
+);
+
+create table if not exists public.areas_visitante (
+    id bigserial primary key,
+    nombre text not null,
+    activo boolean default true,
+    created_at timestamp with time zone default now()
+);
+
+create table if not exists public.estados_visitante (
+    id bigserial primary key,
+    nombre text not null,
+    activo boolean default true,
+    created_at timestamp with time zone default now()
+);
+
+create table if not exists public.visitantes (
+    id bigserial primary key,
+    documento text not null unique,
+    nombre text not null,
+    perfil_id bigint references public.perfiles_visitante(id),
+    activo boolean default true,
+    created_at timestamp with time zone default now()
+);
+
+create index if not exists idx_visitantes_documento
+    on public.visitantes (documento);
+
+create table if not exists public.ingresos_visitantes (
+    id bigserial primary key,
+    visitante_id bigint not null references public.visitantes(id),
+    vigilante_id bigint references public.usuarios(id),
+    fecha date not null,
+    hora time,
+    motivo text not null,
+    area_id bigint references public.areas_visitante(id),
+    estado_id bigint references public.estados_visitante(id),
+    observaciones text,
+    created_at timestamp with time zone default now()
+);
+
+create index if not exists idx_ingresos_visitantes_fecha
+    on public.ingresos_visitantes (fecha);
+
+create index if not exists idx_ingresos_visitantes_visitante
+    on public.ingresos_visitantes (visitante_id);
+
+create table if not exists public.observaciones_visitante (
+    id bigserial primary key,
+    visitante_id bigint not null references public.visitantes(id),
+    observacion text not null,
+    registrado_por bigint references public.usuarios(id),
+    created_at timestamp with time zone default now()
+);
+
+create index if not exists idx_observaciones_visitante_visitante
+    on public.observaciones_visitante (visitante_id);
+
+
 -- Tabla de autorizaciones de salida para personal del colegio
 create table if not exists public.autorizaciones_personal (
     id bigserial primary key,
