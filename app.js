@@ -4121,16 +4121,21 @@ function abrirReporte() {
                 const observationField = document.getElementById(`visitor-exit-observations-${entryId}`);
                 const observations = observationField?.value.trim() || null;
                     
-                const { error: updateError } = await supabaseClient
+                const { data: updatedExit, error: updateError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .update({
                         salida_efectiva: getColombiaDateTime(),
                         salida_observaciones: observations,
                         salida_vigilante_id: currentUser?.id || null
                     })
-                    .eq('id', entryId);
+                    .eq('id', entryId)
+                    .select('id, salida_efectiva')
+                    .single();
 
                 if (updateError) throw updateError;
+                if (!updatedExit?.salida_efectiva) {
+                    throw new Error('No se pudo registrar la salida del visitante. Verifica permisos o el identificador del ingreso.');
+                }
 
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                 await loadPendingVisitorExits();
