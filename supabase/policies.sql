@@ -297,6 +297,14 @@ with check (
     auth.role() <> 'anon'
 );
 
+-- Allow anonymous dashboard access to register visitor areas
+create policy "areas_visitante_insert_anon" on public.areas_visitante
+for insert
+with check (
+    auth.role() = 'anon'
+    and nombre is not null
+);
+
 create policy "areas_visitante_update" on public.areas_visitante
 for update
 with check (
