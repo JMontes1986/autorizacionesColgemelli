@@ -3267,7 +3267,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: areas, error } = await supabase
+                const { data: areas, error } = await supabaseClient
                     .from('areas_visitante')
                     .select('*')
                     .eq('activo', true)
