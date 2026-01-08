@@ -4129,14 +4129,14 @@ function abrirReporte() {
                         salida_vigilante_id: currentUser?.id || null
                     })
                     .eq('id', entryId)
-                    .select('id, salida_efectiva')
-                    .single();
+                    .select('id, salida_efectiva');
 
                 if (updateError) throw updateError;
-                if (!updatedExit?.salida_efectiva) {
+                const updatedRow = Array.isArray(updatedExit) ? updatedExit[0] : updatedExit;
+                if (!updatedRow?.salida_efectiva) {
                     throw new Error('No se pudo registrar la salida del visitante. Verifica permisos o el identificador del ingreso.');
                 }
-
+                    
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                 await loadPendingVisitorExits();
             } catch (error) {
