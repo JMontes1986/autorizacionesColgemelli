@@ -3544,6 +3544,8 @@ function abrirReporte() {
                     salida_efectiva,
                     salida_observaciones,
                     created_at,
+                    vigilante_id,
+                    salida_vigilante_id,
                     area:areas_visitante(nombre),
                     estado:estados_visitante(nombre),
                     vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre),
@@ -3559,6 +3561,8 @@ function abrirReporte() {
                     salida_efectiva,
                     salida_observaciones,
                     created_at,
+                    vigilante_id,
+                    salida_vigilante_id,
                     area:areas_visitante(nombre),
                     estado:estados_visitante(nombre)
                 `;
@@ -3571,13 +3575,32 @@ function abrirReporte() {
                     observaciones,
                     salida_efectiva,
                     salida_observaciones,
-                    created_at
+                    created_at,
+                    vigilante_id,
+                    salida_vigilante_id,
+                    area_id,
+                    estado_id
+                `;
+
+                const minimalSelectWithoutCreatedAt = `
+                    id,
+                    fecha,
+                    hora,
+                    motivo,
+                    observaciones,
+                    salida_efectiva,
+                    salida_observaciones,
+                    vigilante_id,
+                    salida_vigilante_id,
+                    area_id,
+                    estado_id
                 `;
                     
                 const selectAttempts = [
-                    { label: 'full', select: fullSelect },
-                    { label: 'fallback', select: fallbackSelect },
-                    { label: 'minimal', select: minimalSelect }
+                    { label: 'full', select: fullSelect, orderColumn: 'created_at' },
+                    { label: 'fallback', select: fallbackSelect, orderColumn: 'created_at' },
+                    { label: 'minimal', select: minimalSelect, orderColumn: 'created_at' },
+                    { label: 'minimal-fecha', select: minimalSelectWithoutCreatedAt, orderColumn: 'fecha' }
                 ];
 
                 let data = null;
@@ -3588,7 +3611,7 @@ function abrirReporte() {
                         .from('ingresos_visitantes')
                         .select(attempt.select)
                         .eq('visitante_id', visitorId)
-                        .order('created_at', { ascending: false })
+                        .order(attempt.orderColumn, { ascending: false })
                         .limit(10);
 
                     if (error) {
