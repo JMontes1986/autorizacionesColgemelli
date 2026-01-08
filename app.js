@@ -4016,7 +4016,11 @@ function abrirReporte() {
                     throw lastError;
                 }
 
-               if (!entries || entries.length === 0) {
+               if (visitorExitTrackingAvailable && entries) {
+                    entries = entries.filter(entry => !entry.salida_efectiva);
+                }
+                    
+                if (!entries || entries.length === 0) {
                     pendingList.innerHTML = `
                         <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
                             <h3>✅ Sin personal externo pendiente</h3>
