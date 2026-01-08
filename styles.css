@@ -1962,3 +1962,49 @@ body.report {
     gap: 10px;
     flex-wrap: wrap;
 }
+
+.visitor-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.visitor-details h3 {
+    margin-bottom: 12px;
+    color: #2c3e50;
+}
+
+.visitor-entry {
+    border-bottom: 1px solid #e6e6e6;
+    padding: 12px 0;
+}
+
+.visitor-entry:last-child {
+    border-bottom: none;
+}
+
+.visitor-entry-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-weight: 600;
+    color: #34495e;
+}
+
+.visitor-entry-meta {
+    color: #666;
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+.visitor-observation {
+    background: #f7f9fc;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.visitor-observation:last-child {
+    margin-bottom: 0;
+}
