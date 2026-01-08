@@ -1604,6 +1604,7 @@ function abrirReporte() {
         let lastLoginAttempt = null;
         let sessionStartTime = null;
         let sessionTimeout = null;
+        let rolesCache = [];
 
         // Configuración de seguridad
         const MAX_LOGIN_ATTEMPTS = 5;
@@ -2185,6 +2186,31 @@ function abrirReporte() {
             
             const strength = calculatePasswordStrength(password);
             
+            strengthDiv.className = 'password-strength';
+            if (strength < 3) {
+                strengthDiv.classList.add('weak');
+            } else if (strength < 5) {
+                strengthDiv.classList.add('medium');
+            } else {
+                strengthDiv.classList.add('strong');
+            }
+        }
+
+        function checkGuardPasswordStrength() {
+            const password = document.getElementById('guardPassword')?.value;
+            const strengthDiv = document.getElementById('guardPasswordStrength');
+
+            if (!strengthDiv) return;
+
+            if (!password) {
+                strengthDiv.style.display = 'none';
+                return;
+            }
+
+            strengthDiv.style.display = 'block';
+
+            const strength = calculatePasswordStrength(password);
+
             strengthDiv.className = 'password-strength';
             if (strength < 3) {
                 strengthDiv.classList.add('weak');
@@ -2975,6 +3001,7 @@ function abrirReporte() {
                 
                 if (role === 'administrador') {
                     await loadUsers();
+                    await loadGuards();
                     await loadSecurityStats();
                 }
 
@@ -3036,6 +3063,22 @@ function abrirReporte() {
             document.getElementById('userForm').addEventListener('submit', saveUser);
             document.getElementById('reasonForm').addEventListener('submit', saveReason);
             document.getElementById('gradeForm').addEventListener('submit', saveGrade);
+            const guardForm = document.getElementById('guardForm');
+            if (guardForm) {
+                guardForm.addEventListener('submit', saveGuard);
+            }
+            const visitorProfileForm = document.getElementById('visitorProfileForm');
+            if (visitorProfileForm) {
+                visitorProfileForm.addEventListener('submit', saveVisitorProfile);
+            }
+            const visitorAreaForm = document.getElementById('visitorAreaForm');
+            if (visitorAreaForm) {
+                visitorAreaForm.addEventListener('submit', saveVisitorArea);
+            }
+            const visitorStatusForm = document.getElementById('visitorStatusForm');
+            if (visitorStatusForm) {
+                visitorStatusForm.addEventListener('submit', saveVisitorStatus);
+            }
 
             const todayColombia = getColombiaDate();
             document.getElementById('exitDate').value = todayColombia;
@@ -3208,6 +3251,10 @@ function abrirReporte() {
                         select.appendChild(option);
                     });
                 }
+
+                if (currentUser?.rol?.nombre === 'administrador') {
+                    updateVisitorProfilesTable(profiles || []);
+                }
             } catch (error) {
                 console.error('Error loading visitor profiles:', error);
                 await logSecurityEvent('error', 'Error al cargar perfiles de visitantes', {
@@ -3238,6 +3285,10 @@ function abrirReporte() {
                         select.appendChild(option);
                     });
                 }
+
+                if (currentUser?.rol?.nombre === 'administrador') {
+                    updateVisitorAreasTable(areas || []);
+                }
             } catch (error) {
                 console.error('Error loading visitor areas:', error);
                 await logSecurityEvent('error', 'Error al cargar áreas de visitantes', {
@@ -3267,6 +3318,10 @@ function abrirReporte() {
                         option.textContent = sanitizeHtml(status.nombre);
                         select.appendChild(option);
                     });
+                }
+
+                if (currentUser?.rol?.nombre === 'administrador') {
+                    updateVisitorStatusesTable(statuses || []);
                 }
             } catch (error) {
                 console.error('Error loading visitor statuses:', error);
@@ -3691,10 +3746,11 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                rolesCache = roles || [];
                 const select = document.getElementById('userRole');
                 select.innerHTML = '<option value="">Seleccionar rol...</option>';
                 
-                roles.forEach(role => {
+                rolesCache.forEach(role => {
                     const option = document.createElement('option');
                     option.value = role.id;
                     option.textContent = sanitizeHtml(role.descripcion);
@@ -3707,6 +3763,10 @@ function abrirReporte() {
                     error: error.message.substring(0, 200) 
                 }, false);
             }
+        }
+
+        function getRoleIdByName(roleName) {
+            return rolesCache.find(role => role.nombre === roleName)?.id || null;
         }
 
         async function loadUsers() {
@@ -3729,6 +3789,38 @@ function abrirReporte() {
                 console.error('Error loading users:', error);
                 await logSecurityEvent('error', 'Error al cargar usuarios', { 
                     error: error.message.substring(0, 200) 
+                }, false);
+            }
+        }
+
+        async function loadGuards() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: users, error } = await supabaseClient
+                    .from('usuarios')
+                    .select(`
+                        *,
+                        rol:roles(nombre, descripcion)
+                    `)
+                    .eq('activo', true)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                const guardRoleId = getRoleIdByName('vigilante');
+                const guards = (users || []).filter(user => {
+                    if (guardRoleId) {
+                        return user.rol_id === guardRoleId;
+                    }
+                    return user.rol?.nombre === 'vigilante';
+                });
+
+                updateGuardsTable(guards);
+            } catch (error) {
+                console.error('Error loading guards:', error);
+                await logSecurityEvent('error', 'Error al cargar vigilantes', {
+                    error: error.message.substring(0, 200)
                 }, false);
             }
         }
@@ -5146,6 +5238,14 @@ function abrirReporte() {
             if (section === 'security') {
                 loadSecurityStats();
                 loadSecurityLogs();
+                } else if (section === 'guards') {
+                loadGuards();
+            } else if (section === 'visitorProfiles') {
+                loadVisitorProfiles();
+            } else if (section === 'visitorAreas') {
+                loadVisitorAreas();
+            } else if (section === 'visitorStatuses') {
+                loadVisitorStatuses();
             }
             
             renewSession();
@@ -5376,6 +5476,18 @@ function abrirReporte() {
                 document.getElementById('reasonForm').reset();
             } else if (modalId === 'gradeModal') {
                 document.getElementById('gradeForm').reset();
+            } else if (modalId === 'guardModal') {
+                document.getElementById('guardForm').reset();
+                document.getElementById('guardPasswordNote').textContent = '(obligatorio para nuevos vigilantes)';
+                document.getElementById('guardPassword').required = true;
+                const strength = document.getElementById('guardPasswordStrength');
+                if (strength) strength.style.display = 'none';
+            } else if (modalId === 'visitorProfileModal') {
+                document.getElementById('visitorProfileForm').reset();
+            } else if (modalId === 'visitorAreaModal') {
+                document.getElementById('visitorAreaForm').reset();
+            } else if (modalId === 'visitorStatusModal') {
+                document.getElementById('visitorStatusForm').reset();
             }
             
             renewSession();
@@ -5612,6 +5724,119 @@ function abrirReporte() {
             }
         }
 
+        async function saveGuard(e) {
+            e.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('guardName').value.trim();
+                const email = document.getElementById('guardEmail').value.trim().toLowerCase();
+                const password = document.getElementById('guardPassword').value;
+                const guardRoleId = getRoleIdByName('vigilante');
+
+                if (!guardRoleId) {
+                    showError('No se encontró el rol de vigilante. Verifica la configuración de roles.');
+                    return;
+                }
+
+                const cryptoReady = ensureCryptoJSLoaded();
+                if (!cryptoReady) {
+                    showError('No se pudo cargar la librería de cifrado');
+                    return;
+                }
+
+                if (!name || !email) {
+                    showError('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+
+                if (!validateEmail(email)) {
+                    showError('Formato de email inválido');
+                    return;
+                }
+
+                if (!validateName(name)) {
+                    showError('El nombre solo debe contener letras, espacios y acentos');
+                    return;
+                }
+
+                if (!currentEditingId && !password) {
+                    showError('La contraseña es obligatoria para nuevos vigilantes');
+                    return;
+                }
+
+                if (password && !validatePassword(password)) {
+                    showError('La contraseña debe tener entre 8 y 50 caracteres');
+                    return;
+                }
+
+                let result;
+                if (currentEditingId) {
+                    const updateData = {
+                        nombre: name,
+                        email: email,
+                        rol_id: guardRoleId
+                    };
+
+                    if (password && password.trim() !== '') {
+                        updateData.password_hash = encryptPassword(password);
+                    }
+
+                    result = await supabaseClient
+                        .from('usuarios')
+                        .update(updateData)
+                        .eq('id', currentEditingId);
+
+                    await logSecurityEvent('update', 'Vigilante actualizado', {
+                        userId: currentEditingId,
+                        email: email.substring(0, 20) + '...',
+                        passwordChanged: !!password
+                    }, true);
+                } else {
+                    result = await supabaseClient
+                        .from('usuarios')
+                        .insert([{
+                            nombre: name,
+                            email: email,
+                            password_hash: encryptPassword(password),
+                            rol_id: guardRoleId,
+                            activo: true
+                        }]);
+
+                    await logSecurityEvent('create', 'Vigilante creado', {
+                        email: email.substring(0, 20) + '...',
+                        roleId: guardRoleId
+                    }, true);
+                }
+
+                if (result.error) {
+                    console.error('Error al guardar vigilante:', result.error);
+                    if (result.error.code === '23505') {
+                        showError('Ya existe un usuario con ese email');
+                    } else {
+                        throw result.error;
+                    }
+                    return;
+                }
+
+                showSuccess('Vigilante guardado exitosamente');
+                closeModal('guardModal');
+                await loadGuards();
+
+            } catch (error) {
+                console.error('Error completo al guardar vigilante:', error);
+                await logSecurityEvent('error', 'Error al guardar vigilante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al guardar el vigilante: ' + error.message);
+            }
+        }
+
         async function saveReason(e) {
             e.preventDefault();
             
@@ -5762,6 +5987,219 @@ function abrirReporte() {
             }
         }
 
+        async function saveVisitorProfile(e) {
+            e.preventDefault();
+
+        try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('visitorProfileName').value.trim();
+
+                if (!name) {
+                    showError('El nombre del perfil es obligatorio');
+                    return;
+                }
+
+                if (name.length > 50) {
+                    showError('El nombre del perfil no puede exceder 50 caracteres');
+                    return;
+                }
+
+                if (!validateText(name)) {
+                    showError('El nombre contiene caracteres no permitidos');
+                    return;
+                }
+
+                let result;
+                if (currentEditingId) {
+                    result = await supabaseClient
+                        .from('perfiles_visitante')
+                        .update({
+                            nombre: name
+                        })
+                        .eq('id', currentEditingId);
+
+                    await logSecurityEvent('update', 'Perfil de visitante actualizado', {
+                        profileId: currentEditingId,
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                } else {
+                    result = await supabaseClient
+                        .from('perfiles_visitante')
+                        .insert([{
+                            nombre: name,
+                            activo: true
+                        }]);
+
+                    await logSecurityEvent('create', 'Perfil de visitante creado', {
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                }
+
+                if (result.error) {
+                    console.error('Error al guardar perfil de visitante:', result.error);
+                    throw result.error;
+                }
+
+                showSuccess('Perfil de visitante guardado exitosamente');
+                closeModal('visitorProfileModal');
+                await loadVisitorProfiles();
+
+            } catch (error) {
+                console.error('Error completo al guardar perfil de visitante:', error);
+                await logSecurityEvent('error', 'Error al guardar perfil de visitante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al guardar el perfil: ' + error.message);
+            }
+        }
+
+        async function saveVisitorArea(e) {
+            e.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('visitorAreaName').value.trim();
+
+                if (!name) {
+                    showError('El nombre del área es obligatorio');
+                    return;
+                }
+
+                if (name.length > 50) {
+                    showError('El nombre del área no puede exceder 50 caracteres');
+                    return;
+                }
+
+                if (!validateText(name)) {
+                    showError('El nombre contiene caracteres no permitidos');
+                    return;
+                }
+
+                let result;
+                if (currentEditingId) {
+                    result = await supabaseClient
+                        .from('areas_visitante')
+                        .update({
+                            nombre: name
+                        })
+                        .eq('id', currentEditingId);
+
+                    await logSecurityEvent('update', 'Área de visitante actualizada', {
+                        areaId: currentEditingId,
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                } else {
+                    result = await supabaseClient
+                        .from('areas_visitante')
+                        .insert([{
+                            nombre: name,
+                            activo: true
+                        }]);
+
+                    await logSecurityEvent('create', 'Área de visitante creada', {
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                }
+
+                if (result.error) {
+                    console.error('Error al guardar área de visitante:', result.error);
+                    throw result.error;
+                }
+
+                showSuccess('Área de visita guardada exitosamente');
+                closeModal('visitorAreaModal');
+                await loadVisitorAreas();
+
+            } catch (error) {
+                console.error('Error completo al guardar área de visitante:', error);
+                await logSecurityEvent('error', 'Error al guardar área de visitante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al guardar el área: ' + error.message);
+            }
+        }
+
+        async function saveVisitorStatus(e) {
+            e.preventDefault();
+
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const name = document.getElementById('visitorStatusName').value.trim();
+
+                if (!name) {
+                    showError('El nombre del estado es obligatorio');
+                    return;
+                }
+
+                if (name.length > 50) {
+                    showError('El nombre del estado no puede exceder 50 caracteres');
+                    return;
+                }
+
+                if (!validateText(name)) {
+                    showError('El nombre contiene caracteres no permitidos');
+                    return;
+                }
+
+                let result;
+                if (currentEditingId) {
+                    result = await supabaseClient
+                        .from('estados_visitante')
+                        .update({
+                            nombre: name
+                        })
+                        .eq('id', currentEditingId);
+
+                    await logSecurityEvent('update', 'Estado de visitante actualizado', {
+                        statusId: currentEditingId,
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                } else {
+                    result = await supabaseClient
+                        .from('estados_visitante')
+                        .insert([{
+                            nombre: name,
+                            activo: true
+                        }]);
+
+                    await logSecurityEvent('create', 'Estado de visitante creado', {
+                        name: name.substring(0, 30) + '...'
+                    }, true);
+                }
+
+                if (result.error) {
+                    console.error('Error al guardar estado de visitante:', result.error);
+                    throw result.error;
+                }
+
+                showSuccess('Estado de visitante guardado exitosamente');
+                closeModal('visitorStatusModal');
+                await loadVisitorStatuses();
+
+            } catch (error) {
+                console.error('Error completo al guardar estado de visitante:', error);
+                await logSecurityEvent('error', 'Error al guardar estado de visitante', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al guardar el estado: ' + error.message);
+            }
+        }
+
         // ========================================
         // FUNCIONES DE ACTUALIZACIÓN DE TABLAS (CON SANITIZACIÓN)
         // ========================================
@@ -5850,6 +6288,87 @@ function abrirReporte() {
                 `;
             });
             
+            setTimeout(setupTableScroll, 50);
+        }
+
+        function updateGuardsTable(guards) {
+            const tbody = document.querySelector('#guardsTable tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            guards.forEach(guard => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${sanitizeHtml(guard.nombre)}</td>
+                    <td>${sanitizeHtml(guard.email)}</td>
+                    <td>${guard.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editGuard(${guard.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteGuard(${guard.id})">Eliminar</button>
+                    </td>
+                `;
+            });
+
+            setTimeout(setupTableScroll, 50);
+        }
+
+        function updateVisitorProfilesTable(profiles) {
+            const tbody = document.querySelector('#visitorProfilesTable tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            profiles.forEach(profile => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${sanitizeHtml(profile.nombre)}</td>
+                    <td>${profile.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editVisitorProfile(${profile.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteVisitorProfile(${profile.id})">Eliminar</button>
+                    </td>
+                `;
+            });
+
+            setTimeout(setupTableScroll, 50);
+        }
+
+        function updateVisitorAreasTable(areas) {
+            const tbody = document.querySelector('#visitorAreasTable tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            areas.forEach(area => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${sanitizeHtml(area.nombre)}</td>
+                    <td>${area.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editVisitorArea(${area.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteVisitorArea(${area.id})">Eliminar</button>
+                    </td>
+                `;
+            });
+
+            setTimeout(setupTableScroll, 50);
+        }
+
+        function updateVisitorStatusesTable(statuses) {
+            const tbody = document.querySelector('#visitorStatusesTable tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            statuses.forEach(status => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${sanitizeHtml(status.nombre)}</td>
+                    <td>${status.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editVisitorStatus(${status.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteVisitorStatus(${status.id})">Eliminar</button>
+                    </td>
+                `;
+            });
+
             setTimeout(setupTableScroll, 50);
         }
 
@@ -6296,6 +6815,258 @@ function abrirReporte() {
                         error: error.message.substring(0, 200) 
                     }, false);
                     showError('Error al eliminar el usuario: ' + error.message);
+                }
+            }
+        }
+
+        async function editGuard(id) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const { data: user, error } = await supabaseClient
+                    .from('usuarios')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('guardName').value = user.nombre;
+                document.getElementById('guardEmail').value = user.email;
+                document.getElementById('guardPassword').value = '';
+
+                document.getElementById('guardPasswordNote').textContent = '(dejar vacío para mantener actual)';
+                document.getElementById('guardPassword').required = false;
+                const strength = document.getElementById('guardPasswordStrength');
+                if (strength) strength.style.display = 'none';
+
+                openModal('guardModal');
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de vigilante', {
+                    userId: id,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al cargar los datos del vigilante: ' + error.message);
+            }
+        }
+
+        async function deleteGuard(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (id === currentUser.id) {
+                showError('No puedes eliminar tu propio usuario');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar este vigilante?')) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('usuarios')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    await logSecurityEvent('delete', 'Vigilante eliminado', { userId: id }, true);
+                    showSuccess('Vigilante eliminado exitosamente');
+                    await loadGuards();
+
+                } catch (error) {
+                    await logSecurityEvent('error', 'Error al eliminar vigilante', {
+                        userId: id,
+                        error: error.message.substring(0, 200)
+                    }, false);
+                    showError('Error al eliminar el vigilante: ' + error.message);
+                }
+            }
+        }
+
+        async function editVisitorProfile(id) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const { data: profile, error } = await supabaseClient
+                    .from('perfiles_visitante')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('visitorProfileName').value = profile.nombre;
+
+                openModal('visitorProfileModal');
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de perfil visitante', {
+                    profileId: id,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al cargar los datos del perfil: ' + error.message);
+            }
+        }
+
+        async function deleteVisitorProfile(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar este perfil de visitante?')) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('perfiles_visitante')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    await logSecurityEvent('delete', 'Perfil de visitante eliminado', { profileId: id }, true);
+                    showSuccess('Perfil de visitante eliminado exitosamente');
+                    await loadVisitorProfiles();
+
+                } catch (error) {
+                    await logSecurityEvent('error', 'Error al eliminar perfil de visitante', {
+                        profileId: id,
+                        error: error.message.substring(0, 200)
+                    }, false);
+                    showError('Error al eliminar el perfil: ' + error.message);
+                }
+            }
+        }
+
+        async function editVisitorArea(id) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const { data: area, error } = await supabaseClient
+                    .from('areas_visitante')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('visitorAreaName').value = area.nombre;
+
+                openModal('visitorAreaModal');
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de área visitante', {
+                    areaId: id,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al cargar los datos del área: ' + error.message);
+            }
+        }
+
+        async function deleteVisitorArea(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar esta área de visita?')) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('areas_visitante')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    await logSecurityEvent('delete', 'Área de visitante eliminada', { areaId: id }, true);
+                    showSuccess('Área de visita eliminada exitosamente');
+                    await loadVisitorAreas();
+
+                } catch (error) {
+                    await logSecurityEvent('error', 'Error al eliminar área de visitante', {
+                        areaId: id,
+                        error: error.message.substring(0, 200)
+                    }, false);
+                    showError('Error al eliminar el área: ' + error.message);
+                }
+            }
+        }
+
+        async function editVisitorStatus(id) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const { data: status, error } = await supabaseClient
+                    .from('estados_visitante')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                currentEditingId = id;
+                document.getElementById('visitorStatusName').value = status.nombre;
+
+                openModal('visitorStatusModal');
+
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al cargar datos de estado visitante', {
+                    statusId: id,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al cargar los datos del estado: ' + error.message);
+            }
+        }
+
+        async function deleteVisitorStatus(id) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que quieres eliminar este estado de visitante?')) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('estados_visitante')
+                        .update({ activo: false })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    await logSecurityEvent('delete', 'Estado de visitante eliminado', { statusId: id }, true);
+                    showSuccess('Estado de visitante eliminado exitosamente');
+                    await loadVisitorStatuses();
+
+                } catch (error) {
+                    await logSecurityEvent('error', 'Error al eliminar estado de visitante', {
+                        statusId: id,
+                        error: error.message.substring(0, 200)
+                    }, false);
+                    showError('Error al eliminar el estado: ' + error.message);
                 }
             }
         }
@@ -6845,6 +7616,10 @@ function attachEventHandlers() {
     ['#btnAdminUsers', () => showAdminSection('users')],
     ['#btnAdminReasons', () => showAdminSection('reasons')],
     ['#btnAdminGrades', () => showAdminSection('grades')],
+    ['#btnAdminGuards', () => showAdminSection('guards')],
+    ['#btnAdminVisitorProfiles', () => showAdminSection('visitorProfiles')],
+    ['#btnAdminVisitorAreas', () => showAdminSection('visitorAreas')],
+    ['#btnAdminVisitorStatuses', () => showAdminSection('visitorStatuses')],
     ['#btnAdminSecurity', () => showAdminSection('security')],
     ['#addStudentBtn', () => openModal('studentModal')],
     ['#addUserBtn', () => openModal('userModal')],
@@ -6854,6 +7629,10 @@ function attachEventHandlers() {
     ['#cancelUserModal', (e) => { e.preventDefault(); closeModal('userModal'); }],
     ['#cancelReasonModal', (e) => { e.preventDefault(); closeModal('reasonModal'); }],
     ['#cancelGradeModal', (e) => { e.preventDefault(); closeModal('gradeModal'); }],
+    ['#cancelGuardModal', (e) => { e.preventDefault(); closeModal('guardModal'); }],
+    ['#cancelVisitorProfileModal', (e) => { e.preventDefault(); closeModal('visitorProfileModal'); }],
+    ['#cancelVisitorAreaModal', (e) => { e.preventDefault(); closeModal('visitorAreaModal'); }],
+    ['#cancelVisitorStatusModal', (e) => { e.preventDefault(); closeModal('visitorStatusModal'); }],
     ['#filterHistoryBtn', () => loadHistory()],
     ['#viewAllHistoryBtn', () => loadHistory(true)],
     ['#debugHistoryBtn', debugHistory],
@@ -6917,6 +7696,16 @@ function attachEventHandlers() {
     userPassword.addEventListener('keyup', checkPasswordStrength);
   }
 
+  const guardName = document.getElementById('guardName');
+  if (guardName) guardName.addEventListener('input', () => validateNameInput(guardName));
+  const guardEmail = document.getElementById('guardEmail');
+  if (guardEmail) guardEmail.addEventListener('input', () => validateEmailInput(guardEmail));
+  const guardPassword = document.getElementById('guardPassword');
+  if (guardPassword) {
+    guardPassword.addEventListener('input', () => validatePasswordInput(guardPassword));
+    guardPassword.addEventListener('keyup', checkGuardPasswordStrength);
+  }
+        
   const reasonName = document.getElementById('reasonName');
   if (reasonName) reasonName.addEventListener('input', () => validateTextInput(reasonName));
   const reasonDesc = document.getElementById('reasonDescription');
@@ -6924,6 +7713,13 @@ function attachEventHandlers() {
   const gradeName = document.getElementById('gradeName');
   if (gradeName) gradeName.addEventListener('input', () => validateTextInput(gradeName));
 
+  const visitorProfileName = document.getElementById('visitorProfileName');
+  if (visitorProfileName) visitorProfileName.addEventListener('input', () => validateTextInput(visitorProfileName));
+  const visitorAreaName = document.getElementById('visitorAreaName');
+  if (visitorAreaName) visitorAreaName.addEventListener('input', () => validateTextInput(visitorAreaName));
+  const visitorStatusName = document.getElementById('visitorStatusName');
+  if (visitorStatusName) visitorStatusName.addEventListener('input', () => validateTextInput(visitorStatusName));
+        
   const historyDate = document.getElementById('historyDate');
   if (historyDate) historyDate.addEventListener('change', () => loadHistory());
 
