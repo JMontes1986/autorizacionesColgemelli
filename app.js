@@ -3487,7 +3487,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: visitor, error } = await supabase
+                const { data: visitor, error } = await supabaseClient
                     .from('visitantes')
                     .select('id, nombre, perfil_id')
                     .eq('documento', documento)
@@ -3530,7 +3530,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('ingresos_visitantes')
                     .select(`
                         id,
@@ -3567,7 +3567,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('observaciones_visitante')
                     .select(`
                         id,
@@ -3715,7 +3715,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: visitorData, error: visitorError } = await supabase
+                const { data: visitorData, error: visitorError } = await supabaseClient
                     .from('visitantes')
                     .upsert({
                         documento: documentId,
@@ -3733,7 +3733,7 @@ function abrirReporte() {
                     throw new Error('No se pudo registrar el visitante.');
                 }
 
-                const { error: entryError } = await supabase
+                const { error: entryError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .insert({
                         visitante_id: visitorId,
@@ -3749,7 +3749,7 @@ function abrirReporte() {
                 if (entryError) throw entryError;
 
                 if (observations && currentUser?.id) {
-                    const { error: obsError } = await supabase
+                    const { error: obsError } = await supabaseClient
                         .from('observaciones_visitante')
                         .insert({
                             visitante_id: visitorId,
