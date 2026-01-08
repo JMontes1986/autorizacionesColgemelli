@@ -208,7 +208,7 @@
                 console.log('📅 Fecha Colombia para consulta:', todayColombia);
                 
                 // Consulta simplificada - solo datos básicos primero
-                const { data: todayAuthorizations, error: authError } = await supabase
+                const { data: todayAuthorizations, error: authError } = await supabaseClient
                     .from('autorizaciones_salida')
                     .select('id, estudiante_id, motivo_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
                     .eq('fecha_salida', todayColombia)
@@ -323,7 +323,7 @@
 
                 // Consultas separadas más robustas
                 if (studentIds.length > 0) {
-                    const { data: studentsData, error: studentsError } = await supabase
+                    const { data: studentsData, error: studentsError } = await supabaseClient
                         .from('estudiantes')
                         .select(`
                             id, 
@@ -341,7 +341,7 @@
                 }
 
                 if (reasonIds.length > 0) {
-                    const { data: reasonsData, error: reasonsError } = await supabase
+                    const { data: reasonsData, error: reasonsError } = await supabaseClient
                         .from('motivos')
                         .select('id, nombre')
                         .in('id', reasonIds);
@@ -410,7 +410,7 @@
                 let users = [];
 
                 if (studentIds.length > 0) {
-                    const { data: studentsData, error: studentsError } = await supabase
+                    const { data: studentsData, error: studentsError } = await supabaseClient
                         .from('estudiantes')
                         .select('id, nombre, apellidos, grado:grados(nombre)')
                         .in('id', studentIds);
@@ -423,7 +423,7 @@
                 }
 
                 if (allUserIds.length > 0) {
-                    const { data: usersData, error: usersError } = await supabase
+                    const { data: usersData, error: usersError } = await supabaseClient
                         .from('usuarios')
                         .select('id, nombre')
                         .in('id', allUserIds);
@@ -797,21 +797,21 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 console.log(`📋 Cargando salidas confirmadas por ${currentUser.nombre} para Colombia:`, todayColombia);
 
                 const [studentResponse, staffExitResponse, staffReturnResponse] = await Promise.all([
-                    supabase
+                    supabaseClient
                         .from('autorizaciones_salida')
                         .select('*')
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_id', currentUser.id)
                         .not('salida_efectiva', 'is', null)
                         .order('salida_efectiva', { ascending: false }),
-                    supabase
+                    supabaseClient
                         .from('autorizaciones_personal')
                         .select('*')
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_id', currentUser.id)
                         .not('salida_efectiva', 'is', null)
                         .order('salida_efectiva', { ascending: false }),
-                    supabase
+                    supabaseClient
                         .from('autorizaciones_personal')
                         .select('*')
                         .eq('fecha_salida', todayColombia)
@@ -867,16 +867,16 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
 
                 const [studentsResult, staffResult, reasonsResult, usersResult] = await Promise.all([
                     studentIds.length > 0
-                        ? supabase.from('estudiantes').select('id, nombre, apellidos, grado:grados(nombre), foto_url').in('id', studentIds)
+                        ? supabaseClient.from('estudiantes').select('id, nombre, apellidos, grado:grados(nombre), foto_url').in('id', studentIds)
                         : Promise.resolve({ data: [] }),
                     staffIds.length > 0
-                        ? supabase.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', staffIds)
+                        ? supabaseClient.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', staffIds)
                         : Promise.resolve({ data: [] }),
                     reasonIds.length > 0
-                        ? supabase.from('motivos').select('id, nombre').in('id', reasonIds)
+                        ? supabaseClient.from('motivos').select('id, nombre').in('id', reasonIds)
                         : Promise.resolve({ data: [] }),
                     userIds.length > 0
-                        ? supabase.from('usuarios').select('id, nombre, email').in('id', userIds)
+                        ? supabaseClient.from('usuarios').select('id, nombre, email').in('id', userIds)
                         : Promise.resolve({ data: [] })
                 ]);
                 const studentMap = {};
@@ -1086,7 +1086,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     }
                 }
                 
-                console.log('Supabase disponible:', typeof supabase !== 'undefined');
+                console.log('Supabase disponible:', typeof supabaseClient !== 'undefined');
                 console.log('CryptoJS disponible:', typeof CryptoJS !== 'undefined');
                 
                 // 2. Verificar elementos del DOM
@@ -1107,7 +1107,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 console.log('📊 === VERIFICACIÓN DE BASE DE DATOS ===');
                 
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('autorizaciones_salida')
                         .select('*')
                         .eq('fecha_salida', todayColombia);
@@ -1136,9 +1136,9 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 console.log('📊 === VERIFICACIÓN DE TABLAS RELACIONADAS ===');
                 try {
                     const [estudiantes, motivos, usuarios] = await Promise.all([
-                        supabase.from('estudiantes').select('*').limit(1),
-                        supabase.from('motivos').select('*').limit(1),
-                        supabase.from('usuarios').select('*').limit(1)
+                        supabaseClient.from('estudiantes').select('*').limit(1),
+                        supabaseClient.from('motivos').select('*').limit(1),
+                        supabaseClient.from('usuarios').select('*').limit(1)
                     ]);
                     
                     console.log('📊 Tablas relacionadas:', {
@@ -1197,7 +1197,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
             try {
                 const todayColombia = getColombiaDate();
                 
-                const { data: authorizations, error } = await supabase
+                const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_salida')
                     .select(`
                         *,
@@ -1591,7 +1591,7 @@ function abrirReporte() {
             'sistemas@colgemelli.edu.co'
         ];
 
-        let supabase;
+        let supabaseClient;
         let currentUser = null;
         let currentEditingId = null;
         let currentExitAuthId = null;
@@ -2106,7 +2106,7 @@ function abrirReporte() {
                     timestamp: now.toISOString()
                 };
 
-                await supabase
+                await supabaseClient
                     .from('audit_logs')
                     .insert([logEntry]);
                     
@@ -2209,7 +2209,7 @@ function abrirReporte() {
                     throw new Error('Supabase no está cargado');
                 }
                 
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                     auth: {
                         persistSession: false, // No persistir sesiones por seguridad
                         autoRefreshToken: false
@@ -2224,7 +2224,7 @@ function abrirReporte() {
                 console.log('✅ Cliente Supabase creado con configuración segura');
                 
                 // Verificar conexión
-                const { data, error } = await supabase.from('roles').select('*').limit(1);
+                const { data, error } = await supabaseClient.from('roles').select('*').limit(1);
                 
                 if (error) throw error;
                 
@@ -2311,7 +2311,7 @@ function abrirReporte() {
                 console.log('🔐 Intentando login seguro para:', email.substring(0, 5) + '...');
                 
                 // Buscar usuario en la base de datos
-                const { data: user, error } = await supabase
+                const { data: user, error } = await supabaseClient
                     .from('usuarios')
                     .select(`
                         *,
@@ -2624,7 +2624,7 @@ function abrirReporte() {
                 studentList.textContent = 'Cargando estudiantes...';
                 studentList.dataset.disabled = 'true';
 
-                const { data: students, error } = await supabase
+                const { data: students, error } = await supabaseClient
                     .from('estudiantes')
                     .select(`id, nombre, apellidos`)
                     .eq('grado_id', gradeId)
@@ -2697,7 +2697,7 @@ function abrirReporte() {
                     registrado_por: currentUser.id
                 }));
 
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('llegadas_tarde')
                     .insert(records);
 
@@ -3031,7 +3031,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: students, error } = await supabase
+                const { data: students, error } = await supabaseClient
                     .from('estudiantes')
                     .select(`
                         *,
@@ -3068,7 +3068,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: staff, error } = await supabase
+                const { data: staff, error } = await supabaseClient
                     .from('personal_colegio')
                     .select('*')
                     .eq('activo', true)
@@ -3101,7 +3101,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: reasons, error } = await supabase
+                const { data: reasons, error } = await supabaseClient
                     .from('motivos')
                     .select('*')
                     .eq('activo', true)
@@ -3147,7 +3147,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: grades, error } = await supabase
+                const { data: grades, error } = await supabaseClient
                     .from('grados')
                     .select('*')
                     .eq('activo', true)
@@ -3203,7 +3203,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: roles, error } = await supabase
+                const { data: roles, error } = await supabaseClient
                     .from('roles')
                     .select('*')
                     .order('nombre');
@@ -3232,7 +3232,7 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
-                const { data: users, error } = await supabase
+                const { data: users, error } = await supabaseClient
                     .from('usuarios')
                     .select(`
                         *,
@@ -3270,7 +3270,7 @@ function abrirReporte() {
                 
                 console.log('🔄 Cargando estudiantes del grado ID:', gradeId);
                 
-                const { data: students, error } = await supabase
+                const { data: students, error } = await supabaseClient
                     .from('estudiantes')
                     .select(`
                         id,
@@ -3403,7 +3403,7 @@ function abrirReporte() {
                 }
 
                  if (!currentExitAuthId) {
-                    const { data: existing, error: existsError } = await supabase
+                    const { data: existing, error: existsError } = await supabaseClient
                         .from('autorizaciones_salida')
                         .select('id, motivo_id, fecha_salida, hora_salida, observaciones, usuario_autorizador_id')
                         .eq('estudiante_id', studentId)
@@ -3417,7 +3417,7 @@ function abrirReporte() {
                         const record = existing[0];
                         let reporter = 'otro usuario';
                         if (record.usuario_autorizador_id) {
-                            const { data: userData, error: userError } = await supabase
+                            const { data: userData, error: userError } = await supabaseClient
                                 .from('usuarios')
                                 .select('nombre')
                                 .eq('id', record.usuario_autorizador_id)
@@ -3482,7 +3482,7 @@ function abrirReporte() {
                         let originalData = currentExitOriginalData;
 
                         if (!originalData) {
-                            const { data: fetchedRecord, error: fetchError } = await supabase
+                            const { data: fetchedRecord, error: fetchError } = await supabaseClient
                                 .from('autorizaciones_salida')
                                 .select('motivo_id, hora_salida, observaciones')
                                 .eq('id', currentExitAuthId)
@@ -3542,12 +3542,12 @@ function abrirReporte() {
                         }
                     }
 
-                    dbResult = await supabase
+                    dbResult = await supabaseClient
                         .from('autorizaciones_salida')
                             .update(updatePayload)
                         .eq('id', currentExitAuthId);
                 } else {
-                    dbResult = await supabase
+                    dbResult = await supabaseClient
                         .from('autorizaciones_salida')
                         .insert([{ 
                             estudiante_id: studentId,
@@ -3649,7 +3649,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: existingAuths, error: existingError } = await supabase
+                const { data: existingAuths, error: existingError } = await supabaseClient
                     .from('autorizaciones_personal')
                     .select('id, motivo_id, hora_salida, fecha_salida, observaciones, usuario_autorizador_id, requiere_regreso, hora_regreso_estimada')
                     .eq('colaborador_id', staffId)
@@ -3662,7 +3662,7 @@ function abrirReporte() {
 
                 if (existingAuths && existingAuths.length > 0) {
                     const record = existingAuths[0];
-                    const { data: userInfo } = await supabase
+                    const { data: userInfo } = await supabaseClient
                         .from('usuarios')
                         .select('nombre')
                         .eq('id', record.usuario_autorizador_id)
@@ -3686,7 +3686,7 @@ function abrirReporte() {
 
                 let dbAction;
                 if (currentStaffAuthId) {
-                    dbAction = supabase
+                    dbAction = supabaseClient
                         .from('autorizaciones_personal')
                         .update({
                             motivo_id: reasonId,
@@ -3699,7 +3699,7 @@ function abrirReporte() {
                         })
                         .eq('id', currentStaffAuthId);
                 } else {
-                    dbAction = supabase
+                    dbAction = supabaseClient
                         .from('autorizaciones_personal')
                         .insert([{
                             colaborador_id: staffId,
@@ -3837,7 +3837,7 @@ function abrirReporte() {
                 
                 console.log('🔍 Buscando autorizaciones para:', searchTerm.substring(0, 10) + '...', 'en fecha Colombia:', todayColombia);
                 
-                const { data: authorizations, error } = await supabase
+                const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_salida')
                     .select('*')
                     .eq('fecha_salida', todayColombia)
@@ -3859,7 +3859,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: students, error: studentsError } = await supabase
+                const { data: students, error: studentsError } = await supabaseClient
                     .from('estudiantes')
                     .select('id, nombre, apellidos, grado:grados(nombre)')
                     .or(`nombre.ilike.%${searchTerm}%,apellidos.ilike.%${searchTerm}%`)
@@ -3900,8 +3900,8 @@ function abrirReporte() {
                     .filter(Boolean))];
 
                 const [reasonsResult, usersResult] = await Promise.all([
-                    supabase.from('motivos').select('id, nombre').in('id', reasonIds),
-                    supabase.from('usuarios').select('id, nombre, email').in('id', userIds)
+                    supabaseClient.from('motivos').select('id, nombre').in('id', reasonIds),
+                    supabaseClient.from('usuarios').select('id, nombre, email').in('id', userIds)
                 ]);
 
                 const studentMap = {};
@@ -4055,7 +4055,7 @@ function abrirReporte() {
                 const todayColombia = getColombiaDate();
                 console.log('📅 Cargando salidas pendientes para Colombia:', todayColombia);
                 
-                const { data: authorizations, error } = await supabase
+                const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_salida')
                     .select('*')
                     .eq('fecha_salida', todayColombia)
@@ -4090,15 +4090,15 @@ function abrirReporte() {
                     .filter(Boolean))];
 
                 const [studentsResult, reasonsResult, usersResult] = await Promise.all([
-                    supabase
+                    supabaseClient
                         .from('estudiantes')
                         .select('id, nombre, apellidos, grado:grados(nombre), foto_url')
                         .in('id', studentIds),
-                    supabase
+                    supabaseClient
                         .from('motivos')
                         .select('id, nombre')
                         .in('id', reasonIds),
-                    supabase
+                    supabaseClient
                         .from('usuarios')
                         .select('id, nombre, email')
                         .in('id', userIds)
@@ -4231,7 +4231,7 @@ function abrirReporte() {
 
                 const todayColombia = getColombiaDate();
 
-                const { data: authorizations, error } = await supabase
+                const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_personal')
                     .select('*')
                     .eq('fecha_salida', todayColombia)
@@ -4261,14 +4261,14 @@ function abrirReporte() {
                 const userIds = [...new Set(relevantAuths.map(auth => auth.usuario_autorizador_id))];
 
                 const [staffResult, reasonsResult, usersResult] = await Promise.all([
-                    supabase
+                    supabaseClient
                         .from('personal_colegio')
                         .select('id, nombre, cargo, cedula')
                         .in('id', staffIds),
                     reasonIds.length > 0
-                        ? supabase.from('motivos').select('id, nombre').in('id', reasonIds)
+                        ? supabaseClient.from('motivos').select('id, nombre').in('id', reasonIds)
                         : Promise.resolve({ data: [] }),
-                    supabase
+                    supabaseClient
                         .from('usuarios')
                         .select('id, nombre, email')
                         .in('id', userIds)
@@ -4402,7 +4402,7 @@ function abrirReporte() {
 
                 const colombiaDateTime = getColombiaDateTime();
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('autorizaciones_salida')
                     .update({
                         salida_efectiva: colombiaDateTime,
@@ -4496,7 +4496,7 @@ function abrirReporte() {
 
                 const colombiaDateTime = getColombiaDateTime();
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('autorizaciones_personal')
                     .update({
                         salida_efectiva: colombiaDateTime,
@@ -4511,7 +4511,7 @@ function abrirReporte() {
               let authorizationData = data;
 
                 if (!authorizationData) {
-                    const { data: fetchedData, error: fetchError } = await supabase
+                    const { data: fetchedData, error: fetchError } = await supabaseClient
                         .from('autorizaciones_personal')
                         .select('requiere_regreso, hora_regreso_estimada')
                         .eq('id', authId)
@@ -4564,7 +4564,7 @@ function abrirReporte() {
 
                 const colombiaDateTime = getColombiaDateTime();
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('autorizaciones_personal')
                     .update({
                         regreso_efectivo: colombiaDateTime,
@@ -4579,7 +4579,7 @@ function abrirReporte() {
                 let authorizationData = data;
 
                 if (!authorizationData) {
-                    const { data: fetchedData, error: fetchError } = await supabase
+                    const { data: fetchedData, error: fetchError } = await supabaseClient
                         .from('autorizaciones_personal')
                         .select('hora_regreso_estimada, salida_efectiva')
                         .eq('id', authId)
@@ -4676,7 +4676,7 @@ function abrirReporte() {
 
                 const todayColombia = getColombiaDate();
                 
-                const { data: todayLogs, error: logsError } = await supabase
+                const { data: todayLogs, error: logsError } = await supabaseClient
                     .from('audit_logs')
                     .select('*')
                     .gte('timestamp', todayColombia + 'T00:00:00')
@@ -4692,7 +4692,7 @@ function abrirReporte() {
                     document.getElementById('failedAttempts').textContent = failedCount;
                 }
 
-                const { data: activeUsers, error: usersError } = await supabase
+                const { data: activeUsers, error: usersError } = await supabaseClient
                     .from('usuarios')
                     .select('*')
                     .eq('activo', true);
@@ -4729,7 +4729,7 @@ function abrirReporte() {
                 const logType = document.getElementById('logType').value;
                 const logUser = document.getElementById('logUser').value;
 
-                let query = supabase
+                let query = supabaseClient
                     .from('audit_logs')
                     .select(`
                         *,
@@ -4829,7 +4829,7 @@ function abrirReporte() {
                 const logType = document.getElementById('logType').value;
                 const logUser = document.getElementById('logUser').value;
 
-                let query = supabase
+                let query = supabaseClient
                     .from('audit_logs')
                     .select(`
                         *,
@@ -4911,7 +4911,7 @@ function abrirReporte() {
 
          async function uploadImageToStorage(file) {
             const fileName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-            const { data, error } = await supabase.storage
+            const { data, error } = await supabaseClient.storage
                 .from(STORAGE_BUCKET)
                 .upload('fotos/' + fileName, file, {
                     cacheControl: '3600',
@@ -4923,7 +4923,7 @@ function abrirReporte() {
                 return null;
             }
 
-            const { data: urlData } = supabase
+            const { data: urlData } = supabaseClient
                 .storage
                 .from(STORAGE_BUCKET)
                 .getPublicUrl('fotos/' + fileName);
@@ -4976,7 +4976,7 @@ function abrirReporte() {
                         grado_id: gradeId
                     };
                     if (photoUrl) updateData.foto_url = photoUrl;
-                    result = await supabase
+                    result = await supabaseClient
                         .from('estudiantes')
                         .update(updateData)
                         .eq('id', currentEditingId);
@@ -4994,7 +4994,7 @@ function abrirReporte() {
                         activo: true
                     };
                     if (photoUrl) insertData.foto_url = photoUrl;
-                    result = await supabase
+                    result = await supabaseClient
                         .from('estudiantes')
                         .insert([insertData]);
                     await logSecurityEvent('create', 'Estudiante creado', { 
@@ -5081,7 +5081,7 @@ function abrirReporte() {
                         updateData.password_hash = encryptPassword(password);
                     }
 
-                    result = await supabase
+                    result = await supabaseClient
                         .from('usuarios')
                         .update(updateData)
                         .eq('id', currentEditingId);
@@ -5092,7 +5092,7 @@ function abrirReporte() {
                         passwordChanged: !!password
                     }, true);
                 } else {
-                    result = await supabase
+                    result = await supabaseClient
                         .from('usuarios')
                         .insert([{
                             nombre: name,
@@ -5161,7 +5161,7 @@ function abrirReporte() {
 
                 let result;
                 if (currentEditingId) {
-                    result = await supabase
+                    result = await supabaseClient
                         .from('motivos')
                         .update({
                             nombre: name,
@@ -5174,7 +5174,7 @@ function abrirReporte() {
                         name: name.substring(0, 30) + '...'
                     }, true);
                 } else {
-                    result = await supabase
+                    result = await supabaseClient
                         .from('motivos')
                         .insert([{
                             nombre: name,
@@ -5235,7 +5235,7 @@ function abrirReporte() {
 
                 let result;
                 if (currentEditingId) {
-                    result = await supabase
+                    result = await supabaseClient
                         .from('grados')
                         .update({
                             nombre: name,
@@ -5249,7 +5249,7 @@ function abrirReporte() {
                         level: level
                     }, true);
                 } else {
-                    result = await supabase
+                    result = await supabaseClient
                         .from('grados')
                         .insert([{
                             nombre: name,
@@ -5387,12 +5387,12 @@ function abrirReporte() {
                 console.log('🔍 Cargando historial...');
                     const role = currentUser?.rol?.nombre;
 
-                let studentQuery = supabase
+                let studentQuery = supabaseClient
                     .from('autorizaciones_salida')
                     .select('*')
                     .order('fecha_creacion', { ascending: false });
 
-                let staffQuery = supabase
+                let staffQuery = supabaseClient
                     .from('autorizaciones_personal')
                     .select('*')
                     .order('fecha_creacion', { ascending: false });
@@ -5466,25 +5466,25 @@ function abrirReporte() {
 
                 const [studentsResult, staffMembersResult, reasonsResult, usersResult] = await Promise.all([
                     studentIds.length > 0
-                        ? supabase
+                        ? supabaseClient
                             .from('estudiantes')
                             .select('id, nombre, apellidos, grado:grados(nombre)')
                             .in('id', studentIds)
                         : Promise.resolve({ data: [] }),
                     staffIds.length > 0
-                        ? supabase
+                        ? supabaseClient
                             .from('personal_colegio')
                             .select('id, nombre, cargo, cedula')
                             .in('id', staffIds)
                         : Promise.resolve({ data: [] }),
                     reasonIds.length > 0
-                        ? supabase
+                        ? supabaseClient
                             .from('motivos')
                             .select('id, nombre')
                             .in('id', reasonIds)
                         : Promise.resolve({ data: [] }),
                     userIds.length > 0
-                        ? supabase
+                        ? supabaseClient
                             .from('usuarios')
                             .select('id, nombre')
                             .in('id', userIds)
@@ -5607,17 +5607,17 @@ function abrirReporte() {
                     lastAuthResult,
                     lastStaffResult
                 ] = await Promise.all([
-                    supabase.from('autorizaciones_salida').select('*'),
-                    supabase.from('autorizaciones_personal').select('*'),
-                    supabase.from('estudiantes').select('*'),
-                    supabase.from('personal_colegio').select('*'),
-                    supabase.from('usuarios').select('*'),
-                    supabase.from('motivos').select('*'),
-                    supabase.from('grados').select('*'),
-                    supabase.from('autorizaciones_salida').select('*').eq('fecha_salida', todayColombia),
-                    supabase.from('autorizaciones_personal').select('*').eq('fecha_salida', todayColombia),
-                    supabase.from('autorizaciones_salida').select('*').order('fecha_creacion', { ascending: false }).limit(5),
-                    supabase.from('autorizaciones_personal').select('*').order('fecha_creacion', { ascending: false }).limit(5)
+                    supabaseClient.from('autorizaciones_salida').select('*'),
+                    supabaseClient.from('autorizaciones_personal').select('*'),
+                    supabaseClient.from('estudiantes').select('*'),
+                    supabaseClient.from('personal_colegio').select('*'),
+                    supabaseClient.from('usuarios').select('*'),
+                    supabaseClient.from('motivos').select('*'),
+                    supabaseClient.from('grados').select('*'),
+                    supabaseClient.from('autorizaciones_salida').select('*').eq('fecha_salida', todayColombia),
+                    supabaseClient.from('autorizaciones_personal').select('*').eq('fecha_salida', todayColombia),
+                    supabaseClient.from('autorizaciones_salida').select('*').order('fecha_creacion', { ascending: false }).limit(5),
+                    supabaseClient.from('autorizaciones_personal').select('*').order('fecha_creacion', { ascending: false }).limit(5)
                 ]);
                 
                 let html = '<ul style="text-align: left;">';
@@ -5692,7 +5692,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: student, error } = await supabase
+                const { data: student, error } = await supabaseClient
                     .from('estudiantes')
                     .select('*')
                     .eq('id', id)
@@ -5726,7 +5726,7 @@ function abrirReporte() {
 
             if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('estudiantes')
                         .update({ activo: false })
                         .eq('id', id);
@@ -5755,7 +5755,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: user, error } = await supabase
+                const { data: user, error } = await supabaseClient
                     .from('usuarios')
                     .select('*')
                     .eq('id', id)
@@ -5798,7 +5798,7 @@ function abrirReporte() {
             
             if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('usuarios')
                         .update({ activo: false })
                         .eq('id', id);
@@ -5827,7 +5827,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: reason, error } = await supabase
+                const { data: reason, error } = await supabaseClient
                     .from('motivos')
                     .select('*')
                     .eq('id', id)
@@ -5859,7 +5859,7 @@ function abrirReporte() {
 
             if (confirm('¿Estás seguro de que quieres eliminar este motivo?')) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('motivos')
                         .update({ activo: false })
                         .eq('id', id);
@@ -5888,7 +5888,7 @@ function abrirReporte() {
                     return;
                 }
 
-                const { data: grade, error } = await supabase
+                const { data: grade, error } = await supabaseClient
                     .from('grados')
                     .select('*')
                     .eq('id', id)
@@ -5920,7 +5920,7 @@ function abrirReporte() {
 
             if (confirm('¿Estás seguro de que quieres eliminar este grado?')) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('grados')
                         .update({ activo: false })
                         .eq('id', id);
@@ -6189,7 +6189,7 @@ function abrirReporte() {
   }
 
   async function cargarVerificaciones() {
-    if (!supabase || !validateSession()) return;
+    if (!supabaseClient || !validateSession()) return;
 
     const contenedor = document.getElementById("verificaciones");
     if (!contenedor) {
@@ -6199,7 +6199,7 @@ function abrirReporte() {
 
     contenedor.innerHTML = "";
 
-    const { data: salidas, error: errorSalidas } = await supabase
+    const { data: salidas, error: errorSalidas } = await supabaseClient
       .from("autorizaciones")
       .select("documento, motivo, hora");
 
@@ -6209,7 +6209,7 @@ function abrirReporte() {
     }
 
     for (const salida of salidas) {
-      const { data: estudiante, error: errorEst } = await supabase
+      const { data: estudiante, error: errorEst } = await supabaseClient
         .from("estudiantes")
         .select("nombre, grado, foto_url")
         .eq("documento", salida.documento)
