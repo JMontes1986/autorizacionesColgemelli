@@ -3686,7 +3686,7 @@ function abrirReporte() {
                 }
 
                 const date = document.getElementById('visitorDate')?.value;
-                const guardId = document.getElementById('visitorGuardSelect')?.value;
+                const guardId = document.getElementById('visitorGuardSelect')?.value || currentUser?.id;
                 const profileId = document.getElementById('visitorProfileSelect')?.value;
                 const name = document.getElementById('visitorName')?.value.trim();
                 const documentId = document.getElementById('visitorDocument')?.value.trim();
@@ -3695,7 +3695,7 @@ function abrirReporte() {
                 const statusId = document.getElementById('visitorStatusSelect')?.value;
                 const observations = document.getElementById('visitorObservations')?.value.trim();
 
-                if (!date || !guardId || !profileId || !name || !documentId || !reason || !areaId || !statusId) {
+                if (!date || !profileId || !name || !documentId || !reason || !areaId || !statusId) {
                     showError('Por favor, completa todos los campos obligatorios del registro del visitante.', 'visitorError');
                     return;
                 }
