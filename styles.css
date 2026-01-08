@@ -1661,6 +1661,21 @@
             color: white;
         }
 
+        .verification-card.exit-warning {
+            text-align: left;
+        }
+
+        .verification-card.exit-warning h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .verification-card.exit-warning ul {
+            margin: 10px 0 0;
+            padding-left: 20px;
+        }
+
         .search-box {
             width: 100%;
             padding: 15px;
