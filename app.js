@@ -3425,6 +3425,20 @@ function abrirReporte() {
             try {
                 if (!validateSession()) return;
 
+                const select = document.getElementById('visitorGuardSelect');
+                if (!select) return;
+
+                if (currentUser?.id) {
+                    select.innerHTML = '';
+                    const option = document.createElement('option');
+                    option.value = currentUser.id;
+                    option.textContent = sanitizeHtml(currentUser.nombre || 'Vigilante en turno');
+                    select.appendChild(option);
+                    select.value = currentUser.id;
+                    select.disabled = true;
+                    return;
+                }
+                    
                 const { data: users, error } = await supabase
                     .from('usuarios')
                     .select('id, nombre, email, rol:roles(nombre)')
@@ -3437,9 +3451,7 @@ function abrirReporte() {
                     user.rol?.nombre === 'vigilante' || user.email === 'vigilancia@colgemelli.edu.co'
                 );
 
-                const select = document.getElementById('visitorGuardSelect');
-                if (!select) return;
-
+                select.disabled = false;
                 select.innerHTML = '<option value="">Selecciona al vigilante</option>';
                 guards.forEach(guard => {
                     const option = document.createElement('option');
@@ -3447,10 +3459,6 @@ function abrirReporte() {
                     option.textContent = sanitizeHtml(guard.nombre);
                     select.appendChild(option);
                 });
-
-                if (currentUser?.id) {
-                    select.value = currentUser.id;
-                }
             } catch (error) {
                 console.error('Error loading visitor guards:', error);
                 await logSecurityEvent('error', 'Error al cargar vigilantes', {
