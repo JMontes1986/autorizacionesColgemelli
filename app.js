@@ -4134,6 +4134,17 @@ function abrirReporte() {
                 if (updateError) throw updateError;
                 const updatedRow = Array.isArray(updatedExit) ? updatedExit[0] : updatedExit;
                 if (!updatedRow?.salida_efectiva) {
+                    const { data: existingEntry, error: fetchError } = await supabaseClient
+                        .from('ingresos_visitantes')
+                        .select('id, salida_efectiva')
+                        .eq('id', entryId)
+                        .single();
+
+                    if (!fetchError && existingEntry?.salida_efectiva) {
+                        showError('La salida del visitante ya estaba registrada. Se actualizó la lista.', 'visitorExitError');
+                        await loadPendingVisitorExits();
+                        return;
+                    }
                     throw new Error('No se pudo registrar la salida del visitante. Verifica permisos o el identificador del ingreso.');
                 }
                     
