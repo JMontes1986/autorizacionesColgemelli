@@ -4129,22 +4129,34 @@ function abrirReporte() {
                         salida_vigilante_id: currentUser?.id || null
                     })
                     .eq('id', entryId)
-                    .select('id, salida_efectiva');
+                    .select('id, salida_efectiva')
+                    .maybeSingle();
 
                 if (updateError) throw updateError;
-                const updatedRow = Array.isArray(updatedExit) ? updatedExit[0] : updatedExit;
+                const updatedRow = updatedExit;
                 if (!updatedRow?.salida_efectiva) {
                     const { data: existingEntry, error: fetchError } = await supabaseClient
                         .from('ingresos_visitantes')
                         .select('id, salida_efectiva')
                         .eq('id', entryId)
-                        .single();
+                        .maybeSingle();
 
-                    if (!fetchError && existingEntry?.salida_efectiva) {
+                    if (fetchError) {
+                        throw fetchError;
+                    }
+
+                    if (existingEntry?.salida_efectiva) {
                         showError('La salida del visitante ya estaba registrada. Se actualizó la lista.', 'visitorExitError');
                         await loadPendingVisitorExits();
                         return;
                     }
+                    
+                    if (!existingEntry) {
+                        showError('No se encontró el ingreso del visitante. Actualiza la lista e intenta nuevamente.', 'visitorExitError');
+                        await loadPendingVisitorExits();
+                        return;
+                    }
+                        
                     throw new Error('No se pudo registrar la salida del visitante. Verifica permisos o el identificador del ingreso.');
                 }
                     
