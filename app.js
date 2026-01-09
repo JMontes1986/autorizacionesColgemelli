@@ -4056,6 +4056,7 @@ function abrirReporte() {
                     const entryObservations = entry.observaciones ? sanitizeHtml(entry.observaciones) : '';
                     const obsId = `visitor-exit-observations-${entry.id}`;
                     const exitDisabled = !visitorExitTrackingAvailable;
+                    const entryIdPayload = JSON.stringify(entry.id);
 
                     return `
                         <div class="verification-card" style="margin-bottom: 20px;">
@@ -4079,7 +4080,7 @@ function abrirReporte() {
                                 <label for="${obsId}">Observaciones de salida (opcional)</label>
                                 <textarea id="${obsId}" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="2" ${exitDisabled ? 'disabled' : ''}></textarea>
                             </div>
-                            <button class="btn btn-success" onclick="confirmVisitorExit(${entry.id})" style="font-size: 16px; padding: 12px 30px; margin-top: 10px;" ${exitDisabled ? 'disabled' : ''}>
+                            <button class="btn btn-success" onclick="confirmVisitorExit(${entryIdPayload})" style="font-size: 16px; padding: 12px 30px; margin-top: 10px;" ${exitDisabled ? 'disabled' : ''}>
                                 ${exitDisabled ? '⚠️ Salida no disponible' : '✅ Registrar salida'}
                             </button>
                         </div>
@@ -4117,8 +4118,14 @@ function abrirReporte() {
                     showError('No se puede registrar la salida: falta la columna salida_efectiva en la base de datos.', 'visitorExitError');
                     return;
                 }
+
+                const normalizedEntryId = entryId?.toString().trim();
+                if (!normalizedEntryId) {
+                    showError('No se pudo identificar el ingreso del visitante.', 'visitorExitError');
+                    return;
+                }
                     
-                const observationField = document.getElementById(`visitor-exit-observations-${entryId}`);
+                const observationField = document.getElementById(`visitor-exit-observations-${normalizedEntryId}`);
                 const observations = observationField?.value.trim() || null;
                     
                 const { data: updatedExit, error: updateError } = await supabaseClient
@@ -4128,7 +4135,7 @@ function abrirReporte() {
                         salida_observaciones: observations,
                         salida_vigilante_id: currentUser?.id || null
                     })
-                    .eq('id', entryId)
+                    .eq('id', normalizedEntryId)
                     .select('id, salida_efectiva')
                     .maybeSingle();
 
@@ -4138,7 +4145,7 @@ function abrirReporte() {
                     const { data: existingEntry, error: fetchError } = await supabaseClient
                         .from('ingresos_visitantes')
                         .select('id, salida_efectiva')
-                        .eq('id', entryId)
+                        .eq('id', normalizedEntryId)
                         .maybeSingle();
 
                     if (fetchError) {
@@ -4157,7 +4164,7 @@ function abrirReporte() {
                         return;
                     }
                         
-                    throw new Error('No se pudo registrar la salida del visitante. Verifica permisos o el identificador del ingreso.');
+                    throw new Error('No se pudo registrar la salida del visitante. Verifica permisos del usuario o el identificador del ingreso.');
                 }
                     
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
