@@ -443,6 +443,17 @@ with check (
     auth.role() <> 'anon'
 );
 
+create policy "ingresos_visitantes_update_anon" on public.ingresos_visitantes
+for update
+using (
+    auth.role() = 'anon'
+    and salida_efectiva is null
+)
+with check (
+    auth.role() = 'anon'
+    and salida_efectiva is not null
+);
+
 create policy "ingresos_visitantes_delete" on public.ingresos_visitantes
 for delete
 using (
