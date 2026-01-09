@@ -68,22 +68,31 @@
 <div class="app-shell" id="dashboard" style="display: none;">
   <div class="offcanvas-lg offcanvas-start app-sidebar border-end" id="sidebarMenu" tabindex="-1">
     <div class="p-3 border-bottom">
-      <div class="d-flex align-items-center gap-2">
-        <img alt="Logo Colegio Gemelli" class="rounded" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg" width="36" height="36"/>
-        <div>
-          <div class="fw-semibold">Colegio Gemelli</div>
-          <small class="text-muted">Control de Salidas</small>
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <img alt="Logo Colegio Gemelli" class="rounded" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg" width="36" height="36"/>
+          <div class="sidebar-brand-text">
+            <div class="fw-semibold">Colegio Gemelli</div>
+            <small class="text-muted">Control de Salidas</small>
+          </div>
         </div>
+          <button aria-label="Colapsar menú" class="btn btn-outline-secondary btn-sm sidebar-collapse-btn" id="sidebarCollapseBtn" type="button">⮜</button>
       </div>
     </div>
     <div class="p-3">
       <div class="nav-buttons" id="navButtons">
         <!-- Botones se cargarán dinámicamente según el rol -->
-        <button class="btn btn-primary" id="btnControlSalidas">📋 Control de Salidas</button>
+        <button class="btn btn-primary" id="btnControlSalidas">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Control de Salidas</span>
+        </button>
       </div>
     </div>
     <div class="mt-auto p-3">
-      <button id="logoutBtn" class="btn btn-outline-danger w-100" type="button">Cerrar Sesión</button>
+      <button id="logoutBtn" class="btn btn-outline-danger w-100" type="button">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-text">Cerrar Sesión</span>
+      </button>
     </div>
   </div>
   <div class="app-main">
