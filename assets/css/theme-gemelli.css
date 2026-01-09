@@ -114,6 +114,36 @@ h1, h2, h3 {
   padding: 0.6rem 0.75rem;
   color: #2c3e50;
   font-weight: 500;
+  width: 100%;
+}
+
+.app-sidebar .nav-icon {
+  font-size: 1.1rem;
+}
+
+.sidebar-collapse-btn {
+  min-width: 2.25rem;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar {
+  width: 80px;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .sidebar-brand-text {
+  display: none;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .btn {
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .nav-text {
+  display: none;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .nav-buttons {
+  align-items: center;
 }
 
 .app-sidebar .btn:hover,
