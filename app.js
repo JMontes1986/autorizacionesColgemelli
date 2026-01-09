@@ -1764,6 +1764,9 @@ function abrirReporte() {
             // Verificar patrón básico
             if (!emailPattern.test(email)) return false;
             
+             // Verificar dominio institucional
+            if (!email.toLowerCase().endsWith('@colgemelli.edu.co')) return false;
+                
             // Verificar caracteres peligrosos
             const dangerousChars = /<|>|"|'|;|&|javascript:|vbscript:|data:/i;
             if (dangerousChars.test(email)) return false;
@@ -2169,6 +2172,15 @@ function abrirReporte() {
 
         async function logSecurityEvent(type, action, details = {}, success = true) {
             try {
+                if (!supabaseClient) {
+                    return;
+                }
+
+                const { data: authSession } = await supabaseClient.auth.getSession();
+                if (!authSession?.session?.access_token) {
+                    return;
+                }
+                    
                 const now = new Date();
                 const userAgent = navigator.userAgent;
                 const clientId = getClientId();
@@ -2206,9 +2218,13 @@ function abrirReporte() {
                     timestamp: now.toISOString()
                 };
 
-                await supabaseClient
+                 const { error } = await supabaseClient
                     .from('audit_logs')
                     .insert([logEntry]);
+
+                    if (error) {
+                    throw error;
+                }
                     
                 console.log('🔒 Evento de seguridad registrado:', type, action);
                 
