@@ -8205,11 +8205,28 @@ function actualizarVisibilidadHistorico() {
   }
 }
 
+function cerrarMenuMovilSiEstaAbierto() {
+  const sidebar = document.getElementById('sidebarMenu');
+  if (!sidebar) return;
+  if (window.innerWidth >= 992) return;
+  if (!sidebar.classList.contains('show')) return;
+  if (window.bootstrap && window.bootstrap.Offcanvas) {
+    const instance = window.bootstrap.Offcanvas.getInstance(sidebar) || new window.bootstrap.Offcanvas(sidebar);
+    instance.hide();
+  }
+}
+
 // Interceptar todos los clics en los botones de navegación
 document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
   btn.addEventListener('click', () => {
     setTimeout(actualizarVisibilidadHistorico, 100); // espera pequeña para que cambie la clase
   });
+});
+
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('.nav-buttons .btn, #logoutBtn');
+  if (!target) return;
+  cerrarMenuMovilSiEstaAbierto();
 });
 
 document.addEventListener('DOMContentLoaded', function () {
