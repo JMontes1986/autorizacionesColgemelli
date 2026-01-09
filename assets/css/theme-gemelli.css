@@ -1,0 +1,215 @@
+:root {
+  --color-primary: #1f4b99;
+  --color-secondary: #e3e9f6;
+  --color-success: #2f9e44;
+  --color-danger: #dc3545;
+  --color-warning: #f4b740;
+  --color-info: #0dcaf0;
+  --bg-page: #f5f7fb;
+  --text-main: #2f3437;
+  --bs-primary: var(--color-primary);
+  --bs-secondary: #6c7a92;
+  --bs-success: var(--color-success);
+  --bs-danger: var(--color-danger);
+  --bs-warning: var(--color-warning);
+  --bs-info: var(--color-info);
+  --bs-body-color: var(--text-main);
+  --bs-body-bg: var(--bg-page);
+  --bs-border-radius: 0.5rem;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  background: var(--bg-page);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: block;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+.container {
+  max-width: 100%;
+  background: transparent;
+  padding: 0;
+}
+
+.login-page {
+  padding: 24px;
+}
+
+.login-card {
+  border: none;
+  border-radius: 1rem;
+  background: #fff;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.login-card .card-body {
+  padding: 2rem;
+}
+
+.login-logo {
+  width: 110px;
+  height: auto;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  width: 260px;
+  background: #fff;
+}
+
+.app-sidebar .nav-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app-sidebar .btn {
+  text-align: left;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0.6rem 0.75rem;
+  color: #2c3e50;
+}
+
+.app-sidebar .btn:hover,
+.app-sidebar .btn:focus {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.app-sidebar .btn.btn-danger,
+.app-sidebar .btn.btn-warning {
+  color: #fff;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  background: #fff;
+  border-bottom: 1px solid #e6e9f2;
+  padding: 0.75rem 1.5rem;
+}
+
+.app-topbar .app-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #edf2ff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  position: static;
+}
+
+.security-indicator {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  position: static;
+}
+
+.security-indicator.secure {
+  background: #e6fcf5;
+  color: #0f5132;
+}
+
+.security-indicator.warning {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.security-indicator.error {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.section .card {
+  border: 1px solid #e6e9f2;
+}
+
+.chart-container {
+  width: 100%;
+  height: 260px;
+}
+
+.stat-card {
+  border: 1px solid #e6e9f2;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.rate-limit-warning {
+  background: #fff3cd;
+  color: #664d03;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group input:not(.form-control),
+.form-group select:not(.form-select),
+.form-group textarea:not(.form-control) {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.5rem;
+  background-color: #fff;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.table-wrapper .table {
+  margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+  .app-shell {
+    display: block;
+  }
+
+  .app-sidebar {
+    width: 100%;
+  }
+}
