@@ -7814,18 +7814,86 @@ function abrirReporte() {
         }
 
         // Detectar intentos de manipulación del DOM
+        const securityDebugEnabled = new URLSearchParams(window.location.search).has('securityDebug');
+        const domAllowlist = {
+            ids: new Set(['dashboard', 'dashboardSectionDiv', 'historyDebug', 'securityIndicator']),
+            classes: new Set(['toast-container', 'modal', 'tooltip', 'popover', 'dropdown-menu']),
+            scriptSrcPatterns: [
+                /^https:\/\/cdn\.jsdelivr\.net\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/crypto-js\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/gsap\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/echarts\//,
+                /^https:\/\/cdn\.jsdelivr\.net\/npm\/bootstrap\//,
+                /\/(app|env|version|toast)\.js$/
+            ]
+        };
+
+        const domMonitorRoot = document.getElementById('dashboard')
+            || document.querySelector('.app-shell')
+            || document.body;
+
+        const isAllowlistedNode = (node) => {
+            if (!node || node.nodeType !== 1) {
+                return false;
+            }
+
+            if (node.id && domAllowlist.ids.has(node.id)) {
+                return true;
+            }
+
+            if (node.classList) {
+                for (const className of domAllowlist.classes) {
+                    if (node.classList.contains(className)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        const isAllowlistedScript = (script) => {
+            if (!script) {
+                return false;
+            }
+
+            const src = script.getAttribute('src') || '';
+            return domAllowlist.scriptSrcPatterns.some((pattern) => pattern.test(src));
+        };
+
+        const truncateHtml = (html, limit = 300) => {
+            if (!html) {
+                return '';
+            }
+
+            return html.length > limit ? `${html.slice(0, limit)}…` : html;
+        };
+
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList') {
                     mutation.addedNodes.forEach(function(node) {
                         if (node.nodeType === 1) { // Element node
+                                if (isAllowlistedNode(node)) {
+                                return;
+                            }
+                                
                             const scripts = node.querySelectorAll ? node.querySelectorAll('script') : [];
-                            if (scripts.length > 0) {
+                            const suspiciousScripts = Array.from(scripts).filter((script) => !isAllowlistedScript(script));
+
+                            if (suspiciousScripts.length > 0) {
                                 console.warn('🚨 Intento de inyección de script detectado');
-                                scripts.forEach(script => script.remove());
+                                if (securityDebugEnabled) {
+                                    console.debug('🔎 Nodo sospechoso detectado:', truncateHtml(node.outerHTML));
+                                }
+
+                                suspiciousScripts.forEach(script => script.remove());
                                 
                                 logSecurityEvent('security', 'Intento de inyección DOM detectado', {
-                                    element: node.tagName || 'unknown'
+                                    element: node.tagName || 'unknown',
+                                    scriptsDetected: suspiciousScripts.length
                                 }, false);
                             }
                         }
@@ -7887,7 +7955,7 @@ function abrirReporte() {
             }, 500);
             
             // Configurar observador de DOM
-            observer.observe(document.body, {
+           observer.observe(domMonitorRoot, {
                 childList: true,
                 subtree: true
             });
