@@ -2134,15 +2134,28 @@ function abrirReporte() {
             const question = document.getElementById('captchaQuestion');
             const input = document.getElementById('captchaAnswer');
             if (question) question.textContent = `¿Cuánto es ${a} + ${b}?`;
-            if (input) input.value = '';
+            if (input) {
+                input.value = '';
+                input.classList.remove('input-secure', 'input-error');
+            }
         }
 
         function validateCaptcha() {
             const input = document.getElementById('captchaAnswer');
-            if (!input || parseInt(input.value, 10) !== captchaResult) {
+           if (!input) {
+                showError('No se encontró el campo de validación');
+                return false;
+            }
+            const value = parseInt(input.value, 10);
+            if (!Number.isInteger(value) || value !== captchaResult) {
+                input.classList.remove('input-secure');
+                input.classList.add('input-error');
+                input.focus();
                 showError('Respuesta incorrecta a la pregunta de seguridad');
                 return false;
             }
+            input.classList.remove('input-error');
+            input.classList.add('input-secure');
             return true;
         }
 
@@ -8111,6 +8124,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function attachEventHandlers() {
     requestNotificationPermission();
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            login();
+        });
+    }
     const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.addEventListener('click', logout);
   const clickHandlers = [
