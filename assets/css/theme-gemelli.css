@@ -312,6 +312,7 @@ h1, h2, h3 {
   }
 
   .app-sidebar {
-    width: 100%;
+    width: min(85vw, 280px);
+    max-width: 100%;
   }
 }
