@@ -99,15 +99,21 @@ h1, h2, h3 {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  align-items: stretch;
 }
 
 .app-sidebar .btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
   text-align: left;
   border-radius: 0.5rem;
-  background: transparent;
-  border: 1px solid transparent;
+  background: #f7f9fc;
+  border: 1px solid #e3e9f6;
   padding: 0.6rem 0.75rem;
   color: #2c3e50;
+  font-weight: 500;
 }
 
 .app-sidebar .btn:hover,
@@ -118,7 +124,15 @@ h1, h2, h3 {
 
 .app-sidebar .btn.btn-danger,
 .app-sidebar .btn.btn-warning {
+  background: var(--color-danger);
+  border-color: #c82333;
   color: #fff;
+}
+
+.app-sidebar .btn.btn-warning {
+  background: var(--color-warning);
+  border-color: #e0a800;
+  color: #3f2a00;
 }
 
 .app-main {
