@@ -5254,7 +5254,7 @@ function abrirReporte() {
                     html += `
                         <div class="verification-card ${cardClass}">
                             <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
-                            <img src="${student?.foto_url || 'https://via.placeholder.com/120'}" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
+                            <img src="${student?.foto_url || 'assets/img/placeholder-student.png'}" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
                             
                             <div class="verification-card-content">
                                 <div class="verification-card-info">
@@ -8076,7 +8076,7 @@ function abrirReporte() {
       div.style = "border:1px solid #ddd; padding:10px; border-radius:10px; margin:10px 0; text-align:center;";
 
       div.innerHTML = `
-        <img src="${estudiante?.foto_url || 'https://via.placeholder.com/120'}"
+        <img src="${estudiante?.foto_url || 'assets/img/placeholder-student.png'}"
           alt="Foto estudiante"
           style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
         <h3>${estudiante?.nombre || 'Estudiante'}</h3>
