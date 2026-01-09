@@ -2535,7 +2535,7 @@ function abrirReporte() {
                 }
                     
                 // Limpiar UI
-                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('loginSection').style.display = 'flex';
                 document.getElementById('dashboard').style.display = 'none';
                 const logoutBtn = document.getElementById('logoutBtn');
                 if (logoutBtn) logoutBtn.style.display = 'none';
@@ -2880,7 +2880,7 @@ function abrirReporte() {
 
         function showDashboard() {
             document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'flex';
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) logoutBtn.style.display = 'block';
 
