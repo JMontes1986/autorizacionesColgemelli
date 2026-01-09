@@ -37,10 +37,9 @@
 }
 
 .header .logo {
-    height: 35px;             /* small logo */
+    height: 70px;
     width: auto;
-
-        }
+}
 
         .header h1 {
             font-size: 2em;
