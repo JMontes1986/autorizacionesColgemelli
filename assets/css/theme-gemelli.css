@@ -66,6 +66,46 @@ h1, h2, h3 {
   height: auto;
 }
 
+.hub-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: #f2f6ff;
+  color: #1f3d7a;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hub-link:hover,
+.hub-link:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(31, 61, 122, 0.18);
+  color: #163064;
+}
+
+.hub-logo {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hub-logo svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hub-text {
+  font-size: 0.95rem;
+}
+
 .login-active {
   overflow: hidden;
 }
