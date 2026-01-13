@@ -2862,6 +2862,20 @@ function abrirReporte() {
             return new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Bogota', hour12: false }).substring(0, 5);
         }
 
+        const LATE_ARRIVAL_WARNING_THRESHOLD = 3;
+        const LATE_ARRIVAL_WARNING_DAYS = 7;
+        const LATE_ARRIVAL_ALERT_EMAILS = ['sistemas@colgemelli.edu.co', 'convivencia@colgemelli.edu.co'];
+
+        function getColombiaDateFromDate(date) {
+            return date.toLocaleDateString('sv-SE', { timeZone: 'America/Bogota' });
+        }
+
+        function getColombiaDateDaysAgo(daysAgo) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysAgo);
+            return getColombiaDateFromDate(date);
+        }
+
         async function loadLateStudents() {
             const studentList = document.getElementById('lateStudentList');
             const studentSelect = document.getElementById('lateStudentSelect');
@@ -2870,6 +2884,7 @@ function abrirReporte() {
             if (!gradeId) {
                 studentList.innerHTML = '';
                 studentList.dataset.disabled = 'true';
+                await checkLateArrivalWarnings(getSelectedLateStudents());
                 return;
             }
 
@@ -3005,6 +3020,86 @@ function abrirReporte() {
             }));
         }
 
+        function renderLateArrivalWarnings(warnings, startDate, endDate) {
+            const warningDiv = document.getElementById('lateArrivalWarning');
+            if (!warningDiv) return;
+
+            if (!warnings || warnings.length === 0) {
+                warningDiv.style.visibility = 'hidden';
+                warningDiv.innerHTML = '';
+                return;
+            }
+
+            const warningList = warnings.map((student) => `
+                <li><strong>${sanitizeHtml(student.name)}</strong>: ${student.count} llegadas tarde</li>
+            `).join('');
+
+            const subject = `Advertencia de llegadas tarde (${formatDate(startDate)} - ${formatDate(endDate)})`;
+            const body = warnings.map((student) => `- ${student.name}: ${student.count} llegadas tarde`).join('\n');
+            const mailto = `mailto:${LATE_ARRIVAL_ALERT_EMAILS.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            warningDiv.innerHTML = `
+                <div class="mb-2"><strong>⚠️ Advertencia semanal de llegadas tarde</strong></div>
+                <p class="mb-2">Se detectaron estudiantes con varias llegadas tarde en la última semana:</p>
+                <ul class="mb-2">${warningList}</ul>
+                <p class="mb-0">
+                  Notificar a: ${LATE_ARRIVAL_ALERT_EMAILS.map(email => `<a href="mailto:${email}">${email}</a>`).join(', ')}.
+                  <a href="${mailto}" class="ms-1">Enviar advertencia</a>
+                </p>
+            `;
+            warningDiv.style.visibility = 'visible';
+        }
+
+        async function checkLateArrivalWarnings(selectedStudents) {
+            const warningDiv = document.getElementById('lateArrivalWarning');
+            if (!warningDiv) return;
+
+            if (!selectedStudents || selectedStudents.length === 0) {
+                warningDiv.style.visibility = 'hidden';
+                warningDiv.innerHTML = '';
+                return;
+            }
+
+            try {
+                if (!validateSession()) return;
+
+                const endDate = getColombiaDate();
+                const startDate = getColombiaDateDaysAgo(LATE_ARRIVAL_WARNING_DAYS - 1);
+                const studentIds = selectedStudents.map((student) => student.id);
+
+                const { data: arrivals, error } = await supabaseClient
+                    .from('llegadas_tarde')
+                    .select('estudiante_id')
+                    .in('estudiante_id', studentIds)
+                    .gte('fecha', startDate)
+                    .lte('fecha', endDate);
+
+                if (error) throw error;
+
+                const counts = new Map();
+                (arrivals || []).forEach((arrival) => {
+                    if (!arrival.estudiante_id) return;
+                    counts.set(arrival.estudiante_id, (counts.get(arrival.estudiante_id) || 0) + 1);
+                });
+
+                const warnings = selectedStudents
+                    .map((student) => ({
+                        ...student,
+                        count: counts.get(student.id) || 0
+                    }))
+                    .filter((student) => student.count >= LATE_ARRIVAL_WARNING_THRESHOLD);
+
+                renderLateArrivalWarnings(warnings, startDate, endDate);
+            } catch (error) {
+                console.error('Error al evaluar advertencias de llegadas tarde:', error);
+                warningDiv.style.visibility = 'hidden';
+                warningDiv.innerHTML = '';
+                await logSecurityEvent('error', 'Error al evaluar advertencias de llegadas tarde', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
         function getLateHistoryRange() {
             const startInput = document.getElementById('lateHistoryStart');
             const endInput = document.getElementById('lateHistoryEnd');
@@ -3113,6 +3208,7 @@ function abrirReporte() {
                       <strong>Período:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}.
                     </p>
                 `;
+                await checkLateArrivalWarnings(selectedStudents);
             } catch (error) {
                 console.error('Error loading late arrival history:', error);
                 summary.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el historial de llegadas tarde.</p>';
