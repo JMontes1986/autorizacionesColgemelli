@@ -1627,6 +1627,58 @@ function abrirReporte() {
         // CONFIGURACIÓN GROQ (CHAT COMPLETIONS)
         // ========================================
 
+        function encodeToonValue(value) {
+            return String(value ?? '')
+                .replace(/\\/g, '\\\\')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/=/g, '\\=');
+        }
+
+        function decodeToonValue(value) {
+            return String(value ?? '')
+                .replace(/\\=/g, '=')
+                .replace(/\\r/g, '\r')
+                .replace(/\\n/g, '\n')
+                .replace(/\\\\/g, '\\');
+        }
+
+        function serializeToonRequest({
+            model,
+            messages,
+            temperature,
+            maxCompletionTokens,
+            topP,
+            stream,
+            reasoningEffort,
+            stop
+        }) {
+            const lines = [
+                'TOON/1.0',
+                `model=${encodeToonValue(model)}`,
+                `temperature=${temperature}`,
+                `max_completion_tokens=${maxCompletionTokens}`,
+                `top_p=${topP}`,
+                `stream=${stream ? 'true' : 'false'}`,
+                `reasoning_effort=${encodeToonValue(reasoningEffort)}`
+            ];
+
+            if (stop) {
+                const stopValue = Array.isArray(stop)
+                    ? stop.map(encodeToonValue).join('|')
+                    : encodeToonValue(stop);
+                lines.push(`stop=${stopValue}`);
+            }
+
+            lines.push(`messages=${messages.length}`);
+            messages.forEach((message, index) => {
+                lines.push(`message.${index}.role=${encodeToonValue(message.role)}`);
+                lines.push(`message.${index}.content=${encodeToonValue(message.content)}`);
+            });
+
+            return lines.join('\n');
+        }
+
         async function streamGroqChatCompletion({
             messages,
             temperature = 1,
@@ -1643,17 +1695,18 @@ function abrirReporte() {
             const response = await fetch(`${GROQ_API_BASE_URL}/chat/completions`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/toon',
+                    Accept: 'text/toon',
                     Authorization: `Bearer ${GROQ_API_KEY}`
                 },
-                body: JSON.stringify({
+                body: serializeToonRequest({
                     model: GROQ_MODEL,
                     messages,
                     temperature,
-                    max_completion_tokens: maxCompletionTokens,
-                    top_p: topP,
+                    maxCompletionTokens,
+                    topP,
                     stream: true,
-                    reasoning_effort: reasoningEffort,
+                    reasoningEffort,
                     stop
                 })
             });
@@ -1688,17 +1741,9 @@ function abrirReporte() {
                         return;
                     }
 
-                    let parsed;
-                    try {
-                        parsed = JSON.parse(payload);
-                    } catch (error) {
-                        console.warn('⚠️ No se pudo parsear un chunk de Groq:', payload);
-                        continue;
-                    }
-
-                    const token = parsed?.choices?.[0]?.delta?.content || '';
+                    const token = decodeToonValue(payload);
                     if (token && typeof onToken === 'function') {
-                        onToken(token, parsed);
+                        onToken(token, payload);
                     }
                 }
             }
