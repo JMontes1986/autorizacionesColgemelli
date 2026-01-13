@@ -3704,12 +3704,19 @@ function abrirReporte() {
             }
                 
             const staffHasReturn = document.getElementById('staffHasReturn');
+            const staffHasReturnButton = document.getElementById('staffHasReturnButton');
             if (staffHasReturn) {
                 staffHasReturn.addEventListener('change', () => {
                     toggleStaffReturnFields(staffHasReturn.checked);
                 });
                 toggleStaffReturnFields(staffHasReturn.checked);
             }  
+            if (staffHasReturnButton && staffHasReturn) {
+                staffHasReturnButton.addEventListener('click', () => {
+                    staffHasReturn.checked = !staffHasReturn.checked;
+                    toggleStaffReturnFields(staffHasReturn.checked);
+                });
+            }
                 
             const studentSearchInput = document.getElementById('studentSearch');
             if (studentSearchInput) {
@@ -5430,6 +5437,7 @@ function abrirReporte() {
 
         function toggleStaffReturnFields(forceValue) {
             const checkbox = document.getElementById('staffHasReturn');
+            const button = document.getElementById('staffHasReturnButton');
             const returnGroup = document.getElementById('staffReturnTimeGroup');
             const returnInput = document.getElementById('staffReturnTime');
 
@@ -5441,6 +5449,14 @@ function abrirReporte() {
                 checkbox.checked = forceValue;
             }
 
+            if (button) {
+                button.classList.toggle('is-active', shouldShow);
+                button.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+                button.innerHTML = shouldShow
+                    ? '✅ Hora de regreso activa'
+                    : '⏱️ Registrar hora de regreso';
+            }
+                
             if (returnGroup) {
                 returnGroup.style.display = shouldShow ? 'block' : 'none';
             }
