@@ -293,6 +293,12 @@ h1, h2, h3 {
   color: #842029;
 }
 
+@media (max-width: 991.98px) {
+  .app-shell .offcanvas.show ~ .app-main .security-indicator {
+    display: none;
+  }
+}
+
 .section {
   display: none;
 }
