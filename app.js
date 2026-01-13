@@ -2926,6 +2926,7 @@ function abrirReporte() {
 
         function setupNavigation() {
             const navButtons = document.getElementById('navButtons');
+            const navButtonsMobile = document.getElementById('navButtonsMobile');
             const role = currentUser.rol.nombre;
             const email = currentUser.email;
             const lateUser =
@@ -2937,10 +2938,18 @@ function abrirReporte() {
                   <span class="nav-icon">⏰</span>
                   <span class="nav-text">Llegadas Tarde</span>
                 </button>` : '';
-            navButtons.innerHTML = '';
+            const setNavButtonsContent = (html) => {
+                if (navButtons) {
+                    navButtons.innerHTML = html;
+                }
+                if (navButtonsMobile) {
+                    navButtonsMobile.innerHTML = html;
+                }
+            };
+            setNavButtonsContent('');
 
             if (role === 'administrador') {
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
@@ -2970,7 +2979,7 @@ function abrirReporte() {
                       <span class="nav-icon">🛂</span>
                       <span class="nav-text">Verificar Salidas</span>
                     </button>
-                `;
+                `);
             } else if (role === 'talento_humano') {
                 const staffReportButton = email === 'gadministrativa@colgemelli.edu.co'
                     ? `<button class="btn" onclick="abrirReportePersonal()">
@@ -2979,7 +2988,7 @@ function abrirReporte() {
                       </button>`
                     : '';
                     
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                     <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">
                       <span class="nav-icon">👥</span>
                       <span class="nav-text">Autorizar Personal</span>
@@ -2989,9 +2998,9 @@ function abrirReporte() {
                       <span class="nav-text">Historial</span>
                     </button>
                     ${staffReportButton}
-                `;
+                `);
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
@@ -3009,10 +3018,10 @@ function abrirReporte() {
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
-                `;
+                `);
             } else if (email === 'convivencia@colgemelli.edu.co' || email === 'gformativa@colgemelli.edu.co') {
                 // Dashboard especial para convivencia y gestión formativa
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
@@ -3030,10 +3039,10 @@ function abrirReporte() {
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
-                `;
+                `);
             } else if (email === 'enfermeria@colgemelli.edu.co') {
                 // Enfermería NO tiene acceso al dashboard
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('authorizeSectionDiv')">
                       <span class="nav-icon">🚪</span>
@@ -3043,10 +3052,10 @@ function abrirReporte() {
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
-                `;
+                `);
             } else {
                 // Todos los demás usuarios tienen acceso al dashboard
-                navButtons.innerHTML = `
+                setNavButtonsContent(`
                 ${lateBtnHtml}
                     <button class="btn" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
@@ -3060,7 +3069,7 @@ function abrirReporte() {
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
-                `;
+                `);
             }
 
              const lateBtn = document.getElementById('lateArrivalBtn');
