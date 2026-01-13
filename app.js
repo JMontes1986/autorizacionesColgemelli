@@ -3157,7 +3157,7 @@ function abrirReporte() {
 
                 const { data: arrivals, error } = await supabaseClient
                     .from('llegadas_tarde')
-                    .select('estudiante_id, fecha')
+                    .select('estudiante_id, fecha, excusa')
                     .in('estudiante_id', studentIds)
                     .gte('fecha', overallStart)
                     .lte('fecha', overallEnd)
@@ -3175,7 +3175,10 @@ function abrirReporte() {
                     if (!studentId || !fecha) return;
 
                     if (!lastArrivalMap.has(studentId)) {
-                        lastArrivalMap.set(studentId, fecha);
+                        lastArrivalMap.set(studentId, {
+                            fecha,
+                            excusa: arrival.excusa === true
+                        });
                     }
 
                     if (fecha >= monthStart && fecha <= monthEnd) {
@@ -3191,12 +3194,16 @@ function abrirReporte() {
                     const monthCount = monthCounts.get(student.id) || 0;
                     const periodCount = periodCounts.get(student.id) || 0;
                     const lastArrival = lastArrivalMap.get(student.id);
+                    const excuseLabel = lastArrival
+                        ? (lastArrival.excusa ? 'Con excusa' : 'Sin excusa')
+                        : 'Sin registros';
                     return `
                         <tr>
                           <td>${sanitizeHtml(student.name)}</td>
                           <td>${monthCount}</td>
                           <td>${periodCount}</td>
-                          <td>${lastArrival ? formatDate(lastArrival) : 'Sin registros'}</td>
+                          <td>${lastArrival ? formatDate(lastArrival.fecha) : 'Sin registros'}</td>
+                          <td>${excuseLabel}</td>
                         </tr>
                     `;
                 }).join('');
