@@ -99,7 +99,10 @@
   </main>
 
   <script>
-    const supabase = window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    const supabaseEnv = window.process?.env ?? {};
+    const SUPABASE_URL = supabaseEnv.SUPABASE_URL || 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
+    const SUPABASE_ANON_KEY = supabaseEnv.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function sanitizeHtml(str) {
       if (!str) return '';
