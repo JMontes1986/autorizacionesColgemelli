@@ -2801,6 +2801,7 @@ function abrirReporte() {
                 } else {
                     studentList.textContent = 'No hay estudiantes en este grado';
                 }
+                await loadLateArrivalHistory();
 
             } catch (error) {
                 console.error('Error loading late students:', error);
@@ -2862,6 +2863,7 @@ function abrirReporte() {
 
                 const names = Array.from(boxes).map(b => b.dataset.name);
                 showSuccess(`Llegada tarde registrada para ${sanitizeHtml(names.join(', '))}`, 'lateArrivalInfo');
+                await loadLateArrivalHistory();
                 resetLateArrivalForm();
 
             } catch (error) {
@@ -2878,6 +2880,140 @@ function abrirReporte() {
             if (studentList) {
                 studentList.innerHTML = '';
                 studentList.dataset.disabled = 'true';
+            }
+        }
+
+        function getMonthRange(dateString) {
+            const monthStart = `${dateString.slice(0, 7)}-01`;
+            const date = new Date(`${dateString}T00:00:00-05:00`);
+            const monthEndDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+            const monthEnd = monthEndDate.toLocaleDateString('sv-SE', { timeZone: 'America/Bogota' });
+            return { monthStart, monthEnd };
+        }
+
+        function getSelectedLateStudents() {
+            const selected = Array.from(document.querySelectorAll('#lateStudentList input:checked'));
+            return selected.map((checkbox) => ({
+                id: checkbox.value,
+                name: checkbox.dataset.name || 'Estudiante'
+            }));
+        }
+
+        function getLateHistoryRange() {
+            const startInput = document.getElementById('lateHistoryStart');
+            const endInput = document.getElementById('lateHistoryEnd');
+            if (!startInput || !endInput) return null;
+            const startDate = startInput.value;
+            const endDate = endInput.value;
+            if (!startDate || !endDate) return null;
+            return { startDate, endDate };
+        }
+
+        function setLateHistoryDateRange(startDate, endDate) {
+            const startInput = document.getElementById('lateHistoryStart');
+            const endInput = document.getElementById('lateHistoryEnd');
+            if (startInput) startInput.value = startDate;
+            if (endInput) endInput.value = endDate;
+        }
+
+        async function loadLateArrivalHistory() {
+            const summary = document.getElementById('lateHistorySummary');
+            const tableBody = document.querySelector('#lateHistoryTable tbody');
+            if (!summary || !tableBody) return;
+
+            const selectedStudents = getSelectedLateStudents();
+            if (selectedStudents.length === 0) {
+                summary.innerHTML = '<p class="text-muted mb-0">Selecciona estudiantes para ver el historial.</p>';
+                tableBody.innerHTML = '';
+                return;
+            }
+
+            const range = getLateHistoryRange();
+            if (!range) {
+                summary.innerHTML = '<p class="text-muted mb-0">Define un período para consultar el historial.</p>';
+                tableBody.innerHTML = '';
+                return;
+            }
+
+            const { startDate, endDate } = range;
+            if (startDate > endDate) {
+                summary.innerHTML = '<p class="text-danger mb-0">El inicio del período no puede ser posterior a la fecha final.</p>';
+                tableBody.innerHTML = '';
+                return;
+            }
+
+            summary.innerHTML = '<p class="text-muted mb-0">Consultando historial...</p>';
+            tableBody.innerHTML = '';
+
+            try {
+                if (!validateSession()) return;
+
+                const today = getColombiaDate();
+                const { monthStart, monthEnd } = getMonthRange(today);
+                const overallStart = startDate < monthStart ? startDate : monthStart;
+                const overallEnd = endDate > monthEnd ? endDate : monthEnd;
+                const studentIds = selectedStudents.map((student) => student.id);
+
+                const { data: arrivals, error } = await supabaseClient
+                    .from('llegadas_tarde')
+                    .select('estudiante_id, fecha')
+                    .in('estudiante_id', studentIds)
+                    .gte('fecha', overallStart)
+                    .lte('fecha', overallEnd)
+                    .order('fecha', { ascending: false });
+
+                if (error) throw error;
+
+                const monthCounts = new Map();
+                const periodCounts = new Map();
+                const lastArrivalMap = new Map();
+
+                (arrivals || []).forEach((arrival) => {
+                    const studentId = arrival.estudiante_id;
+                    const fecha = arrival.fecha;
+                    if (!studentId || !fecha) return;
+
+                    if (!lastArrivalMap.has(studentId)) {
+                        lastArrivalMap.set(studentId, fecha);
+                    }
+
+                    if (fecha >= monthStart && fecha <= monthEnd) {
+                        monthCounts.set(studentId, (monthCounts.get(studentId) || 0) + 1);
+                    }
+
+                    if (fecha >= startDate && fecha <= endDate) {
+                        periodCounts.set(studentId, (periodCounts.get(studentId) || 0) + 1);
+                    }
+                });
+
+                tableBody.innerHTML = selectedStudents.map((student) => {
+                    const monthCount = monthCounts.get(student.id) || 0;
+                    const periodCount = periodCounts.get(student.id) || 0;
+                    const lastArrival = lastArrivalMap.get(student.id);
+                    return `
+                        <tr>
+                          <td>${sanitizeHtml(student.name)}</td>
+                          <td>${monthCount}</td>
+                          <td>${periodCount}</td>
+                          <td>${lastArrival ? formatDate(lastArrival) : 'Sin registros'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                summary.innerHTML = `
+                    <p class="mb-0">
+                      Mostrando ${selectedStudents.length} estudiante(s).
+                      <strong>Mes actual:</strong> ${formatDate(monthStart)} - ${formatDate(monthEnd)}.
+                      <strong>Período:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}.
+                    </p>
+                `;
+            } catch (error) {
+                console.error('Error loading late arrival history:', error);
+                summary.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el historial de llegadas tarde.</p>';
+                tableBody.innerHTML = '';.
+                await logSecurityEvent('error', 'Error al cargar historial de llegadas tarde', {
+                    error: error.message.substring(0, 200)
+                }, false);
             }
         }
 
@@ -3175,6 +3311,11 @@ function abrirReporte() {
             } else if (sectionId === 'lateArrivalSectionDiv') {
                 const gradeSel = document.getElementById('lateGradeSelect');
                 const form = document.getElementById('lateArrivalForm');
+                const historyStart = document.getElementById('lateHistoryStart');
+                const historyEnd = document.getElementById('lateHistoryEnd');
+                const historyRefresh = document.getElementById('lateHistoryRefresh');
+                const historyReset = document.getElementById('lateHistoryReset');
+                const studentList = document.getElementById('lateStudentList');
                 if (gradeSel && !gradeSel.dataset.bound) {
                     gradeSel.addEventListener('change', loadLateStudents);
                     gradeSel.dataset.bound = 'true';
@@ -3182,6 +3323,40 @@ function abrirReporte() {
                 if (form && !form.dataset.bound) {
                     form.addEventListener('submit', saveLateArrival);
                     form.dataset.bound = 'true';
+                }
+                if (historyStart && historyEnd && !historyStart.value && !historyEnd.value) {
+                    const today = getColombiaDate();
+                    const { monthStart } = getMonthRange(today);
+                    setLateHistoryDateRange(monthStart, today);
+                }
+                if (historyRefresh && !historyRefresh.dataset.bound) {
+                    historyRefresh.addEventListener('click', loadLateArrivalHistory);
+                    historyRefresh.dataset.bound = 'true';
+                }
+                if (historyReset && !historyReset.dataset.bound) {
+                    historyReset.addEventListener('click', () => {
+                        const today = getColombiaDate();
+                        const { monthStart } = getMonthRange(today);
+                        setLateHistoryDateRange(monthStart, today);
+                        loadLateArrivalHistory();
+                    });
+                    historyReset.dataset.bound = 'true';
+                }
+                if (historyStart && !historyStart.dataset.bound) {
+                    historyStart.addEventListener('change', loadLateArrivalHistory);
+                    historyStart.dataset.bound = 'true';
+                }
+                if (historyEnd && !historyEnd.dataset.bound) {
+                    historyEnd.addEventListener('change', loadLateArrivalHistory);
+                    historyEnd.dataset.bound = 'true';
+                }
+                if (studentList && !studentList.dataset.bound) {
+                    studentList.addEventListener('change', (event) => {
+                        if (event.target && event.target.matches('input[type="checkbox"]')) {
+                            loadLateArrivalHistory();
+                        }
+                    });
+                    studentList.dataset.bound = 'true';
                 }
                     } else if (sectionId === 'visitorEntrySectionDiv') {
                 loadVisitorCatalogs();
