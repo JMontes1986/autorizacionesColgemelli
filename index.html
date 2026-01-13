@@ -457,7 +457,44 @@
         <div class="alert alert-success notification-card" id="lateArrivalInfo" style="visibility: hidden;"></div>
       </div>
     </div>
- </div> 
+ </div>
+ <div class="card shadow-sm mb-4" id="lateArrivalHistoryCard">
+    <div class="card-header bg-white">
+      <h3 class="h6 mb-0">📅 Historial de llegadas tarde</h3>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label" for="lateHistoryStart">Inicio del período</label>
+          <input class="form-control" id="lateHistoryStart" type="date"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="lateHistoryEnd">Fin del período</label>
+          <input class="form-control" id="lateHistoryEnd" type="date"/>
+        </div>
+        <div class="col-md-4 d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-primary" id="lateHistoryRefresh" type="button">🔎 Consultar historial</button>
+          <button class="btn btn-outline-secondary" id="lateHistoryReset" type="button">📅 Mes actual</button>
+        </div>
+      </div>
+      <div class="mt-3" id="lateHistorySummary">
+        <p class="text-muted mb-0">Selecciona estudiantes para ver el historial.</p>
+      </div>
+      <div class="table-responsive mt-3">
+        <table class="table table-sm align-middle" id="lateHistoryTable">
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Este mes</th>
+              <th>Período</th>
+              <th>Última llegada</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+ </div>
 </div>
 <!-- Sección de Administración -->
 <div class="section" id="adminSectionDiv">
