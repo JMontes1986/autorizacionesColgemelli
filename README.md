@@ -60,7 +60,7 @@ Antes de construir o desplegar la aplicación se deben definir las siguientes va
 
 - `SUPABASE_URL` – URL de tu instancia de Supabase.
 - `SUPABASE_ANON_KEY` – clave anónima pública del proyecto.
-`GROQ_API_KEY` – clave de API para consumir Groq Chat Completions.
+`GROQ_API_KEY` – clave de API para consumir Groq Chat Completions usando el formato TOON.
 
 Estas variables se utilizan durante el proceso de construcción para generar un archivo `env.js` que queda disponible en tiempo de ejecución.
 En la raíz del repositorio también se provee `env.example.js` con valores de ejemplo. Puedes copiarlo como `env.js` y reemplazar los datos por los de tu proyecto si prefieres configurarlo manualmente.
