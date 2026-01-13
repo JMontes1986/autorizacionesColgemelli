@@ -530,7 +530,6 @@
                 }
                 if (dashboardCharts.gradeChart) {
                 dashboardCharts.gradeChart.dispose();
-                    dashboardCharts.gradeChart.destroy();
                 }
                 const gradeData = {};
                 authorizations.forEach(auth => {
@@ -544,6 +543,7 @@
                         gradeData[gradeName].pending++;
                     }
                 });
+                const labels = Object.keys(gradeData);
                 const pendingData = labels.map(g => gradeData[g].pending);
                 const confirmedData = labels.map(g => gradeData[g].confirmed);
                 const chart = echarts.init(el);
@@ -591,7 +591,7 @@
                     return;
                 }
                 if (dashboardCharts.reasonChart) {
-                    dashboardCharts.reasonChart.destroy();
+                    dashboardCharts.reasonChart.dispose();
                 }
                 const reasonData = {};
                 authorizations.forEach(auth => {
