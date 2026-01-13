@@ -1585,6 +1585,9 @@ function abrirReporte() {
 
         const SUPABASE_URL = envExists ? window.process.env.SUPABASE_URL : '';
         const SUPABASE_ANON_KEY = envExists ? window.process.env.SUPABASE_ANON_KEY : '';
+        const GROQ_API_KEY = envExists ? window.process.env.GROQ_API_KEY : '';
+        const GROQ_API_BASE_URL = 'https://api.groq.com/openai/v1';
+        const GROQ_MODEL = 'openai/gpt-oss-120b';
         const STORAGE_BUCKET = 'autorizaciones';
         const EXIT_EDIT_USERS = [
             'convivencia@colgemelli.edu.co',
@@ -1618,6 +1621,109 @@ function abrirReporte() {
         const SECURE_HEADERS = {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-Token': CSRF_TOKEN
+        };
+
+        // ========================================
+        // CONFIGURACIÓN GROQ (CHAT COMPLETIONS)
+        // ========================================
+
+        async function streamGroqChatCompletion({
+            messages,
+            temperature = 1,
+            maxCompletionTokens = 8192,
+            topP = 1,
+            reasoningEffort = 'medium',
+            stop = null,
+            onToken
+        }) {
+            if (!GROQ_API_KEY) {
+                throw new Error('GROQ_API_KEY no configurada. Define la clave en env.js antes de usar Groq.');
+            }
+
+            const response = await fetch(`${GROQ_API_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: GROQ_MODEL,
+                    messages,
+                    temperature,
+                    max_completion_tokens: maxCompletionTokens,
+                    top_p: topP,
+                    stream: true,
+                    reasoning_effort: reasoningEffort,
+                    stop
+                })
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Groq error ${response.status}: ${errorBody}`);
+            }
+
+            if (!response.body) {
+                throw new Error('La respuesta de Groq no incluye un stream legible.');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || !trimmed.startsWith('data:')) continue;
+
+                    const payload = trimmed.replace(/^data:\s*/, '');
+                    if (payload === '[DONE]') {
+                        return;
+                    }
+
+                    let parsed;
+                    try {
+                        parsed = JSON.parse(payload);
+                    } catch (error) {
+                        console.warn('⚠️ No se pudo parsear un chunk de Groq:', payload);
+                        continue;
+                    }
+
+                    const token = parsed?.choices?.[0]?.delta?.content || '';
+                    if (token && typeof onToken === 'function') {
+                        onToken(token, parsed);
+                    }
+                }
+            }
+        }
+
+        window.groqChatStream = async function groqChatStream(prompt, options = {}) {
+            const messages = options.messages || [{ role: 'user', content: prompt }];
+            let fullText = '';
+
+            await streamGroqChatCompletion({
+                messages,
+                temperature: options.temperature ?? 1,
+                maxCompletionTokens: options.maxCompletionTokens ?? 8192,
+                topP: options.topP ?? 1,
+                reasoningEffort: options.reasoningEffort ?? 'medium',
+                stop: options.stop ?? null,
+                onToken: (token, payload) => {
+                    fullText += token;
+                    if (typeof options.onToken === 'function') {
+                        options.onToken(token, payload);
+                    }
+                }
+            });
+
+            return fullText;
         };
 
         // ========================================
