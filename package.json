@@ -1,6 +1,6 @@
 {
   "name": "autorizacionescolgemelli",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Sistema de control de salidas estudiantiles - Colegio Gemelli",
   "scripts": {
     "test": "jest",
