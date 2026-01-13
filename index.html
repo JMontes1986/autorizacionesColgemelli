@@ -222,8 +222,11 @@
             <div class="form-group">
               <label class="form-label" for="staffHasReturn">5. ¿Tiene hora de regreso?</label>
               <div class="return-time-toggle mt-2">
-                <input class="return-time-toggle__input" id="staffHasReturn" type="checkbox"/>
-                <label class="return-time-toggle__label" for="staffHasReturn">Marcar si se debe registrar la hora de regreso</label>
+               <input class="return-time-toggle__input return-time-toggle__input--hidden" id="staffHasReturn" type="checkbox"/>
+                <button class="btn btn-outline-primary btn-sm return-time-toggle__button" id="staffHasReturnButton" type="button" aria-pressed="false">
+                  ⏱️ Registrar hora de regreso
+                </button>
+                <span class="return-time-toggle__hint text-muted">Opcional</span>
               </div>
             </div>
             </div>
