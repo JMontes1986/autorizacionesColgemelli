@@ -2938,12 +2938,18 @@ function abrirReporte() {
                   <span class="nav-icon">⏰</span>
                   <span class="nav-text">Llegadas Tarde</span>
                 </button>` : '';
-            const setNavButtonsContent = (html) => {
+           const logoutButtonHtml = `
+                <button class="btn btn-outline-danger" id="logoutNavBtn" type="button">
+                  <span class="nav-icon">🚪</span>
+                  <span class="nav-text">Cerrar Sesión</span>
+                </button>
+            `; 
+           const setNavButtonsContent = (html) => {
                 if (navButtons) {
                     navButtons.innerHTML = html;
                 }
                 if (navButtonsMobile) {
-                    navButtonsMobile.innerHTML = html;
+                   navButtonsMobile.innerHTML = `${html}${logoutButtonHtml}`;
                 }
             };
             setNavButtonsContent('');
@@ -3072,7 +3078,12 @@ function abrirReporte() {
                 `);
             }
 
-             const lateBtn = document.getElementById('lateArrivalBtn');
+             const logoutNavBtn = document.getElementById('logoutNavBtn');
+            if (logoutNavBtn) {
+                logoutNavBtn.addEventListener('click', logout);
+            }
+                
+              const lateBtn = document.getElementById('lateArrivalBtn');
             if (lateBtn) {
                 lateBtn.style.display = lateUser ? 'inline-block' : 'none';
             }
@@ -8233,7 +8244,7 @@ document.querySelectorAll('.nav-buttons .btn').forEach(btn => {
 });
 
 document.addEventListener('click', (event) => {
-  const target = event.target.closest('.nav-buttons .btn, #logoutBtn');
+  const target = event.target.closest('.nav-buttons .btn, #logoutBtn, #logoutNavBtn');
   if (!target) return;
   cerrarMenuMovilSiEstaAbierto();
 });
