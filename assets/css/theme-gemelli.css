@@ -258,6 +258,42 @@ h1, h2, h3 {
   object-fit: contain;
 }
 
+.app-topbar .nav-buttons {
+  margin-bottom: 0;
+  justify-content: flex-start;
+}
+
+.app-topbar-nav {
+  gap: 0.5rem;
+  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.app-topbar-nav .btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.45rem 0.6rem;
+  min-width: 90px;
+  font-size: 0.8rem;
+  background: #f7f9fc;
+  border: 1px solid #e3e9f6;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.app-topbar-nav .nav-icon {
+  font-size: 1.1rem;
+}
+
+.app-topbar-nav .nav-text {
+  font-size: 0.75rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
 .connection-status {
   display: inline-flex;
   align-items: center;
