@@ -1226,7 +1226,52 @@
             accent-color: #C69C72;
         }
 
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        .return-time-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: #34495e;
+        }
+
+        .return-time-toggle__input {
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border: 2px solid #cbd5f5;
+            border-radius: 50%;
+            background: #fff;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .return-time-toggle__input::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            transform: scale(0);
+            transition: transform 0.2s ease;
+        }
+
+        .return-time-toggle__input:checked {
+            background: #667eea;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .return-time-toggle__input:checked::before {
+            transform: scale(1);
+        }
+
+        .return-time-toggle__label {
+            margin: 0;
+        }
+
+         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
         }
