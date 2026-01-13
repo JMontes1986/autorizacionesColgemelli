@@ -3010,7 +3010,7 @@ function abrirReporte() {
             } catch (error) {
                 console.error('Error loading late arrival history:', error);
                 summary.innerHTML = '<p class="text-danger mb-0">No se pudo cargar el historial de llegadas tarde.</p>';
-                tableBody.innerHTML = '';.
+                tableBody.innerHTML = '';
                 await logSecurityEvent('error', 'Error al cargar historial de llegadas tarde', {
                     error: error.message.substring(0, 200)
                 }, false);
