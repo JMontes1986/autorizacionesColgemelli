@@ -373,10 +373,7 @@
 
             /* Security indicator responsive */
             .security-indicator {
-                position: fixed;
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
+                position: static;
                 text-align: center;
                 border-radius: 10px;
                 font-size: 11px;
@@ -1806,15 +1803,12 @@
         }
 
         .security-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
+            position: static;
             background: rgba(46, 204, 113, 0.9);
             color: white;
             padding: 10px 15px;
             border-radius: 20px;
             font-size: 12px;
-            z-index: 9999;
             display: flex;
             align-items: center;
             gap: 5px;
