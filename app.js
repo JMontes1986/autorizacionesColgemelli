@@ -4479,7 +4479,8 @@ function abrirReporte() {
                 showSuccess('Ingreso de visitante registrado correctamente.', 'visitorInfo');
                 await Promise.all([
                     loadVisitorHistory(visitorId),
-                    loadVisitorObservations(visitorId)
+                    loadVisitorObservations(visitorId),
+                    loadPendingVisitorExits()
                 ]);
             } catch (error) {
                 console.error('Error saving visitor entry:', error);
@@ -4519,7 +4520,7 @@ function abrirReporte() {
                             estado:estados_visitante(nombre),
                             vigilante:usuarios!ingresos_visitantes_vigilante_id_fkey(nombre)
                         `,
-                        applyFilter: query => query.is('salida_efectiva', null)
+                        applyFilter: query => query
                     },
                     {
                         label: 'withoutExitTracking',
