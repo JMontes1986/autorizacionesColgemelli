@@ -4004,19 +4004,7 @@ function abrirReporte() {
                 const select = document.getElementById('visitorGuardSelect');
                 if (!select) return;
 
-                // Si hay un usuario actual, establecerlo automáticamente
-                if (currentUser?.id) {
-                    select.innerHTML = '';
-                    const option = document.createElement('option');
-                    option.value = currentUser.id;
-                    option.textContent = sanitizeHtml(currentUser.nombre || 'Vigilante en turno');
-                    select.appendChild(option);
-                    select.value = currentUser.id;
-                    select.disabled = true; // Deshabilitar el select para que no se pueda cambiar
-                    return;
-                }
-                
-                // Si por alguna razón no hay usuario actual, cargar todos los vigilantes
+               // Cargar todos los vigilantes activos para seleccionar quién da el ingreso
                 const { data: users, error } = await supabaseClient
                     .from('usuarios')
                     .select('id, nombre, email, rol:roles(nombre)')
@@ -4037,6 +4025,10 @@ function abrirReporte() {
                     option.textContent = sanitizeHtml(guard.nombre);
                     select.appendChild(option);
                 });
+
+                    if (currentUser?.id) {
+                    select.value = currentUser.id;
+                }
             } catch (error) {
                 console.error('Error loading visitor guards:', error);
                 await logSecurityEvent('error', 'Error al cargar vigilantes', {
