@@ -5052,19 +5052,29 @@ function abrirReporte() {
             }
 
             try {
-                const { error } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('estudiantes')
                     .update({ activo: false })
-                    .in('id', selectedIds);
+                    .in('id', selectedIds)
+                    .select('id');
 
                 if (error) throw error;
 
+                const updatedIds = (data || []).map(student => student.id);
+                if (updatedIds.length === 0) {
+                    throw new Error('No se pudo dar de baja a los estudiantes seleccionados. Verifica permisos o estado actual.');
+                }
+
+                if (updatedIds.length !== selectedIds.length) {
+                    showError('Algunos estudiantes no se pudieron dar de baja. Se actualizará la lista con los cambios confirmados.');
+                }
+                    
                 await logSecurityEvent('delete', 'Estudiantes dados de baja desde promoción', {
-                    studentCount: selectedIds.length
+                    studentCount: updatedIds.length
                 }, true);
 
                 showSuccess('Estudiantes dados de baja exitosamente');
-                promotionStudentsCache = promotionStudentsCache.filter(student => !selectedIds.includes(student.id));
+                promotionStudentsCache = promotionStudentsCache.filter(student => !updatedIds.includes(student.id));
                 updatePromotionStudentsTable(promotionStudentsCache);
                 const gradeSelect = document.getElementById('promotionGradeSelect');
                 if (gradeSelect?.value) {
@@ -5091,12 +5101,16 @@ function abrirReporte() {
             }
 
             try {
-                const { error } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('estudiantes')
                     .update({ activo: false })
-                    .eq('id', studentId);
+                    .eq('id', studentId)
+                    .select('id');
 
                 if (error) throw error;
+                if (!data || data.length === 0) {
+                    throw new Error('No se pudo dar de baja al estudiante. Verifica permisos o estado actual.');
+                }
 
                 await logSecurityEvent('delete', 'Estudiante dado de baja desde promoción', {
                     studentId
@@ -8209,9 +8223,13 @@ function abrirReporte() {
                     const { data, error } = await supabaseClient
                         .from('estudiantes')
                         .update({ activo: false })
-                        .eq('id', id);
+                        .eq('id', id)
+                        .select('id');
 
                     if (error) throw error;
+                    if (!data || data.length === 0) {
+                        throw new Error('No se pudo dar de baja al estudiante. Verifica permisos o estado actual.');
+                    }
 
                     await logSecurityEvent('delete', 'Estudiante eliminado', { studentId: id }, true);
                     showSuccess('Estudiante eliminado exitosamente');
