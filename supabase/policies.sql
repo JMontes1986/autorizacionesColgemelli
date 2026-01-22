@@ -134,6 +134,38 @@ with check (
     and usuario_id is null
 );
 
+-- Enable RLS on table estudiantes
+alter table public.estudiantes enable row level security;
+
+create policy "estudiantes_read" on public.estudiantes
+for select
+using (
+    auth.role() <> 'anon'
+);
+
+-- Allow anonymous dashboard access to read students
+create policy "estudiantes_read_anon" on public.estudiantes
+for select
+using (
+    auth.role() = 'anon'
+);
+
+create policy "estudiantes_update" on public.estudiantes
+for update
+with check (
+    auth.role() <> 'anon'
+);
+
+-- Allow anonymous dashboard workflows to update student status/promotions
+create policy "estudiantes_update_anon" on public.estudiantes
+for update
+using (
+    auth.role() = 'anon'
+)
+with check (
+    auth.role() = 'anon'
+);
+
 -- Enable RLS on table personal_colegio
 alter table public.personal_colegio enable row level security;
 
