@@ -1609,6 +1609,8 @@ function abrirReporte() {
         let sessionTimeout = null;
         let lastActivityTime = null;
         let rolesCache = [];
+        let promotionGradesCache = [];
+        let promotionStudentsCache = [];
         let visitorExitTrackingAvailable = true;
 
         // Configuración de seguridad
@@ -4801,6 +4803,318 @@ function abrirReporte() {
             }
         }
 
+        async function loadPromotionSection() {
+            try {
+                await loadPromotionGrades();
+                const gradeSelect = document.getElementById('promotionGradeSelect');
+                if (!gradeSelect) return;
+                if (!gradeSelect.value) {
+                    updatePromotionNextGrade('');
+                    updatePromotionStudentsTable([]);
+                } else {
+                    await loadPromotionStudents(gradeSelect.value);
+                    updatePromotionNextGrade(gradeSelect.value);
+                }
+            } catch (error) {
+                console.error('Error cargando sección de promoción:', error);
+                await logSecurityEvent('error', 'Error al cargar sección de promoción', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al cargar la sección de promoción: ' + error.message);
+            }
+        }
+
+        async function loadPromotionGrades() {
+            try {
+                if (!validateSession()) return;
+
+                const { data: grades, error } = await supabaseClient
+                    .from('grados')
+                    .select('id, nombre, nivel')
+                    .eq('activo', true)
+                    .order('nivel', { ascending: true });
+
+                if (error) throw error;
+
+                promotionGradesCache = grades || [];
+                updatePromotionGradeSelect();
+            } catch (error) {
+                console.error('Error loading promotion grades:', error);
+                await logSecurityEvent('error', 'Error al cargar grados para promoción', {
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        function updatePromotionGradeSelect() {
+            const gradeSelect = document.getElementById('promotionGradeSelect');
+            if (!gradeSelect) return;
+
+            const currentValue = gradeSelect.value;
+            gradeSelect.innerHTML = '<option value="">Seleccionar grado...</option>';
+
+            promotionGradesCache.forEach(grade => {
+                const option = document.createElement('option');
+                option.value = grade.id;
+                option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
+                gradeSelect.appendChild(option);
+            });
+
+            if (currentValue) {
+                gradeSelect.value = currentValue;
+            }
+        }
+
+        function getNextPromotionGrade(gradeId) {
+            const currentIndex = promotionGradesCache.findIndex(grade => String(grade.id) === String(gradeId));
+            if (currentIndex === -1) return null;
+            return promotionGradesCache[currentIndex + 1] || null;
+        }
+
+        function updatePromotionNextGrade(gradeId) {
+            const nextGradeLabel = document.getElementById('promotionNextGrade');
+            if (!nextGradeLabel) return;
+
+            if (!gradeId) {
+                nextGradeLabel.textContent = 'Selecciona un grado para ver el siguiente nivel.';
+                return;
+            }
+
+            const nextGrade = getNextPromotionGrade(gradeId);
+            if (!nextGrade) {
+                nextGradeLabel.textContent = 'Este grado no tiene un nivel siguiente.';
+                return;
+            }
+
+            nextGradeLabel.textContent = `${sanitizeHtml(nextGrade.nombre)} - ${sanitizeHtml(nextGrade.nivel)}`;
+        }
+
+        async function loadPromotionStudents(gradeId) {
+            try {
+                if (!validateSession()) return;
+
+                if (!gradeId) {
+                    promotionStudentsCache = [];
+                    updatePromotionStudentsTable([]);
+                    return;
+                }
+
+                const { data: students, error } = await supabaseClient
+                    .from('estudiantes')
+                    .select('id, nombre, apellidos, documento, grado_id')
+                    .eq('activo', true)
+                    .eq('grado_id', gradeId)
+                    .order('nombre');
+
+                if (error) throw error;
+
+                promotionStudentsCache = students || [];
+                updatePromotionStudentsTable(promotionStudentsCache);
+            } catch (error) {
+                console.error('Error loading promotion students:', error);
+                await logSecurityEvent('error', 'Error al cargar estudiantes para promoción', {
+                    gradeId,
+                    error: error.message.substring(0, 200)
+                }, false);
+            }
+        }
+
+        function updatePromotionStudentsTable(students) {
+            const tbody = document.querySelector('#promotionStudentsTable tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!students || students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-muted">No hay estudiantes para este grado.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            students.forEach(student => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>
+                        <input class="form-check-input promotion-student-checkbox" type="checkbox" value="${student.id}">
+                    </td>
+                    <td>${sanitizeHtml(student.nombre)}</td>
+                    <td>${sanitizeHtml(student.apellidos)}</td>
+                    <td>${student.documento ? sanitizeHtml(student.documento) : 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deactivatePromotionStudent(${student.id})">Dar de baja</button>
+                    </td>
+                `;
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('.promotion-student-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', syncPromotionSelectAll);
+                });
+                syncPromotionSelectAll();
+            }, 0);
+        }
+
+        function getSelectedPromotionStudentIds() {
+            return Array.from(document.querySelectorAll('.promotion-student-checkbox:checked'))
+                .map(checkbox => Number(checkbox.value));
+        }
+
+        function syncPromotionSelectAll() {
+            const selectAll = document.getElementById('promotionSelectAll');
+            if (!selectAll) return;
+            const checkboxes = document.querySelectorAll('.promotion-student-checkbox');
+            const checked = document.querySelectorAll('.promotion-student-checkbox:checked');
+            selectAll.checked = checkboxes.length > 0 && checked.length === checkboxes.length;
+            selectAll.indeterminate = checked.length > 0 && checked.length < checkboxes.length;
+        }
+
+        function togglePromotionSelectAll() {
+            const selectAll = document.getElementById('promotionSelectAll');
+            if (!selectAll) return;
+            document.querySelectorAll('.promotion-student-checkbox').forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            syncPromotionSelectAll();
+        }
+
+        async function applyPromotionToSelected() {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            const gradeSelect = document.getElementById('promotionGradeSelect');
+            if (!gradeSelect || !gradeSelect.value) {
+                showError('Selecciona el grado actual para promover estudiantes.');
+                return;
+            }
+
+            const nextGrade = getNextPromotionGrade(gradeSelect.value);
+            if (!nextGrade) {
+                showError('El grado seleccionado no tiene un nivel siguiente.');
+                return;
+            }
+
+            const selectedIds = getSelectedPromotionStudentIds();
+            if (selectedIds.length === 0) {
+                showError('Selecciona al menos un estudiante para promocionar.');
+                return;
+            }
+
+            if (!confirm(`¿Deseas promover ${selectedIds.length} estudiante(s) al grado ${nextGrade.nombre}?`)) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('estudiantes')
+                    .update({ grado_id: nextGrade.id })
+                    .in('id', selectedIds);
+
+                if (error) throw error;
+
+                await logSecurityEvent('update', 'Promoción de estudiantes', {
+                    gradeFrom: gradeSelect.value,
+                    gradeTo: nextGrade.id,
+                    studentCount: selectedIds.length
+                }, true);
+
+                showSuccess('Estudiantes promovidos exitosamente');
+                await loadStudents();
+                await loadPromotionStudents(gradeSelect.value);
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al promocionar estudiantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al promocionar estudiantes: ' + error.message);
+            }
+        }
+
+        async function removeSelectedPromotionStudents() {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            const selectedIds = getSelectedPromotionStudentIds();
+            if (selectedIds.length === 0) {
+                showError('Selecciona al menos un estudiante para dar de baja.');
+                return;
+            }
+
+            if (!confirm(`¿Deseas dar de baja ${selectedIds.length} estudiante(s)?`)) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('estudiantes')
+                    .update({ activo: false })
+                    .in('id', selectedIds);
+
+                if (error) throw error;
+
+                await logSecurityEvent('delete', 'Estudiantes dados de baja desde promoción', {
+                    studentCount: selectedIds.length
+                }, true);
+
+                showSuccess('Estudiantes dados de baja exitosamente');
+                const gradeSelect = document.getElementById('promotionGradeSelect');
+                if (gradeSelect?.value) {
+                    await loadPromotionStudents(gradeSelect.value);
+                }
+                await loadStudents();
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al dar de baja estudiantes', {
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al dar de baja estudiantes: ' + error.message);
+            }
+        }
+
+        async function deactivatePromotionStudent(studentId) {
+            if (!validateSession()) {
+                showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                logout();
+                return;
+            }
+
+            if (!confirm('¿Deseas dar de baja a este estudiante?')) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('estudiantes')
+                    .update({ activo: false })
+                    .eq('id', studentId);
+
+                if (error) throw error;
+
+                await logSecurityEvent('delete', 'Estudiante dado de baja desde promoción', {
+                    studentId
+                }, true);
+
+                showSuccess('Estudiante dado de baja exitosamente');
+                const gradeSelect = document.getElementById('promotionGradeSelect');
+                if (gradeSelect?.value) {
+                    await loadPromotionStudents(gradeSelect.value);
+                }
+                await loadStudents();
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al dar de baja estudiante', {
+                    studentId,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('Error al dar de baja estudiante: ' + error.message);
+            }
+        }
+
         async function loadRoles() {
             try {
                 if (!validateSession()) return;
@@ -6323,6 +6637,8 @@ function abrirReporte() {
                 loadVisitorAreas();
             } else if (section === 'visitorStatuses') {
                 loadVisitorStatuses();
+            } else if (section === 'promotion') {
+                loadPromotionSection();
             }
             
             renewSession();
@@ -8809,6 +9125,7 @@ function attachEventHandlers() {
     ['#btnAdminUsers', () => showAdminSection('users')],
     ['#btnAdminReasons', () => showAdminSection('reasons')],
     ['#btnAdminGrades', () => showAdminSection('grades')],
+    ['#btnAdminPromotion', () => showAdminSection('promotion')],
     ['#btnAdminGuards', () => showAdminSection('guards')],
     ['#btnAdminVisitorProfiles', () => showAdminSection('visitorProfiles')],
     ['#btnAdminVisitorAreas', () => showAdminSection('visitorAreas')],
@@ -8835,7 +9152,9 @@ function attachEventHandlers() {
     ['#debugDashboardBtn', debugDashboard],
     ['#loadLogsBtn', loadSecurityLogs],
     ['#exportLogsBtn', exportLogs],
-    ['#cancelEditExitBtn', cancelExitEdit]
+    ['#cancelEditExitBtn', cancelExitEdit],
+    ['#promotionApplyBtn', applyPromotionToSelected],
+    ['#promotionRemoveBtn', removeSelectedPromotionStudents]
   ];
   clickHandlers.forEach(([sel, handler]) => {
     const el = document.querySelector(sel);
@@ -8863,6 +9182,17 @@ function attachEventHandlers() {
   const gradeSelect = document.getElementById('gradeSelect');
   if (gradeSelect) gradeSelect.addEventListener('change', loadStudentsByGrade);
 
+  const promotionGradeSelect = document.getElementById('promotionGradeSelect');
+  if (promotionGradeSelect) {
+    promotionGradeSelect.addEventListener('change', async () => {
+      updatePromotionNextGrade(promotionGradeSelect.value);
+      await loadPromotionStudents(promotionGradeSelect.value);
+    });
+  }
+
+  const promotionSelectAll = document.getElementById('promotionSelectAll');
+  if (promotionSelectAll) promotionSelectAll.addEventListener('change', togglePromotionSelectAll);
+        
   const observations = document.getElementById('observations');
   if (observations) observations.addEventListener('input', () => validateTextInput(observations));
 
