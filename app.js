@@ -7789,6 +7789,11 @@ function abrirReporte() {
                     .from('autorizaciones_personal')
                     .select('*')
                     .order('fecha_creacion', { ascending: false });
+
+                    let visitorQuery = supabaseClient
+                    .from('ingresos_visitantes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
                     
                 if (!all) {
                     const date = document.getElementById('historyDate').value;
@@ -7796,6 +7801,7 @@ function abrirReporte() {
                          console.log('🗓️ Filtrando por fecha específica:', date);
                         studentQuery = studentQuery.eq('fecha_salida', date);
                         staffQuery = staffQuery.eq('fecha_salida', date);
+                        visitorQuery = visitorQuery.eq('fecha', date);
                     } else {
                         const todayColombia = getColombiaDate();
                         const thirtyDaysAgo = new Date(todayColombia);
@@ -7804,12 +7810,14 @@ function abrirReporte() {
                         console.log('🗓️ Filtrando últimos 30 días desde:', dateLimit, 'hasta:', todayColombia);
                         studentQuery = studentQuery.gte('fecha_salida', dateLimit);
                         staffQuery = staffQuery.gte('fecha_salida', dateLimit);
+                        visitorQuery = visitorQuery.gte('fecha', dateLimit);
                     }
                 }
 
-               const [studentResult, staffResult] = await Promise.all([
+               const [studentResult, staffResult, visitorResult] = await Promise.all([
                     role === 'talento_humano' ? Promise.resolve({ data: [] }) : studentQuery,
-                    staffQuery
+                    staffQuery,
+                    visitorQuery
                 ]);
 
                 if (studentResult.error) {
@@ -7821,14 +7829,21 @@ function abrirReporte() {
                     throw staffResult.error;
                 }
 
-               const studentAuths = role === 'talento_humano' ? [] : (studentResult.data || []);
+                if (visitorResult.error) {
+                    console.error('❌ Error en historial de visitantes:', visitorResult.error);
+                    throw visitorResult.error;
+                }
+                    
+                const studentAuths = role === 'talento_humano' ? [] : (studentResult.data || []);
                 const staffAuths = staffResult.data || [];
+                const visitorAuths = visitorResult.data || [];
                 const combinedRecords = [
                     ...studentAuths.map(record => ({ ...record, tipo: 'estudiante' })),
-                    ...staffAuths.map(record => ({ ...record, tipo: 'personal' }))
+                    ...staffAuths.map(record => ({ ...record, tipo: 'personal' })),
+                    ...visitorAuths.map(record => ({ ...record, tipo: 'visitante' }))
                 ].sort((a, b) => {
-                    const dateA = new Date(a.fecha_creacion || `${a.fecha_salida}T00:00:00`);
-                    const dateB = new Date(b.fecha_creacion || `${b.fecha_salida}T00:00:00`);
+                    const dateA = new Date(a.fecha_creacion || a.created_at || a.salida_efectiva || `${a.fecha_salida || a.fecha}T00:00:00`);
+                    const dateB = new Date(b.fecha_creacion || b.created_at || b.salida_efectiva || `${b.fecha_salida || b.fecha}T00:00:00`);
                     return dateB - dateA;
                 });
 
@@ -7848,16 +7863,21 @@ function abrirReporte() {
 
                 const studentIds = [...new Set(studentAuths.map(auth => auth.estudiante_id))];
                 const staffIds = [...new Set(staffAuths.map(auth => auth.colaborador_id))];
+                const visitorIds = [...new Set(visitorAuths.map(auth => auth.visitante_id))];
                 const reasonIds = [...new Set([
                     ...studentAuths.map(auth => auth.motivo_id),
                     ...staffAuths.map(auth => auth.motivo_id)
                 ].filter(Boolean))];
+                const visitorAreaIds = [...new Set(visitorAuths.map(auth => auth.area_id).filter(Boolean))];
+                const visitorStatusIds = [...new Set(visitorAuths.map(auth => auth.estado_id).filter(Boolean))];
+                const visitorGuardIds = [...new Set(visitorAuths.flatMap(auth => [auth.vigilante_id, auth.salida_vigilante_id]).filter(Boolean))];
                 const userIds = [...new Set([
                     ...studentAuths.map(auth => auth.usuario_autorizador_id),
-                    ...staffAuths.map(auth => auth.usuario_autorizador_id)
+                    ...staffAuths.map(auth => auth.usuario_autorizador_id),
+                    ...visitorGuardIds
                 ])];
 
-                const [studentsResult, staffMembersResult, reasonsResult, usersResult] = await Promise.all([
+                const [studentsResult, staffMembersResult, reasonsResult, usersResult, visitorsResult, visitorAreasResult, visitorStatusesResult] = await Promise.all([
                     studentIds.length > 0
                         ? supabaseClient
                             .from('estudiantes')
@@ -7881,6 +7901,24 @@ function abrirReporte() {
                             .from('usuarios')
                             .select('id, nombre')
                             .in('id', userIds)
+                        : Promise.resolve({ data: [] }),
+                    visitorIds.length > 0
+                        ? supabaseClient
+                            .from('visitantes')
+                            .select('id, nombre, documento, perfil:perfiles_visitante(nombre)')
+                            .in('id', visitorIds)
+                        : Promise.resolve({ data: [] }),
+                    visitorAreaIds.length > 0
+                        ? supabaseClient
+                            .from('areas_visitante')
+                            .select('id, nombre')
+                            .in('id', visitorAreaIds)
+                        : Promise.resolve({ data: [] }),
+                    visitorStatusIds.length > 0
+                        ? supabaseClient
+                            .from('estados_visitante')
+                            .select('id, nombre')
+                            .in('id', visitorStatusIds)
                         : Promise.resolve({ data: [] })
                 ]);
 
@@ -7888,6 +7926,9 @@ function abrirReporte() {
                 const staffMap = {};
                 const reasonMap = {};
                 const userMap = {};
+                const visitorMap = {};
+                const visitorAreaMap = {};
+                const visitorStatusMap = {};
 
                 studentsResult.data?.forEach(student => {
                     studentMap[student.id] = student;
@@ -7905,21 +7946,45 @@ function abrirReporte() {
                     userMap[user.id] = user;
                 });
 
+                visitorsResult.data?.forEach(visitor => {
+                    visitorMap[visitor.id] = visitor;
+                });
+
+                visitorAreasResult.data?.forEach(area => {
+                    visitorAreaMap[area.id] = area;
+                });
+
+                visitorStatusesResult.data?.forEach(status => {
+                    visitorStatusMap[status.id] = status;
+                });
+                    
                 const tbody = document.querySelector('#historyTable tbody');
                 tbody.innerHTML = '';
 
                 combinedRecords.forEach(record => {
                     const isStaff = record.tipo === 'personal';
-                    const persona = isStaff ? staffMap[record.colaborador_id] : studentMap[record.estudiante_id];
+                    const isVisitor = record.tipo === 'visitante';
+                    const persona = isVisitor
+                        ? visitorMap[record.visitante_id]
+                        : (isStaff ? staffMap[record.colaborador_id] : studentMap[record.estudiante_id]);
                     const reason = reasonMap[record.motivo_id];
-                    const user = userMap[record.usuario_autorizador_id];
+                    const guardId = isVisitor ? (record.salida_vigilante_id || record.vigilante_id) : record.usuario_autorizador_id;
+                    const user = userMap[guardId];
 
-                    const personaNombre = isStaff
-                        ? (persona ? sanitizeHtml(persona.nombre) : 'Personal no encontrado')
-                        : (persona ? `${sanitizeHtml(persona.nombre)} ${sanitizeHtml(persona.apellidos)}` : 'Estudiante no encontrado');
+                    const personaNombre = isVisitor
+                        ? (persona ? sanitizeHtml(persona.nombre) : 'Visitante no encontrado')
+                        : (isStaff
+                            ? (persona ? sanitizeHtml(persona.nombre) : 'Personal no encontrado')
+                            : (persona ? `${sanitizeHtml(persona.nombre)} ${sanitizeHtml(persona.apellidos)}` : 'Estudiante no encontrado'));
 
                     let detalleTexto;
-                    if (isStaff) {
+                    if (isVisitor) {
+                        const profile = persona?.perfil?.nombre ? sanitizeHtml(persona.perfil.nombre) : 'Perfil no encontrado';
+                        const area = visitorAreaMap[record.area_id]?.nombre ? sanitizeHtml(visitorAreaMap[record.area_id].nombre) : 'Área no registrada';
+                        const status = visitorStatusMap[record.estado_id]?.nombre ? sanitizeHtml(visitorStatusMap[record.estado_id].nombre) : 'Estado no registrado';
+                        const document = persona?.documento ? sanitizeHtml(persona.documento) : 'Sin documento';
+                        detalleTexto = `${profile} • ${area} • ${status} • ${document}`;
+                    } else if (isStaff) {
                         if (persona) {
                             const cargo = persona.cargo ? sanitizeHtml(persona.cargo) : 'Cargo no registrado';
                             const cedula = persona.cedula ? ` • CC ${sanitizeHtml(persona.cedula)}` : '';
@@ -7933,20 +7998,38 @@ function abrirReporte() {
 
                     const estadoHtml = record.salida_efectiva
                         ? `✅ Confirmada<br><small style="color: #666;">Hora: ${formatDateTime(record.salida_efectiva)}</small>`
-                        : '⏳ Pendiente';
+                        : (isVisitor ? '⏳ En sitio' : '⏳ Pendiente');
 
-                    const observacionesHtml = record.observaciones
-                        ? `<br><small style="color: #666;">Obs: ${sanitizeHtml(record.observaciones)}</small>`
-                        : '';
+                    let observacionesHtml = '';
+                    if (isVisitor) {
+                        const obsParts = [];
+                        if (record.observaciones) {
+                            obsParts.push(`Ingreso: ${sanitizeHtml(record.observaciones)}`);
+                        }
+                        if (record.salida_observaciones) {
+                            obsParts.push(`Salida: ${sanitizeHtml(record.salida_observaciones)}`);
+                        }
+                        if (obsParts.length > 0) {
+                            observacionesHtml = `<br><small style="color: #666;">Obs: ${obsParts.join(' • ')}</small>`;
+                        }
+                    } else if (record.observaciones) {
+                        observacionesHtml = `<br><small style="color: #666;">Obs: ${sanitizeHtml(record.observaciones)}</small>`;
+                    }
+                    
+                    const fechaSalida = isVisitor ? formatDate(record.fecha) : formatDate(record.fecha_salida);
+                    const horaSalida = isVisitor ? formatTime(record.hora) : formatTime(record.hora_salida);
+                    const motivoTexto = isVisitor
+                        ? (record.motivo ? sanitizeHtml(record.motivo) : 'Motivo no registrado')
+                        : (reason?.nombre ? sanitizeHtml(reason.nombre) : 'Motivo no encontrado');
 
                     const row = tbody.insertRow();
                     row.innerHTML = `
-                         <td>${isStaff ? 'Personal' : 'Estudiante'}</td>
+                         <td>${isVisitor ? 'Visitante' : (isStaff ? 'Personal' : 'Estudiante')}</td>
                         <td>${personaNombre}</td>
                         <td>${detalleTexto}</td>
-                        <td>${reason?.nombre ? sanitizeHtml(reason.nombre) : 'Motivo no encontrado'}</td>
-                        <td>${formatDate(record.fecha_salida)}</td>
-                        <td>${formatTime(record.hora_salida)}</td>
+                        <td>${motivoTexto}</td>
+                        <td>${fechaSalida}</td>
+                        <td>${horaSalida}</td>
                         <td>${user?.nombre ? sanitizeHtml(user.nombre) : 'Usuario no encontrado'}</td>
                          <td><span style="color: ${record.salida_efectiva ? '#2ecc71' : '#f39c12'}">${estadoHtml}</span>${observacionesHtml}</td>
                     `;
