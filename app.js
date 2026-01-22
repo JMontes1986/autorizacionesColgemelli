@@ -4809,11 +4809,11 @@ function abrirReporte() {
                 const gradeSelect = document.getElementById('promotionGradeSelect');
                 if (!gradeSelect) return;
                 if (!gradeSelect.value) {
-                    updatePromotionNextGrade('');
+                    updatePromotionTargetGradeOptions('');
                     updatePromotionStudentsTable([]);
                 } else {
+                    updatePromotionTargetGradeOptions(gradeSelect.value);
                     await loadPromotionStudents(gradeSelect.value);
-                    updatePromotionNextGrade(gradeSelect.value);
                 }
             } catch (error) {
                 console.error('Error cargando sección de promoción:', error);
@@ -4871,22 +4871,38 @@ function abrirReporte() {
             return promotionGradesCache[currentIndex + 1] || null;
         }
 
-        function updatePromotionNextGrade(gradeId) {
-            const nextGradeLabel = document.getElementById('promotionNextGrade');
-            if (!nextGradeLabel) return;
+        function updatePromotionTargetGradeOptions(gradeId) {
+            const targetSelect = document.getElementById('promotionTargetGradeSelect');
+            if (!targetSelect) return;
 
-            if (!gradeId) {
-                nextGradeLabel.textContent = 'Selecciona un grado para ver el siguiente nivel.';
+            const previousValue = targetSelect.value;
+            targetSelect.innerHTML = '<option value="">Seleccionar grado de destino...</option>';
+
+            promotionGradesCache.forEach(grade => {
+                if (gradeId && String(grade.id) === String(gradeId)) return;
+                const option = document.createElement('option');
+                option.value = grade.id;
+                option.textContent = sanitizeHtml(`${grade.nombre} - ${grade.nivel}`);
+                targetSelect.appendChild(option);
+            });
+
+            if (previousValue && Array.from(targetSelect.options).some(option => option.value === previousValue)) {
+                targetSelect.value = previousValue;
                 return;
             }
 
-            const nextGrade = getNextPromotionGrade(gradeId);
-            if (!nextGrade) {
-                nextGradeLabel.textContent = 'Este grado no tiene un nivel siguiente.';
-                return;
+            if (gradeId) {
+                const nextGrade = getNextPromotionGrade(gradeId);
+                if (nextGrade) {
+                    targetSelect.value = String(nextGrade.id);
+                }
             }
+        }
 
-            nextGradeLabel.textContent = `${sanitizeHtml(nextGrade.nombre)} - ${sanitizeHtml(nextGrade.nivel)}`;
+            function getSelectedPromotionTargetGrade() {
+            const targetSelect = document.getElementById('promotionTargetGradeSelect');
+            if (!targetSelect || !targetSelect.value) return null;
+            return promotionGradesCache.find(grade => String(grade.id) === String(targetSelect.value)) || null;
         }
 
         async function loadPromotionStudents(gradeId) {
@@ -4934,11 +4950,10 @@ function abrirReporte() {
                 return;
             }
 
-            const gradeSelect = document.getElementById('promotionGradeSelect');
-            const nextGrade = gradeSelect?.value ? getNextPromotionGrade(gradeSelect.value) : null;
-            const nextGradeLabel = nextGrade
-                ? `${sanitizeHtml(nextGrade.nombre)} - ${sanitizeHtml(nextGrade.nivel)}`
-                : 'Sin siguiente grado';   
+           const targetGrade = getSelectedPromotionTargetGrade();
+            const targetGradeLabel = targetGrade
+                ? `${sanitizeHtml(targetGrade.nombre)} - ${sanitizeHtml(targetGrade.nivel)}`
+                : 'Selecciona grado destino';   
                 
         students.forEach(student => {
                 const row = tbody.insertRow();
@@ -4949,7 +4964,7 @@ function abrirReporte() {
                     <td>${sanitizeHtml(student.nombre)}</td>
                     <td>${sanitizeHtml(student.apellidos)}</td>
                     <td>${student.documento ? sanitizeHtml(student.documento) : 'N/A'}</td>
-                    <td>${nextGradeLabel}</td>
+                    <td>${targetGradeLabel}</td>
                     <td>
                         <button class="btn btn-outline-danger btn-sm" onclick="deactivatePromotionStudent(${student.id})">Dar de baja</button>
                     </td>
@@ -5012,21 +5027,21 @@ function abrirReporte() {
                 return;
             }
 
-            if (!confirm(`¿Deseas promover ${selectedIds.length} estudiante(s) al grado ${nextGrade.nombre}?`)) {
+            if (!confirm(`¿Deseas promover ${selectedIds.length} estudiante(s) al grado ${targetGrade.nombre}?`)) {
                 return;
             }
 
             try {
                 const { error } = await supabaseClient
                     .from('estudiantes')
-                    .update({ grado_id: nextGrade.id })
+                    .update({ grado_id: targetGrade.id })
                     .in('id', selectedIds);
 
                 if (error) throw error;
 
                 await logSecurityEvent('update', 'Promoción de estudiantes', {
                     gradeFrom: gradeSelect.value,
-                    gradeTo: nextGrade.id,
+                    gradeTo: targetGrade.id,
                     studentCount: selectedIds.length
                 }, true);
 
@@ -9297,11 +9312,18 @@ function attachEventHandlers() {
   const promotionGradeSelect = document.getElementById('promotionGradeSelect');
   if (promotionGradeSelect) {
     promotionGradeSelect.addEventListener('change', async () => {
-      updatePromotionNextGrade(promotionGradeSelect.value);
+      updatePromotionTargetGradeOptions(promotionGradeSelect.value);
       await loadPromotionStudents(promotionGradeSelect.value);
     });
   }
 
+  const promotionTargetGradeSelect = document.getElementById('promotionTargetGradeSelect');
+  if (promotionTargetGradeSelect) {
+    promotionTargetGradeSelect.addEventListener('change', () => {
+      updatePromotionStudentsTable(promotionStudentsCache);
+    });
+  }
+        
   const promotionSelectAll = document.getElementById('promotionSelectAll');
   if (promotionSelectAll) promotionSelectAll.addEventListener('change', togglePromotionSelectAll);
         
