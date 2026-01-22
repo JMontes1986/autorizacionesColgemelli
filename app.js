@@ -4928,13 +4928,19 @@ function abrirReporte() {
             if (!students || students.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-muted">No hay estudiantes para este grado.</td>
+                        <td colspan="6" class="text-muted">No hay estudiantes para este grado.</td>
                     </tr>
                 `;
                 return;
             }
 
-            students.forEach(student => {
+            const gradeSelect = document.getElementById('promotionGradeSelect');
+            const nextGrade = gradeSelect?.value ? getNextPromotionGrade(gradeSelect.value) : null;
+            const nextGradeLabel = nextGrade
+                ? `${sanitizeHtml(nextGrade.nombre)} - ${sanitizeHtml(nextGrade.nivel)}`
+                : 'Sin siguiente grado';   
+                
+        students.forEach(student => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>
@@ -4943,6 +4949,7 @@ function abrirReporte() {
                     <td>${sanitizeHtml(student.nombre)}</td>
                     <td>${sanitizeHtml(student.apellidos)}</td>
                     <td>${student.documento ? sanitizeHtml(student.documento) : 'N/A'}</td>
+                    <td>${nextGradeLabel}</td>
                     <td>
                         <button class="btn btn-outline-danger btn-sm" onclick="deactivatePromotionStudent(${student.id})">Dar de baja</button>
                     </td>
