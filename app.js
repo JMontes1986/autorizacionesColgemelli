@@ -5064,6 +5064,8 @@ function abrirReporte() {
                 }, true);
 
                 showSuccess('Estudiantes dados de baja exitosamente');
+                promotionStudentsCache = promotionStudentsCache.filter(student => !selectedIds.includes(student.id));
+                updatePromotionStudentsTable(promotionStudentsCache);
                 const gradeSelect = document.getElementById('promotionGradeSelect');
                 if (gradeSelect?.value) {
                     await loadPromotionStudents(gradeSelect.value);
@@ -5101,6 +5103,8 @@ function abrirReporte() {
                 }, true);
 
                 showSuccess('Estudiante dado de baja exitosamente');
+                promotionStudentsCache = promotionStudentsCache.filter(student => student.id !== studentId);
+                updatePromotionStudentsTable(promotionStudentsCache);
                 const gradeSelect = document.getElementById('promotionGradeSelect');
                 if (gradeSelect?.value) {
                     await loadPromotionStudents(gradeSelect.value);
