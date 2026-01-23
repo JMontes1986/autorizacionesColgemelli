@@ -6907,7 +6907,7 @@ function abrirReporte() {
         // FUNCIONES DE MODALES CON SEGURIDAD
         // ========================================
 
-        function openModal(modalId) {
+        function openModal(modalId, options = {}) {
             if (!validateSession()) {
                 showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
                 logout();
@@ -6915,7 +6915,9 @@ function abrirReporte() {
             }
 
             document.getElementById(modalId).style.display = 'block';
-            currentEditingId = null;
+            if (!options.keepEditingId) {
+                currentEditingId = null;
+            }
             
             if (modalId === 'studentModal') {
                 document.getElementById('studentForm').reset();
@@ -8235,13 +8237,12 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('studentModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('studentName').value = student.nombre;
                 document.getElementById('studentLastName').value = student.apellidos;
                 document.getElementById('studentDocument').value = student.documento || '';
                 document.getElementById('studentGrade').value = student.grado_id;
-                
-                openModal('studentModal');
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de estudiante', { 
@@ -8302,6 +8303,7 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('userModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('userName').value = user.nombre;
                 document.getElementById('userEmail').value = user.email;
@@ -8311,8 +8313,6 @@ function abrirReporte() {
                 document.getElementById('passwordNote').textContent = '(dejar vacío para mantener actual)';
                 document.getElementById('userPassword').required = false;
                 document.getElementById('userPasswordStrength').style.display = 'none';
-                
-                openModal('userModal');
                 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de usuario', { 
@@ -8374,6 +8374,7 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('guardModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('guardName').value = user.nombre;
                 document.getElementById('guardEmail').value = user.email;
@@ -8384,9 +8385,7 @@ function abrirReporte() {
                 const strength = document.getElementById('guardPasswordStrength');
                 if (strength) strength.style.display = 'none';
 
-                openModal('guardModal');
-
-            } catch (error) {
+             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de vigilante', {
                     userId: id,
                     error: error.message.substring(0, 200)
@@ -8446,10 +8445,9 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('visitorProfileModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('visitorProfileName').value = profile.nombre;
-
-                openModal('visitorProfileModal');
 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de perfil visitante', {
@@ -8506,10 +8504,9 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('visitorAreaModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('visitorAreaName').value = area.nombre;
-
-                openModal('visitorAreaModal');
 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de área visitante', {
@@ -8566,10 +8563,9 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('visitorStatusModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('visitorStatusName').value = status.nombre;
-
-                openModal('visitorStatusModal');
 
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de estado visitante', {
@@ -8626,12 +8622,11 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('reasonModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('reasonName').value = reason.nombre;
                 document.getElementById('reasonDescription').value = reason.descripcion || '';
-                
-                openModal('reasonModal');
-                
+
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de motivo', { 
                     reasonId: id,
@@ -8687,12 +8682,11 @@ function abrirReporte() {
 
                 if (error) throw error;
 
+                openModal('gradeModal', { keepEditingId: true });
                 currentEditingId = id;
                 document.getElementById('gradeName').value = grade.nombre;
                 document.getElementById('gradeLevel').value = grade.nivel;
-                
-                openModal('gradeModal');
-                
+
             } catch (error) {
                 await logSecurityEvent('error', 'Error al cargar datos de grado', { 
                     gradeId: id,
