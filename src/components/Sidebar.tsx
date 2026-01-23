@@ -1,4 +1,9 @@
-React.FC = () => {
+import type { FC } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+import { navItems } from "../config/sidebar";
+
+const Sidebar: FC = () => {
   const location = useLocation();
 
   return (
@@ -28,3 +33,5 @@ React.FC = () => {
     </aside>
   );
 };
+
+export default Sidebar;
