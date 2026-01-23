@@ -345,14 +345,29 @@ body:not(.login-active) {
   font-size: 0.75rem;
   line-height: 1.1;
   text-align: center;
+  white-space: normal;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {
+  .app-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-topbar > div:first-child {
+    width: 100%;
+  }
+
+  .app-topbar-logo {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .app-topbar-nav.nav-buttons {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 0.5rem;
   }
 
@@ -532,6 +547,7 @@ body:not(.login-active) {
   }
 
   .app-topbar-nav {
+    .app-topbar-nav.nav-buttons {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
