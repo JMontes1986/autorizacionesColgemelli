@@ -1264,7 +1264,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
             return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
         }
 
-        function generateCSVFromLogs(logs) {
+        function generateCSVFromLogs(logs, usersById = {}) {
             const headers = [
                 'Fecha/Hora',
                 'Usuario',
@@ -1281,10 +1281,11 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 } catch (e) {
                     details = { error: 'Error al parsear detalles' };
                 }
+                const user = log.usuario || usersById[log.usuario_id];
 
                 return [
                     formatDateTime(log.timestamp),
-                    log.usuario ? log.usuario.nombre : 'Sistema',
+                    user ? user.nombre : 'Sistema',
                     log.tipo,
                     log.accion,
                     JSON.stringify(details),
@@ -6753,6 +6754,27 @@ function abrirReporte() {
             }
         }
 
+        async function fetchUsersById(userIds) {
+            if (!userIds || userIds.length === 0) {
+                return {};
+            }
+
+            const { data: users, error } = await supabaseClient
+                .from('usuarios')
+                .select('id, nombre, email')
+                .in('id', userIds);
+
+            if (error || !users) {
+                console.warn('No se pudieron cargar usuarios para logs:', error);
+                return {};
+            }
+
+            return users.reduce((acc, user) => {
+                acc[user.id] = user;
+                return acc;
+            }, {});
+        }
+
         async function loadSecurityLogs() {
             try {
                 if (!validateSession()) return;
@@ -6764,10 +6786,7 @@ function abrirReporte() {
 
                 let query = supabaseClient
                     .from('audit_logs')
-                    .select(`
-                        *,
-                        usuario:usuarios(nombre, email)
-                    `)
+                    .select('*')
                     .order('timestamp', { ascending: false })
                     .limit(100);
 
@@ -6806,11 +6825,15 @@ function abrirReporte() {
                     return;
                 }
 
+                const userIds = [...new Set(logs.map(log => log.usuario_id).filter(Boolean))];
+                const usersById = await fetchUsersById(userIds);
+
                 logs.forEach(log => {
                     const row = tbody.insertRow();
                     const typeClass = getLogTypeClass(log.tipo);
                     let details = {};
-                    
+                    const user = log.usuario || usersById[log.usuario_id];
+                        
                     try {
                         details = log.detalles ? JSON.parse(log.detalles) : {};
                     } catch (e) {
@@ -6819,7 +6842,7 @@ function abrirReporte() {
                     
                     row.innerHTML = `
                         <td>${formatDateTime(log.timestamp)}</td>
-                        <td>${log.usuario ? sanitizeHtml(log.usuario.nombre) : 'Sistema'}</td>
+                        <td>${user ? sanitizeHtml(user.nombre) : 'Sistema'}</td>
                         <td><span class="log-type ${typeClass}">${sanitizeHtml(log.tipo)}</span></td>
                         <td>${sanitizeHtml(log.accion)}</td>
                         <td title="${sanitizeHtml(JSON.stringify(details))}">${sanitizeHtml(JSON.stringify(details).substring(0, 50))}...</td>
@@ -6864,10 +6887,7 @@ function abrirReporte() {
 
                 let query = supabaseClient
                     .from('audit_logs')
-                    .select(`
-                        *,
-                        usuario:usuarios(nombre, email)
-                    `)
+                    .select('*')
                     .order('timestamp', { ascending: false });
 
                 if (dateFrom) query = query.gte('timestamp', dateFrom + 'T00:00:00');
@@ -6883,7 +6903,9 @@ function abrirReporte() {
                     return;
                 }
 
-                const csvContent = generateCSVFromLogs(logs);
+                const userIds = [...new Set(logs.map(log => log.usuario_id).filter(Boolean))];
+                const usersById = await fetchUsersById(userIds);
+                const csvContent = generateCSVFromLogs(logs, usersById);
                 const today = getColombiaDate();
                 downloadCSV(csvContent, `logs_${today}.csv`);
 
