@@ -3339,12 +3339,12 @@ function abrirReporte() {
                 email === 'sistemas@colgemelli.edu.co' ||
                 email === 'gformativa@colgemelli.edu.co';
             const lateBtnHtml = lateUser ?
-                `<button id="lateArrivalBtn" class="btn btn-danger" onclick="showSection('lateArrivalSectionDiv')">
+                `<button id="lateArrivalBtn" class="btn btn-danger" data-label="Llegadas Tarde" onclick="showSection('lateArrivalSectionDiv')">
                   <span class="nav-icon">⏰</span>
                   <span class="nav-text">Llegadas Tarde</span>
                 </button>` : '';
            const logoutButtonHtml = `
-                <button class="btn btn-outline-danger" id="logoutNavBtn" type="button">
+                <button class="btn btn-outline-danger" data-label="Cerrar Sesión" id="logoutNavBtn" type="button">
                   <span class="nav-icon">🚪</span>
                   <span class="nav-text">Cerrar Sesión</span>
                 </button>
@@ -3362,49 +3362,49 @@ function abrirReporte() {
             if (role === 'administrador') {
                 setNavButtonsContent(`
                 ${lateBtnHtml}
-                    <button class="btn" onclick="showSection('dashboardSectionDiv')">
+                    <button class="btn" data-label="Dashboard" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
                       <span class="nav-text">Dashboard</span>
                     </button>
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">
+                    <button class="btn" data-label="Autorizar Salidas" onclick="showSection('authorizeSectionDiv')">
                       <span class="nav-icon">🚪</span>
                       <span class="nav-text">Autorizar Salidas</span>
                     </button>
-                    <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">
+                    <button class="btn" data-label="Autorizar Personal" onclick="showSection('authorizeStaffSectionDiv')">
                       <span class="nav-icon">👥</span>
                       <span class="nav-text">Autorizar Personal</span>
                     </button>
-                    <button class="btn" onclick="showSection('visitorEntrySectionDiv')">
+                    <button class="btn" data-label="Visitantes" onclick="showSection('visitorEntrySectionDiv')">
                       <span class="nav-icon">🧾</span>
                       <span class="nav-text">Visitantes</span>
                     </button>
-                    <button class="btn" onclick="showSection('adminSectionDiv')">
+                    <button class="btn" data-label="Administración" onclick="showSection('adminSectionDiv')">
                       <span class="nav-icon">⚙️</span>
                       <span class="nav-text">Administración</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')">
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
-                    <button class="btn" onclick="showSection('verifySectionDiv')">
+                    <button class="btn" data-label="Verificar Salidas" onclick="showSection('verifySectionDiv')">
                       <span class="nav-icon">🛂</span>
                       <span class="nav-text">Verificar Salidas</span>
                     </button>
                 `);
             } else if (role === 'talento_humano') {
                 const staffReportButton = email === 'gadministrativa@colgemelli.edu.co'
-                    ? `<button class="btn" onclick="abrirReportePersonal()">
+                    ? `<button class="btn" data-label="Reporte Personal" onclick="abrirReportePersonal()">
                         <span class="nav-icon">👥</span>
                         <span class="nav-text">Reporte Personal</span>
                       </button>`
                     : '';
                     
                 setNavButtonsContent(`
-                    <button class="btn" onclick="showSection('authorizeStaffSectionDiv')">
+                    <button class="btn" data-label="Autorizar Personal" onclick="showSection('authorizeStaffSectionDiv')">
                       <span class="nav-icon">👥</span>
                       <span class="nav-text">Autorizar Personal</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')">
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
@@ -3413,19 +3413,19 @@ function abrirReporte() {
             } else if (role === 'vigilante' || email === 'vigilancia@colgemelli.edu.co') {
                 setNavButtonsContent(`
                 ${lateBtnHtml}
-                    <button class="btn" onclick="showSection('dashboardSectionDiv')">
+                    <button class="btn" data-label="Dashboard" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
                       <span class="nav-text">Dashboard</span>
                     </button>
-                    <button class="btn" onclick="showSection('verifySectionDiv')">
+                    <button class="btn" data-label="Control de Salidas" onclick="showSection('verifySectionDiv')">
                       <span class="nav-icon">🛂</span>
                       <span class="nav-text">Control de Salidas</span>
                     </button>
-                    <button class="btn" onclick="showSection('visitorEntrySectionDiv')">
+                    <button class="btn" data-label="Visitantes" onclick="showSection('visitorEntrySectionDiv')">
                       <span class="nav-icon">🧾</span>
                       <span class="nav-text">Visitantes</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')">
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
@@ -3434,19 +3434,19 @@ function abrirReporte() {
                 // Dashboard especial para convivencia y gestión formativa
                 setNavButtonsContent(`
                 ${lateBtnHtml}
-                    <button class="btn" onclick="showSection('dashboardSectionDiv')">
+                    <button class="btn" data-label="Dashboard" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
                       <span class="nav-text">Dashboard</span>
                     </button>
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">
+                    <button class="btn" data-label="Autorizar Salidas" onclick="showSection('authorizeSectionDiv')">
                       <span class="nav-icon">🚪</span>
                       <span class="nav-text">Autorizar Salidas</span>
                     </button>
-                    <button class="btn" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">
+                    <button class="btn" data-label="Control de Salidas" id="btnControlSalidas" onclick="showSection('verifySectionDiv')">
                       <span class="nav-icon">🛂</span>
                       <span class="nav-text">Control de Salidas</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')">
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
@@ -3455,11 +3455,11 @@ function abrirReporte() {
                 // Enfermería NO tiene acceso al dashboard
                 setNavButtonsContent(`
                 ${lateBtnHtml}
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">
+                    <button class="btn" data-label="Autorizar Salidas" onclick="showSection('authorizeSectionDiv')">
                       <span class="nav-icon">🚪</span>
                       <span class="nav-text">Autorizar Salidas</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')">
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
@@ -3468,15 +3468,15 @@ function abrirReporte() {
                 // Todos los demás usuarios tienen acceso al dashboard
                 setNavButtonsContent(`
                 ${lateBtnHtml}
-                    <button class="btn" onclick="showSection('dashboardSectionDiv')">
+                    <button class="btn" data-label="Dashboard" onclick="showSection('dashboardSectionDiv')">
                       <span class="nav-icon">📊</span>
                       <span class="nav-text">Dashboard</span>
                     </button>
-                    <button class="btn" onclick="showSection('authorizeSectionDiv')">
+                    <button class="btn" data-label="Autorizar Salidas" onclick="showSection('authorizeSectionDiv')">
                       <span class="nav-icon">🚪</span>
                       <span class="nav-text">Autorizar Salidas</span>
                     </button>
-                    <button class="btn" onclick="showSection('historySectionDiv')">
+                    <button class="btn" data-label="Historial" onclick="showSection('historySectionDiv')"
                       <span class="nav-icon">🕒</span>
                       <span class="nav-text">Historial</span>
                     </button>
