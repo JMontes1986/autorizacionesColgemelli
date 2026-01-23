@@ -134,6 +134,8 @@ h1, h2, h3 {
 .app-sidebar {
   width: 260px;
   background: #fff;
+  position: relative;
+  z-index: 1040;
 }
 
 .app-sidebar .nav-buttons {
@@ -222,7 +224,7 @@ h1, h2, h3 {
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 10;
+  z-index: 1060;
 }
 
 .app-shell.sidebar-collapsed .app-sidebar .btn::before {
@@ -236,6 +238,7 @@ h1, h2, h3 {
   background: #1f2a44;
   border-radius: 0.15rem;
   opacity: 0;
+  z-index: 1050;
   transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
 }
