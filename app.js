@@ -5021,6 +5021,12 @@ function abrirReporte() {
                 return;
             }
 
+            const targetGrade = getSelectedPromotionTargetGrade();
+            if (!targetGrade) {
+                showError('Selecciona el grado destino para la promoción.');
+                return;
+            }
+                
             const selectedIds = getSelectedPromotionStudentIds();
             if (selectedIds.length === 0) {
                 showError('Selecciona al menos un estudiante para promocionar.');
