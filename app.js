@@ -1595,6 +1595,7 @@ function abrirReporte() {
         ];
 
         let supabaseClient;
+        let supabaseInitPromise = null;
         let currentUser = null;
         let currentEditingId = null;
         let currentExitAuthId = null;
@@ -2495,6 +2496,15 @@ function abrirReporte() {
 
         // Inicializar Supabase con seguridad mejorada
         async function initSupabase() {
+                if (supabaseClient) {
+                return true;
+            }
+
+            if (supabaseInitPromise) {
+                return supabaseInitPromise;
+            }
+
+            supabaseInitPromise = (async () => {
             try {
                 console.log('🔄 Inicializando Supabase con medidas de seguridad...');
                 
@@ -2540,6 +2550,9 @@ function abrirReporte() {
                 
                 return false;
             }
+            })();
+
+            return supabaseInitPromise;
         }
 
         // Función de login con seguridad mejorada
