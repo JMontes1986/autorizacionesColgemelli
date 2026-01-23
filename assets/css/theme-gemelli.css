@@ -525,8 +525,17 @@ body:not(.login-active) {
   }
 
   .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
     width: min(85vw, 280px);
     max-width: 100%;
+  }
+
+  .app-main {
+    width: 100%;
+    margin-left: 0;
   }
 }
 
