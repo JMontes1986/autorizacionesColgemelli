@@ -145,28 +145,34 @@
                 'info': '#00aaff'
             };
             
-            logArea.innerHTML += `<span style="color: ${colors[type]}">[${timestamp}] ${message}</span>\n`;
+            const entry = document.createElement('span');
+            entry.style.color = colors[type];
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.appendChild(document.createTextNode('\n'));
             logArea.scrollTop = logArea.scrollHeight;
         }
 
         function clearLog() {
-            document.getElementById('logArea').innerHTML = 'Log limpiado...\n';
+            document.getElementById('logArea').textContent = 'Log limpiado...\n';
         }
 
         function updateStatus(message, type) {
             const statusDiv = document.getElementById('connectionStatus');
             statusDiv.className = `status ${type}`;
-            statusDiv.innerHTML = message;
+            statusDiv.textContent = message;
         }
 
         // Paso 1: Verificar configuración
         function step1() {
             log('=== PASO 1: Verificando URLs de Supabase ===');
-            log(`URL: ${SUPABASE_URL}`);
-            log(`API Key length: ${SUPABASE_ANON_KEY.length} caracteres`);
-            log(`API Key empieza con: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
+            lconst safeSupabaseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL : '';
+            const safeSupabaseKey = typeof SUPABASE_ANON_KEY === 'string' ? SUPABASE_ANON_KEY : '';
             
-            if (SUPABASE_URL.includes('supabase.co') && SUPABASE_ANON_KEY.length > 100) {
+            log(`URL: ${safeSupabaseUrl || 'No definida'}`);
+            log(`API Key length: ${safeSupabaseKey.length} caracteres`);
+            
+            if (safeSupabaseUrl.includes('supabase.co') && safeSupabaseKey.length > 100) {
                 log('✅ URLs parecen correctas', 'success');
                 updateStatus('✅ URLs verificadas', 'success');
             } else {
