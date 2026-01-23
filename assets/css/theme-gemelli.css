@@ -347,6 +347,21 @@ body:not(.login-active) {
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  .app-topbar-nav.nav-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .app-topbar-nav.nav-buttons .btn {
+    width: auto;
+    margin: 0;
+  }
+}
+
 .connection-status {
   display: inline-flex;
   align-items: center;
