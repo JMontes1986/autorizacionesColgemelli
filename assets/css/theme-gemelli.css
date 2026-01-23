@@ -349,6 +349,40 @@ body:not(.login-active) {
   word-break: break-word;
 }
 
+.app-mobile-nav {
+  display: none;
+  gap: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+  border-top: 1px solid #e3e9f6;
+  box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.app-mobile-nav .mobile-nav-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.25rem;
+  color: #2f3437;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.app-mobile-nav .mobile-nav-btn:hover,
+.app-mobile-nav .mobile-nav-btn:focus {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.app-mobile-nav .mobile-nav-icon {
+  font-size: 1.1rem;
+}
+
 @media (max-width: 768px) {
   .app-topbar {
     flex-direction: column;
@@ -415,6 +449,19 @@ body:not(.login-active) {
 @media (max-width: 991.98px) {
   .app-shell .offcanvas.show ~ .app-main .security-indicator {
     display: none;
+  }
+  
+  .app-mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+  }
+
+  .app-main > main.container-fluid {
+    padding-bottom: 5.5rem;
   }
 }
 
