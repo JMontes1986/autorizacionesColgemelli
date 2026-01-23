@@ -452,3 +452,19 @@ body:not(.login-active) {
     max-width: 100%;
   }
 }
+
+@media (max-width: 575.98px) {
+  .app-main > main.container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .section {
+    padding: 12px 0;
+  }
+
+  .section .card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
