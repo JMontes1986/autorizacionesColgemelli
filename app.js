@@ -7409,13 +7409,51 @@ function abrirReporte() {
                         level: level
                     }, true);
                 } else {
-                    result = await supabaseClient
+                const { data: existingGrades, error: existingError } = await supabaseClient
+                        .from('grados')
+                        .select('id')
+                        .eq('nombre', name)
+                        .eq('nivel', level)
+                        .limit(1);
+
+                    if (existingError) {
+                        throw existingError;
+                    }
+
+                    if (existingGrades && existingGrades.length > 0) {
+                        showError('Ya existe un grado con ese nombre y nivel');
+                        return;
+                    }
+                        
+                result = await supabaseClient
                         .from('grados')
                         .insert([{
                             nombre: name,
                             nivel: level,
                             activo: true
                         }]);
+
+                if (result.error && result.error.code === '23505') {
+                        const { data: lastGrades, error: lastError } = await supabaseClient
+                            .from('grados')
+                            .select('id')
+                            .order('id', { ascending: false })
+                            .limit(1);
+
+                        const lastId = lastGrades?.[0]?.id;
+                        const nextId = Number(lastId);
+
+                        if (!lastError && Number.isFinite(nextId)) {
+                            result = await supabaseClient
+                                .from('grados')
+                                .insert([{
+                                    id: nextId + 1,
+                                    nombre: name,
+                                    nivel: level,
+                                    activo: true
+                                }]);
+                        }
+                    }
                         
                     await logSecurityEvent('create', 'Grado creado', { 
                         name: name, 
