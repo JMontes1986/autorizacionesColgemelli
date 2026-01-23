@@ -1613,6 +1613,7 @@ function abrirReporte() {
         let rolesCache = [];
         let promotionGradesCache = [];
         let promotionStudentsCache = [];
+        let adminStudentsCache = [];
         let visitorExitTrackingAvailable = true;
 
         // Configuración de seguridad
@@ -3810,7 +3811,8 @@ function abrirReporte() {
                     select.appendChild(option);
                 });
 
-                updateStudentsTable(students);
+                adminStudentsCache = students || [];
+                applyAdminStudentsFilter();
                 
             } catch (error) {
                 console.error('Error loading students:', error);
@@ -3819,9 +3821,38 @@ function abrirReporte() {
                 }, false);
             }
         }
+        
+            function applyAdminStudentsFilter() {
+            const searchInput = document.getElementById('adminStudentSearch');
+            if (!searchInput) {
+                updateStudentsTable(adminStudentsCache);
+                return;
+            }
+
+            const term = searchInput.value.trim().toLowerCase();
+            if (!term) {
+                updateStudentsTable(adminStudentsCache);
+                return;
+            }
+
+            const filtered = adminStudentsCache.filter(student => {
+                const nombre = student.nombre ? student.nombre.toLowerCase() : '';
+                const apellidos = student.apellidos ? student.apellidos.toLowerCase() : '';
+                const documento = student.documento ? String(student.documento).toLowerCase() : '';
+                const grado = student.grado?.nombre ? student.grado.nombre.toLowerCase() : '';
+                return (
+                    nombre.includes(term) ||
+                    apellidos.includes(term) ||
+                    documento.includes(term) ||
+                    grado.includes(term)
+                );
+            });
+
+        updateStudentsTable(filtered);
+        }
 
         async function loadStaffMembers() {
-            try {
+             try {
                 if (!validateSession()) return;
 
                 const { data: staff, error } = await supabaseClient
@@ -9408,8 +9439,19 @@ function attachEventHandlers() {
   const studentSearch = document.getElementById('studentSearch');
   if (studentSearch) studentSearch.addEventListener('input', () => validateSearchInput(studentSearch));
 
+  const adminStudentSearch = document.getElementById('adminStudentSearch');
+  if (adminStudentSearch) {
+    adminStudentSearch.addEventListener('input', applyAdminStudentsFilter);
+  }
+  const adminStudentSearchBtn = document.getElementById('adminStudentSearchBtn');
+  if (adminStudentSearchBtn) {
+    adminStudentSearchBtn.addEventListener('click', applyAdminStudentsFilter);
+  }
+        
   const uploadPhoto = document.getElementById('uploadStudentPhoto');
   if (uploadPhoto) uploadPhoto.addEventListener('change', handleImageUpload);
+
+
 
   const studentName = document.getElementById('studentName');
   if (studentName) studentName.addEventListener('input', () => validateNameInput(studentName));
