@@ -210,7 +210,7 @@ h1, h2, h3 {
   position: absolute;
   left: calc(100% + 0.75rem);
   top: 50%;
-  transform: translateY(-50%) translateX(-4px);
+  transform: translateY(calc(-50% - 2px)) translateX(-4px);
   opacity: 0;
   background: #1f2a44;
   color: #fff;
@@ -230,7 +230,7 @@ h1, h2, h3 {
   position: absolute;
   left: calc(100% + 0.35rem);
   top: 50%;
-  transform: translateY(-50%) translateX(-4px);
+  transform: translateY(calc(-50% - 2px)) translateX(-4px);
   width: 0.5rem;
   height: 0.5rem;
   background: #1f2a44;
