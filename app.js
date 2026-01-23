@@ -182,6 +182,23 @@
             }
         }
 
+        function initMobileNavigation() {
+            const mobileButtons = document.querySelectorAll('[data-mobile-target]');
+            if (!mobileButtons.length) return;
+
+            mobileButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetSelector = button.getAttribute('data-mobile-target');
+                    if (!targetSelector) return;
+
+                    const target = document.querySelector(targetSelector);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+
         // ========================================
         // FUNCIONES DEL DASHBOARD
         // ========================================
@@ -9497,6 +9514,7 @@ function attachEventHandlers() {
   const historyDate = document.getElementById('historyDate');
   if (historyDate) historyDate.addEventListener('change', () => loadHistory());
 
+  initMobileNavigation();
 }
 
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
