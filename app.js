@@ -4934,7 +4934,8 @@ function abrirReporte() {
                     .select('id, nombre, apellidos, documento, grado_id')
                     .eq('activo', true)
                     .eq('grado_id', gradeId)
-                    .order('nombre');
+                    .order('apellidos', { ascending: true })
+                    .order('nombre', { ascending: true });
 
                 if (error) throw error;
 
