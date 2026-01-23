@@ -537,12 +537,16 @@ body:not(.login-active) {
   }
 
   .section {
-    padding: 12px 0;
+    padding: 12px 0.75rem;
   }
 
   .section .card {
     margin-left: 0;
     margin-right: 0;
+  }
+
+  .app-main {
+    overflow-x: hidden;
   }
 }
 
