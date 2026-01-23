@@ -126,9 +126,15 @@ h1, h2, h3 {
   display: none;
 }
 
+body:not(.login-active) {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 .app-sidebar {
