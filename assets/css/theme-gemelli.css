@@ -198,10 +198,54 @@ h1, h2, h3 {
 .app-shell.sidebar-collapsed .app-sidebar .btn {
   justify-content: center;
   padding: 0.6rem;
+  position: relative;
 }
 
 .app-shell.sidebar-collapsed .app-sidebar .nav-text {
   display: none;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .btn::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 0.75rem);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  opacity: 0;
+  background: #1f2a44;
+  color: #fff;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .btn::before {
+  content: "";
+  position: absolute;
+  left: calc(100% + 0.35rem);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #1f2a44;
+  border-radius: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar .btn:hover::after,
+.app-shell.sidebar-collapsed .app-sidebar .btn:focus-visible::after,
+.app-shell.sidebar-collapsed .app-sidebar .btn:hover::before,
+.app-shell.sidebar-collapsed .app-sidebar .btn:focus-visible::before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 .app-shell.sidebar-collapsed .app-sidebar .nav-buttons {
