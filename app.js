@@ -9120,6 +9120,7 @@ if (fechaHasta) fechaHasta.addEventListener('change', checkMostrarHistorico);
 function actualizarVisibilidadHistorico() {
   const seccionDashboard = document.getElementById('dashboardSectionDiv');
   const wrapperHistorico = document.getElementById('historicalWrapper');
+  if (!seccionDashboard || !wrapperHistorico) return;
   if (!seccionDashboard.classList.contains('active')) {
     wrapperHistorico.style.display = 'none';
   }
