@@ -156,6 +156,12 @@ with check (
     auth.role() <> 'anon'
 );
 
+create policy "estudiantes_insert" on public.estudiantes
+for insert
+with check (
+    auth.role() <> 'anon'
+);
+
 -- Allow anonymous dashboard workflows to update student status/promotions
 create policy "estudiantes_update_anon" on public.estudiantes
 for update
