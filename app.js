@@ -1979,8 +1979,8 @@ function abrirReporte() {
         function validateDocument(document) {
             if (!document) return true; // Es opcional
             
-            // Solo números, 6-20 dígitos
-            const docPattern = /^[0-9]{6,20}$/;
+            // Solo números, 4-20 dígitos
+            const docPattern = /^[0-9]{4,20}$/;
             return docPattern.test(document);
         }
 
@@ -7081,7 +7081,7 @@ function abrirReporte() {
                 }
 
                 if (documentValue && !validateDocument(documentValue)) {
-                    showError('El documento debe contener solo números (6-20 dígitos)');
+                    showError('El documento debe contener solo números (4-20 dígitos)');
                     return;
                 }
 
