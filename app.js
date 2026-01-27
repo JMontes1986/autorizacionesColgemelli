@@ -7086,6 +7086,47 @@ function abrirReporte() {
                 }
 
                 let result;
+                    if (!currentEditingId) {
+                    let existingStudent = null;
+                    let existingError = null;
+
+                    if (documentValue) {
+                        ({ data: existingStudent, error: existingError } = await supabaseClient
+                            .from('estudiantes')
+                            .select('id, nombre, apellidos, documento, grado_id, foto_url')
+                            .eq('documento', documentValue)
+                            .limit(1));
+                    } else {
+                        ({ data: existingStudent, error: existingError } = await supabaseClient
+                            .from('estudiantes')
+                            .select('id, nombre, apellidos, documento, grado_id, foto_url')
+                            .eq('nombre', name)
+                            .eq('apellidos', lastName)
+                            .eq('grado_id', gradeId)
+                            .limit(1));
+                    }
+
+                    if (existingError) throw existingError;
+
+                    if (existingStudent && existingStudent.length > 0) {
+                        const student = existingStudent[0];
+                        currentEditingId = student.id;
+                        document.getElementById('studentName').value = student.nombre || name;
+                        document.getElementById('studentLastName').value = student.apellidos || lastName;
+                        document.getElementById('studentDocument').value = student.documento || documentValue || '';
+                        document.getElementById('studentGrade').value = student.grado_id || gradeId;
+                        const preview = document.getElementById('studentPhotoPreview');
+                        if (preview) {
+                            preview.src = student.foto_url || 'assets/img/placeholder-student.png';
+                        }
+                        const duplicateMessage = documentValue
+                            ? `El estudiante con documento ${sanitizeHtml(documentValue)} ya existe. Se cargaron los datos para editar.`
+                            : `El estudiante ${sanitizeHtml(name)} ${sanitizeHtml(lastName)} ya existe en el grado seleccionado. Se cargaron los datos para editar.`;
+                        showWarning(duplicateMessage);
+                        return;
+                    }
+                }
+                    
                 if (currentEditingId) {
                     const updateData = {
                         nombre: name,
