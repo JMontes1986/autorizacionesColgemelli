@@ -7048,6 +7048,26 @@ function abrirReporte() {
             return urlData.publicUrl;
         }
 
+        function isPrimaryKeyConflict(error, constraintName) {
+            const message = error?.message || '';
+            const details = error?.details || '';
+            return (
+                error?.code === '23505' &&
+                (message.includes(constraintName) || details.includes(constraintName))
+            );
+        }
+
+        async function getNextStudentId() {
+            const { data, error } = await supabaseClient
+                .from('estudiantes')
+                .select('id')
+                .order('id', { ascending: false })
+                .limit(1);
+            if (error) throw error;
+            const maxId = data?.[0]?.id ?? 0;
+            return maxId + 1;
+        }
+
         async function saveStudent(e) {
             e.preventDefault();
             
@@ -7156,6 +7176,15 @@ function abrirReporte() {
                     result = await supabaseClient
                         .from('estudiantes')
                         .insert([insertData]);
+                        if (result.error && isPrimaryKeyConflict(result.error, 'estudiantes_pkey')) {
+                        const nextId = await getNextStudentId();
+                        result = await supabaseClient
+                            .from('estudiantes')
+                            .insert([{ ...insertData, id: nextId }]);
+                        if (!result.error) {
+                            console.warn('Secuencia desincronizada al crear estudiante. Se insertó con ID manual:', nextId);
+                        }
+                    }
                     await logSecurityEvent('create', 'Estudiante creado', { 
                         name: name.substring(0, 20) + '...',
                         lastName: lastName.substring(0, 20) + '...',
