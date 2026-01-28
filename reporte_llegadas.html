@@ -441,7 +441,7 @@
       const busqueda = document.getElementById('busquedaEstudiante').value.toLowerCase().trim();
       let consulta = supabase
         .from('llegadas_tarde')
-        .select('id, estudiante_id, grado_id, fecha, hora, excusa, registrado_por');
+        .select('*');
 
       if (desde) {
         consulta = consulta.gte('fecha', desde);
@@ -518,15 +518,23 @@
       registros.forEach(item => {
         const s = studentsMap[item.estudiante_id] || {};
         const u = usersMap[item.registrado_por] || {};
+        const hora = item.hora
+          || (item.created_at
+            ? new Date(item.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+            : '');
+        const excusaValue = typeof item.excusa === 'boolean'
+          ? item.excusa
+          : Boolean(item.observacion && String(item.observacion).trim());
+        const gradoLabel = s.grado?.nombre || item.grado || item.grado_id || '';
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${sanitizeHtml(String(s.id || ''))}</td>
           <td>${sanitizeHtml(s.nombre)}</td>
           <td>${sanitizeHtml(s.apellidos)}</td>
-          <td>${sanitizeHtml(s.grado?.nombre)}</td>
+          <td>${sanitizeHtml(gradoLabel)}</td>
           <td>${sanitizeHtml(item.fecha)}</td>
-          <td>${sanitizeHtml(item.hora)}</td>
-          <td><span class="status-badge ${item.excusa ? 'status-si' : 'status-no'}">${item.excusa ? 'Sí' : 'No'}</span></td>
+          <td>${sanitizeHtml(hora)}</td>
+          <td><span class="status-badge ${excusaValue ? 'status-si' : 'status-no'}">${excusaValue ? 'Sí' : 'No'}</span></td>
           <td>${sanitizeHtml(u.nombre || '')}</td>
         `;
         tbody.appendChild(row);
