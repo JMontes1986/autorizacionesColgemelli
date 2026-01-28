@@ -5007,7 +5007,7 @@ function abrirReporte() {
             if (!students || students.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-muted">No hay estudiantes para este grado.</td>
+                        <td colspan="7" class="text-muted">No hay estudiantes para este grado.</td>
                     </tr>
                 `;
                 return;
@@ -5018,12 +5018,13 @@ function abrirReporte() {
                 ? `${sanitizeHtml(targetGrade.nombre)} - ${sanitizeHtml(targetGrade.nivel)}`
                 : 'Selecciona grado destino';   
                 
-        students.forEach(student => {
+        students.forEach((student, index) => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>
                         <input class="form-check-input promotion-student-checkbox" type="checkbox" value="${student.id}">
                     </td>
+                    <td>${index + 1}</td>
                     <td>${sanitizeHtml(student.nombre)}</td>
                     <td>${sanitizeHtml(student.apellidos)}</td>
                     <td>${student.documento ? sanitizeHtml(student.documento) : 'N/A'}</td>
