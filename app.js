@@ -5079,12 +5079,6 @@ function abrirReporte() {
                 return;
             }
 
-            const nextGrade = getNextPromotionGrade(gradeSelect.value);
-            if (!nextGrade) {
-                showError('El grado seleccionado no tiene un nivel siguiente.');
-                return;
-            }
-
             const targetGrade = getSelectedPromotionTargetGrade();
             if (!targetGrade) {
                 showError('Selecciona el grado destino para la promoción.');
