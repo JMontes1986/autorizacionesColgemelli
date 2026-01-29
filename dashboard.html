@@ -254,21 +254,11 @@
             const [salidasRes, llegadasRes] = await Promise.all([
                 supabase
                     .from('autorizaciones_salida')
-                    .select(`
-                        fecha_salida,
-                        hora_salida,
-                        estudiante:estudiantes(nombre, grado:grados(nombre)),
-                        motivo:motivos(nombre)
-                    `)
+                    .select('fecha_salida, hora_salida, estudiante_id, motivo_id')
                     .order('fecha_salida', { ascending: false }),
                 supabase
                     .from('llegadas_tarde')
-                    .select(`
-                        fecha,
-                        hora,
-                        estudiante:estudiantes(nombre, grado:grados(nombre)),
-                        observacion
-                    `)
+                    .select('fecha, hora, estudiante_id, grado_id, observacion')
                     .order('fecha', { ascending: false })
             ]);
 
@@ -277,24 +267,93 @@
                 return [];
             }
 
-            const salidas = (salidasRes.data || []).map(it => ({
-                fecha: it.fecha_salida,
-                estudiante: it.estudiante?.nombre || '',
-                grado: it.estudiante?.grado?.nombre || '',
-                tipo: 'salida',
-                motivo: it.motivo?.nombre || '',
-                hora: it.hora_salida
-            }));
+            const salidasRaw = salidasRes.data || [];
+            const llegadasRaw = llegadasRes.data || [];
 
-            const llegadas = (llegadasRes.data || []).map(it => ({
-                fecha: it.fecha,
-                estudiante: it.estudiante?.nombre || '',
-                grado: it.estudiante?.grado?.nombre || '',
-                tipo: 'llegada_tarde',
-                motivo: it.observacion || '',
-                hora: it.hora
-            }));
+            const studentIds = new Set([
+                ...salidasRaw.map(it => it.estudiante_id),
+                ...llegadasRaw.map(it => it.estudiante_id)
+            ].filter(Boolean));
 
+            const studentsMap = {};
+            const gradeIds = new Set();
+            if (studentIds.size > 0) {
+                const { data: students, error: studentsError } = await supabase
+                    .from('estudiantes')
+                    .select('id, nombre, grado_id')
+                    .in('id', Array.from(studentIds));
+
+                if (studentsError) {
+                    console.error('Error al cargar estudiantes:', studentsError);
+                } else {
+                    (students || []).forEach(student => {
+                        studentsMap[student.id] = student;
+                        if (student.grado_id) gradeIds.add(student.grado_id);
+                    });
+                }
+            }
+
+            const gradeMap = {};
+            if (gradeIds.size > 0) {
+                const { data: grades, error: gradesError } = await supabase
+                    .from('grados')
+                    .select('id, nombre')
+                    .in('id', Array.from(gradeIds));
+
+                if (gradesError) {
+                    console.error('Error al cargar grados:', gradesError);
+                } else {
+                    (grades || []).forEach(grade => {
+                        gradeMap[grade.id] = grade.nombre;
+                    });
+                }
+            }
+
+            const motivoIds = new Set(salidasRaw.map(it => it.motivo_id).filter(Boolean));
+            const motivoMap = {};
+            if (motivoIds.size > 0) {
+                const { data: motivos, error: motivosError } = await supabase
+                    .from('motivos')
+                    .select('id, nombre')
+                    .in('id', Array.from(motivoIds));
+
+                if (motivosError) {
+                    console.error('Error al cargar motivos:', motivosError);
+                } else {
+                    (motivos || []).forEach(motivo => {
+                        motivoMap[motivo.id] = motivo.nombre;
+                    });
+                }
+            }
+
+            const salidas = salidasRaw.map(it => {
+                const student = studentsMap[it.estudiante_id] || {};
+                const gradoId = student.grado_id || '';
+                return {
+                    fecha: it.fecha_salida,
+                    estudiante: student.nombre || '',
+                    grado: gradeMap[gradoId] || '',
+                    gradoId,
+                    tipo: 'salida',
+                    motivo: motivoMap[it.motivo_id] || '',
+                    hora: it.hora_salida
+                };
+            });
+
+            const llegadas = llegadasRaw.map(it => {
+                const student = studentsMap[it.estudiante_id] || {};
+                const gradoId = it.grado_id || student.grado_id || '';
+                return {
+                    fecha: it.fecha,
+                    estudiante: student.nombre || '',
+                    grado: gradeMap[gradoId] || '',
+                    gradoId,
+                    tipo: 'llegada_tarde',
+                    motivo: it.observacion || '',
+                    hora: it.hora
+                };
+            });
+            
             return [...salidas, ...llegadas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
             }
@@ -349,7 +408,7 @@
                 if (fechaInicio) cumpleFecha = fechaItem >= fechaInicioDate;
                 if (fechaFin) cumpleFecha = cumpleFecha && fechaItem <= fechaFinDate;
 
-                const cumpleGrado = !grado || item.grado === grado;
+                const cumpleGrado = !grado || String(item.gradoId || '') === String(grado);
                 const cumpleTipo = !tipo || item.tipo === tipo;
 
                 return cumpleFecha && cumpleGrado && cumpleTipo;
@@ -484,7 +543,8 @@
             const conteoPorGrado = {};
 
             datos.forEach(item => {
-                conteoPorGrado[item.grado] = (conteoPorGrado[item.grado] || 0) + 1;
+                const grado = item.grado || 'Sin grado';
+                conteoPorGrado[grado] = (conteoPorGrado[grado] || 0) + 1;
             });
 
             const grados = Object.keys(conteoPorGrado).sort();
@@ -607,7 +667,7 @@
                 tr.innerHTML = `
                     <td>${item.fecha}</td>
                     <td>${item.estudiante}</td>
-                    <td>${item.grado}</td>
+                    <td>${item.grado || '-'}</td>
                     <td>${item.tipo === 'salida' ? 'Salida' : 'Llegada Tarde'}</td>
                     <td>${item.motivo}</td>
                     <td>${item.hora}</td>
