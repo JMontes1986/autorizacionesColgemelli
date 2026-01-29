@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reporte de Visitantes</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/theme-gemelli.css">
+  <script src="env.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .status-badge {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .table td,
+    .table th {
+      vertical-align: middle;
+    }
+
+    .report-footer {
+      font-size: 0.85rem;
+    }
+
+    .app-topbar-logo-image {
+      width: 96px;
+      height: 96px;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-topbar d-flex align-items-center gap-3 flex-wrap">
+    <div>
+      <h1 class="h4 mb-1">📄 Reporte de Visitantes</h1>
+      <p class="text-muted mb-0">Sistema de Control de Autorizaciones de Salida</p>
+    </div>
+    <div class="app-topbar-logo">
+      <img
+        alt="Logo Colegio Gemelli"
+        class="app-topbar-logo-image"
+        src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg"
+      >
+    </div>
+  </header>
+
+  <main class="container-fluid py-4">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="desdeReporte">Fecha desde</label>
+            <input class="form-control" type="date" id="desdeReporte">
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <label class="form-label" for="hastaReporte">Fecha hasta</label>
+            <input class="form-control" type="date" id="hastaReporte">
+          </div>
+          <div class="col-lg-6">
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+              <button class="btn btn-primary" onclick="mostrarReporteVisitantes()">
+                <i class="fas fa-chart-bar"></i> Generar reporte
+              </button>
+              <button class="btn btn-success" onclick="exportarCSV()">
+                <i class="fas fa-download"></i> Descargar CSV
+              </button>
+              <button class="btn btn-danger" onclick="exportarPDF()">
+                <i class="fas fa-file-pdf"></i> Descargar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle" id="tabla-reporte">
+            <thead>
+              <tr>
+                <th><i class="fas fa-id-card"></i> ID Ingreso</th>
+                <th><i class="fas fa-user"></i> Visitante ID</th>
+                <th><i class="fas fa-user"></i> Nombre</th>
+                <th><i class="fas fa-id-badge"></i> Documento</th>
+                <th><i class="fas fa-address-card"></i> Perfil</th>
+                <th><i class="fas fa-calendar"></i> Fecha</th>
+                <th><i class="fas fa-clock"></i> Hora</th>
+                <th><i class="fas fa-note-sticky"></i> Motivo</th>
+                <th><i class="fas fa-school"></i> Área</th>
+                <th><i class="fas fa-flag"></i> Estado</th>
+                <th><i class="fas fa-comment"></i> Observaciones</th>
+                <th><i class="fas fa-user-shield"></i> Vigilante</th>
+                <th><i class="fas fa-door-open"></i> Salida efectiva</th>
+                <th><i class="fas fa-clipboard"></i> Observaciones salida</th>
+                <th><i class="fas fa-user-shield"></i> Vigilante salida</th>
+                <th><i class="fas fa-calendar-plus"></i> Creado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-muted report-footer mt-3">© 2026 Colegio Gemelli - Sistema de Ingreso y Salidas</p>
+  </main>
+
+  <script>
+    const supabaseEnv = window.process?.env ?? {};
+    const SUPABASE_URL = supabaseEnv.SUPABASE_URL || 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
+    const SUPABASE_ANON_KEY = supabaseEnv.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function sanitizeHtml(str) {
+      if (!str) return '';
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      let escaped = temp.innerHTML;
+      escaped = escaped.replace(/javascript:/gi, '')
+                       .replace(/vbscript:/gi, '')
+                       .replace(/data:/gi, '')
+                       .replace(/on\w+=/gi, '')
+                       .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                       .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+                       .replace(/<object[^>]*>.*?<\/object>/gi, '')
+                       .replace(/<embed[^>]*>/gi, '')
+                       .replace(/<link[^>]*>/gi, '')
+                       .replace(/<meta[^>]*>/gi, '');
+      return escaped;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return sanitizeHtml(String(value));
+      }
+      return date.toLocaleString('es-CO');
+    }
+
+    async function mostrarReporteVisitantes() {
+      const tbody = document.querySelector('#tabla-reporte tbody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="16" class="text-center text-muted">
+            <div class="d-flex flex-column align-items-center py-4">
+              <div class="spinner-border text-primary" role="status" aria-label="Cargando"></div>
+              <div class="mt-2">Cargando datos...</div>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      const desde = document.getElementById('desdeReporte').value;
+      const hasta = document.getElementById('hastaReporte').value;
+      let consulta = supabaseClient
+        .from('ingresos_visitantes')
+        .select('id, visitante_id, vigilante_id, fecha, hora, motivo, area_id, estado_id, observaciones, salida_efectiva, salida_observaciones, salida_vigilante_id, created_at');
+
+      if (desde) {
+        consulta = consulta.gte('fecha', desde);
+      }
+      if (hasta) {
+        consulta = consulta.lte('fecha', hasta);
+      }
+
+      const { data: ingresos, error } = await consulta;
+
+      if (error) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="16" class="text-center text-danger">
+              <div class="py-4">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>Error al cargar datos</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        console.error(error);
+        return;
+      }
+
+      if (!ingresos || ingresos.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="16" class="text-center text-muted">
+              <div class="py-4">
+                <i class="fas fa-search"></i>
+                <div>No se encontraron datos</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const visitorIds = [...new Set(ingresos.map(item => item.visitante_id).filter(Boolean))];
+      const areaIds = [...new Set(ingresos.map(item => item.area_id).filter(Boolean))];
+      const statusIds = [...new Set(ingresos.map(item => item.estado_id).filter(Boolean))];
+      const userIds = [...new Set(ingresos.flatMap(item => [item.vigilante_id, item.salida_vigilante_id]).filter(Boolean))];
+
+      let visitorsMap = {};
+      if (visitorIds.length > 0) {
+        const { data: visitors, error: visitorsError } = await supabaseClient
+          .from('visitantes')
+          .select('id, nombre, documento, perfil:perfiles_visitante(nombre)')
+          .in('id', visitorIds);
+        if (visitorsError) {
+          console.error(visitorsError);
+        } else if (visitors) {
+          visitors.forEach(visitor => { visitorsMap[visitor.id] = visitor; });
+        }
+      }
+
+      let areasMap = {};
+      if (areaIds.length > 0) {
+        const { data: areas, error: areasError } = await supabaseClient
+          .from('areas_visitante')
+          .select('id, nombre')
+          .in('id', areaIds);
+        if (areasError) {
+          console.error(areasError);
+        } else if (areas) {
+          areas.forEach(area => { areasMap[area.id] = area; });
+        }
+      }
+
+      let statusesMap = {};
+      if (statusIds.length > 0) {
+        const { data: statuses, error: statusesError } = await supabaseClient
+          .from('estados_visitante')
+          .select('id, nombre')
+          .in('id', statusIds);
+        if (statusesError) {
+          console.error(statusesError);
+        } else if (statuses) {
+          statuses.forEach(status => { statusesMap[status.id] = status; });
+        }
+      }
+
+      let usersMap = {};
+      if (userIds.length > 0) {
+        const { data: users, error: usersError } = await supabaseClient
+          .from('usuarios')
+          .select('id, nombre')
+          .in('id', userIds);
+        if (usersError) {
+          console.error(usersError);
+        } else if (users) {
+          users.forEach(user => { usersMap[user.id] = user; });
+        }
+      }
+
+      tbody.innerHTML = '';
+      ingresos.forEach(item => {
+        const visitor = visitorsMap[item.visitante_id] || {};
+        const row = document.createElement('tr');
+
+        const salidaHtml = item.salida_efectiva
+          ? `<span class="badge bg-success-subtle text-success-emphasis status-badge">${sanitizeHtml(formatDateTime(item.salida_efectiva))}</span>`
+          : '<span class="badge bg-warning-subtle text-warning-emphasis status-badge">Pendiente</span>';
+
+        const vigilanteNombre = usersMap[item.vigilante_id]?.nombre || '';
+        const vigilanteSalidaNombre = usersMap[item.salida_vigilante_id]?.nombre || '';
+
+        row.innerHTML = `
+          <td>${sanitizeHtml(String(item.id ?? ''))}</td>
+          <td>${sanitizeHtml(String(item.visitante_id ?? ''))}</td>
+          <td>${sanitizeHtml(visitor.nombre)}</td>
+          <td>${sanitizeHtml(visitor.documento)}</td>
+          <td>${sanitizeHtml(visitor.perfil?.nombre)}</td>
+          <td>${sanitizeHtml(item.fecha)}</td>
+          <td>${sanitizeHtml(item.hora)}</td>
+          <td>${sanitizeHtml(item.motivo)}</td>
+          <td>${sanitizeHtml(areasMap[item.area_id]?.nombre)}</td>
+          <td>${sanitizeHtml(statusesMap[item.estado_id]?.nombre)}</td>
+          <td>${sanitizeHtml(item.observaciones)}</td>
+          <td>${sanitizeHtml(vigilanteNombre)}</td>
+          <td>${salidaHtml}</td>
+          <td>${sanitizeHtml(item.salida_observaciones)}</td>
+          <td>${sanitizeHtml(vigilanteSalidaNombre)}</td>
+          <td>${sanitizeHtml(formatDateTime(item.created_at))}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function exportarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+
+      const primaryColor = [31, 75, 153];
+      const secondaryColor = [227, 233, 246];
+
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, 297, 40, 'F');
+
+      doc.setFillColor(255, 255, 255);
+      doc.circle(25, 20, 8, 'F');
+      doc.setTextColor(...primaryColor);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('G', 22, 25);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Reporte de Visitantes', 40, 28);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      doc.text(`Generado el: ${fechaGeneracion}`, 40, 35);
+
+      const tabla = document.getElementById('tabla-reporte');
+      const tbody = tabla.querySelector('tbody');
+      const filas = tbody.querySelectorAll('tr');
+
+      if (filas.length === 0 || filas[0].cells.length === 1) {
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text('No hay datos para mostrar', 20, 60);
+        doc.save(`reporte_visitantes_${new Date().toISOString().slice(0,10)}.pdf`);
+        return;
+      }
+
+      const headers = [
+        'ID Ingreso',
+        'Visitante ID',
+        'Nombre',
+        'Documento',
+        'Perfil',
+        'Fecha',
+        'Hora',
+        'Motivo',
+        'Área',
+        'Estado',
+        'Observaciones',
+        'Vigilante',
+        'Salida efectiva',
+        'Observaciones salida',
+        'Vigilante salida',
+        'Creado'
+      ];
+      const datos = [];
+
+      filas.forEach(fila => {
+        if (fila.cells.length > 1) {
+          const fila_datos = [];
+          for (let i = 0; i < fila.cells.length; i++) {
+            let texto = fila.cells[i].textContent.trim();
+            texto = texto.replace(/[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+            fila_datos.push(texto);
+          }
+          datos.push(fila_datos);
+        }
+      });
+
+      doc.autoTable({
+        head: [headers],
+        body: datos,
+        startY: 50,
+        theme: 'grid',
+        styles: {
+          fontSize: 6,
+          cellPadding: 3,
+          textColor: [0, 0, 0],
+          lineColor: [200, 200, 200],
+          lineWidth: 0.5
+        },
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontSize: 7,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 14 },
+          1: { halign: 'center', cellWidth: 14 },
+          2: { halign: 'left', cellWidth: 24 },
+          3: { halign: 'center', cellWidth: 18 },
+          4: { halign: 'center', cellWidth: 18 },
+          5: { halign: 'center', cellWidth: 16 },
+          6: { halign: 'center', cellWidth: 14 },
+          7: { halign: 'left', cellWidth: 26 },
+          8: { halign: 'left', cellWidth: 18 },
+          9: { halign: 'left', cellWidth: 18 },
+          10: { halign: 'left', cellWidth: 26 },
+          11: { halign: 'left', cellWidth: 18 },
+          12: { halign: 'left', cellWidth: 20 },
+          13: { halign: 'left', cellWidth: 24 },
+          14: { halign: 'left', cellWidth: 18 },
+          15: { halign: 'left', cellWidth: 22 }
+        },
+        alternateRowStyles: {
+          fillColor: secondaryColor
+        },
+        margin: { top: 50, right: 10, bottom: 30, left: 10 }
+      });
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Página ${i} de ${pageCount}`, 10, 200);
+        doc.text('Sistema de Control de Salidas - Colegio Gemelli', 10, 205);
+      }
+
+      const fecha = new Date().toISOString().slice(0,10);
+      doc.save(`reporte_visitantes_${fecha}.pdf`);
+    }
+
+    function exportarCSV() {
+      const tabla = document.getElementById('tabla-reporte');
+      const filas = tabla.querySelectorAll('tr');
+      const csv = [];
+      filas.forEach(fila => {
+        const cols = fila.querySelectorAll('th, td');
+        const datos = Array.from(cols).map(col => {
+          const texto = sanitizeHtml(col.textContent.trim()).replace(/"/g, '""');
+          return `"${texto}"`;
+        });
+        csv.push(datos.join(','));
+      });
+      const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const fecha = new Date().toISOString().slice(0,10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `reporte_visitantes_${fecha}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      mostrarReporteVisitantes();
+    });
+  </script>
+  <div id="toast-container" class="toast-container"></div>
+  <script src="toast.js"></script>
+</body>
+</html>
