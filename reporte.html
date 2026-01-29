@@ -102,8 +102,8 @@
     const supabaseEnv = window.process?.env ?? {};
     const SUPABASE_URL = supabaseEnv.SUPABASE_URL || 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
     const SUPABASE_ANON_KEY = supabaseEnv.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
     function sanitizeHtml(str) {
       if (!str) return '';
       const temp = document.createElement('div');
@@ -137,7 +137,7 @@
 
       const desde = document.getElementById('desdeReporte').value;
       const hasta = document.getElementById('hastaReporte').value;
-      let consulta = supabase
+      let consulta = supabaseClient
         .from('autorizaciones_salida')
         .select('estudiante_id, fecha_salida, hora_salida, autorizada, salida_efectiva, usuario_autorizador_id');
 
@@ -182,7 +182,7 @@
       const studentIds = [...new Set(autorizaciones.map(a => a.estudiante_id))];
       let studentsMap = {};
       if (studentIds.length > 0) {
-        const { data: students, error: studentsError } = await supabase
+        const { data: students, error: studentsError } = await supabaseClient
           .from('estudiantes')
           .select('id, nombre, apellidos, documento, grado:grados(nombre)')
           .in('id', studentIds);
@@ -196,7 +196,7 @@
       const userIds = [...new Set(autorizaciones.filter(a => a.usuario_autorizador_id).map(a => a.usuario_autorizador_id))];
       let usersMap = {};
       if (userIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
+        const { data: users, error: usersError } = await supabaseClient
           .from('usuarios')
           .select('id, nombre')
           .in('id', userIds);
