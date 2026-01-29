@@ -421,7 +421,7 @@
     const supabaseEnv = window.process?.env ?? {};
     const SUPABASE_URL = supabaseEnv.SUPABASE_URL || 'https://mbosvnmhnbrslfwlfcxu.supabase.co';
     const SUPABASE_ANON_KEY = supabaseEnv.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ib3N2bm1obmJyc2xmd2xmY3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1ODU2MzUsImV4cCI6MjA2NTE2MTYzNX0.evgs5gWsCRyfeo273tLiAAoIdB-IjMaPq8U23xK4lqc';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const allowedUsers = [
       'sistemas@colgemelli.edu.co',
       'gadministrativa@colgemelli.edu.co'
@@ -590,7 +590,7 @@
         const desde = document.getElementById('desdeReporte').value;
         const hasta = document.getElementById('hastaReporte').value;
 
-        let consulta = supabase
+        let consulta = supabaseClient
           .from('autorizaciones_personal')
           .select('*')
           .order('fecha_salida', { ascending: false })
@@ -626,13 +626,13 @@
 
         const [colaboradoresRes, motivosRes, usuariosRes] = await Promise.all([
           staffIds.size
-            ? supabase.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', Array.from(staffIds))
+            ? supabaseClient.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', Array.from(staffIds))
             : { data: [], error: null },
           motivoIds.size
-            ? supabase.from('motivos').select('id, descripcion').in('id', Array.from(motivoIds))
+            ? supabaseClient.from('motivos').select('id, descripcion').in('id', Array.from(motivoIds))
             : { data: [], error: null },
           usuarioIds.size
-            ? supabase.from('usuarios').select('id, nombre').in('id', Array.from(usuarioIds))
+            ? supabaseClient.from('usuarios').select('id, nombre').in('id', Array.from(usuarioIds))
             : { data: [], error: null }
         ]);
 
