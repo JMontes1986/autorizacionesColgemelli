@@ -116,7 +116,38 @@
                 </div>
             </div>
 
-       <div class="col-xl-6 col-lg-6">
+       <div class="col-xl-4 col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Visitantes Registrados por Mes</h3>
+                        <div class="chart-container">
+                            <div id="visitantesMesChart" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Visitantes Recurrentes</h3>
+                        <div class="chart-container">
+                            <div id="visitantesRecurrentesChart" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Sitios Más Visitados</h3>
+                        <div class="chart-container">
+                            <div id="sitiosVisitadosChart" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        <div class="col-xl-6 col-lg-6">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
                         <h3 class="h6">Estudiantes con Más Llegadas Tarde</h3>
@@ -345,6 +376,9 @@
             crearGraficoMotivos(datos);
             crearGraficoTendencia(datos);
             crearGraficoGrados(datos);
+            crearGraficoVisitantesPorMes(datos);
+            crearGraficoVisitantesRecurrentes(datos);
+            crearGraficoSitiosVisitados(datos);
         }
 
         function crearGraficoLlegadasTarde(datos) {
@@ -471,6 +505,94 @@
             });
         }
 
+        function crearGraficoVisitantesPorMes(datos) {
+            const conteoPorMes = {};
+
+            datos.forEach(item => {
+                const fecha = new Date(item.fecha);
+                if (Number.isNaN(fecha.getTime())) return;
+                const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                conteoPorMes[clave] = (conteoPorMes[clave] || 0) + 1;
+            });
+
+            const meses = Object.keys(conteoPorMes).sort();
+            const valores = meses.map(mes => conteoPorMes[mes]);
+
+            const dom = document.getElementById('visitantesMesChart');
+            if (charts.visitantesMes) charts.visitantesMes.dispose();
+
+            charts.visitantesMes = echarts.init(dom);
+            charts.visitantesMes.setOption({
+                xAxis: { type: 'category', data: meses },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(25, 135, 84, 0.8)' }
+                }]
+            });
+        }
+
+        function crearGraficoVisitantesRecurrentes(datos) {
+            const conteoVisitantes = {};
+
+            datos.forEach(item => {
+                if (!item.estudiante) return;
+                conteoVisitantes[item.estudiante] = (conteoVisitantes[item.estudiante] || 0) + 1;
+            });
+
+            const recurrentes = Object.entries(conteoVisitantes)
+                .filter(([, conteo]) => conteo > 1)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 10);
+
+            const nombres = recurrentes.map(([nombre]) => nombre);
+            const valores = recurrentes.map(([, conteo]) => conteo);
+
+            const dom = document.getElementById('visitantesRecurrentesChart');
+            if (charts.visitantesRecurrentes) charts.visitantesRecurrentes.dispose();
+
+            charts.visitantesRecurrentes = echarts.init(dom);
+            charts.visitantesRecurrentes.setOption({
+                xAxis: { type: 'category', data: nombres },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(255, 193, 7, 0.8)' }
+                }]
+            });
+        }
+
+        function crearGraficoSitiosVisitados(datos) {
+            const conteoSitios = {};
+
+            datos.forEach(item => {
+                const sitio = (item.motivo || '').trim();
+                if (!sitio) return;
+                conteoSitios[sitio] = (conteoSitios[sitio] || 0) + 1;
+            });
+
+            const sitios = Object.keys(conteoSitios)
+                .sort((a, b) => conteoSitios[b] - conteoSitios[a])
+                .slice(0, 10);
+            const valores = sitios.map(sitio => conteoSitios[sitio]);
+
+            const dom = document.getElementById('sitiosVisitadosChart');
+            if (charts.sitiosVisitados) charts.sitiosVisitados.dispose();
+
+            charts.sitiosVisitados = echarts.init(dom);
+            charts.sitiosVisitados.setOption({
+                xAxis: { type: 'category', data: sitios },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'bar',
+                    data: valores,
+                    itemStyle: { color: 'rgba(13, 110, 253, 0.8)' }
+                }]
+            });
+        }
+            
         function actualizarTabla(datos) {
             const tbody = document.getElementById('tablaRegistros');
             tbody.innerHTML = '';
