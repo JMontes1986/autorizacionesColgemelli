@@ -405,8 +405,10 @@
   </div>
 
   <script>
-    const supabase = window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-
+    const supabaseClient = window.supabaseClient
+      || window.supabase.createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
+    
     function sanitizeHtml(str) {
       if (!str) return '';
       const temp = document.createElement('div');
@@ -439,7 +441,7 @@
       const desde = document.getElementById('desdeLlegadas').value;
       const hasta = document.getElementById('hastaLlegadas').value;
       const busqueda = document.getElementById('busquedaEstudiante').value.toLowerCase().trim();
-      let consulta = supabase
+      let consulta = supabaseClient
         .from('llegadas_tarde')
         .select('*');
 
@@ -480,7 +482,7 @@
       const studentIds = [...new Set(llegadas.map(a => a.estudiante_id))];
       let studentsMap = {};
       if (studentIds.length > 0) {
-        const { data: students, error: studentsError } = await supabase
+        const { data: students, error: studentsError } = await supabaseClient
           .from('estudiantes')
           .select('id, nombre, apellidos, grado:grados(nombre)')
           .in('id', studentIds);
@@ -494,7 +496,7 @@
        const userIds = [...new Set(llegadas.filter(a => a.registrado_por).map(a => a.registrado_por))];
       let usersMap = {};
       if (userIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
+        const { data: users, error: usersError } = await supabaseClient
           .from('usuarios')
           .select('id, nombre')
           .in('id', userIds);
