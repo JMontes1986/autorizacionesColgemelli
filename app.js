@@ -1347,6 +1347,9 @@ function abrirReporte() {
     window.open('reporte_personal.html', '_blank');
 }
 
+function abrirReporteVisitantes() {
+    window.open('reporte_visitantes.html', '_blank');
+}
         async function forceReloadCharts() {
             try {
                 console.log('🔄 Forzando recarga de gráficos...');
@@ -3535,7 +3538,16 @@ function abrirReporte() {
                 staffReportBtn.style.display = allowedStaffReportUsers.includes(email) ? 'inline-block' : 'none';
             }
                 
-            // Mostrar la primera sección disponible
+           const visitorReportBtn = document.getElementById('visitorReportBtn');
+            if (visitorReportBtn) {
+                const allowedVisitorReportUsers = [
+                    'sistemas@colgemelli.edu.co',
+                    'vigilancia@colgemelli.edu.co'
+                ];
+                visitorReportBtn.style.display = allowedVisitorReportUsers.includes(email) ? 'inline-block' : 'none';
+            }
+                
+           // Mostrar la primera sección disponible
             if (role === 'talento_humano') {
                 showSection('authorizeStaffSectionDiv');
             } else if (email === 'vigilancia@colgemelli.edu.co') {
@@ -9589,5 +9601,6 @@ window.mostrarReporteLlegadas = mostrarReporteLlegadas;
 window.abrirReportePersonal = abrirReportePersonal;
 window.abrirReporte = abrirReporte;
 window.loadSecurityLogs = loadSecurityLogs;
+window.abrirReporteVisitantes = abrirReporteVisitantes;
 window.loadSecurityStats = loadSecurityStats;
 window.exportLogs = exportLogs;
