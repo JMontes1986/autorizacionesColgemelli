@@ -495,6 +495,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(255, 99, 132, 0.8)' }
                 }]
             });
@@ -528,6 +533,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(54, 162, 235, 0.8)' }
                 }]
             });
@@ -558,7 +568,11 @@
                 series: [{
                     type: 'pie',
                     radius: ['40%', '70%'],
-                    data: motivos.map((m, i) => ({ value: valores[i], name: m }))
+                    data: motivos.map((m, i) => ({ value: valores[i], name: m })),
+                    label: {
+                        show: true,
+                        formatter: '{b}: {c}'
+                    }
                 }]
             });
             charts.motivos.off('click');
@@ -619,6 +633,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(153, 102, 255, 0.8)' }
                 }]
             });
@@ -654,6 +673,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(25, 135, 84, 0.8)' }
                 }]
             });
@@ -692,6 +716,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(255, 193, 7, 0.8)' }
                 }]
             });
@@ -725,6 +754,11 @@
                 series: [{
                     type: 'bar',
                     data: valores,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    },
                     itemStyle: { color: 'rgba(13, 110, 253, 0.8)' }
                 }]
             });
