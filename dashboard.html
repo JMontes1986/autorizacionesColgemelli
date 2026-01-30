@@ -255,6 +255,7 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let datosCompletos = [];
+        let datosVisitantes = [];
         const filtrosInteractivos = {
             estudiante: null,
             motivo: null,
@@ -374,6 +375,60 @@
 
             }
 
+        async function obtenerDatosVisitantes() {
+            const ingresosRes = await supabase
+                .from('ingresos_visitantes')
+                .select('fecha, visitante_id, area_id')
+                .order('fecha', { ascending: false });
+
+            if (ingresosRes.error) {
+                console.error('Error al cargar ingresos de visitantes:', ingresosRes.error);
+                return [];
+            }
+
+            const ingresosRaw = ingresosRes.data || [];
+            const visitanteIds = new Set(ingresosRaw.map(it => it.visitante_id).filter(Boolean));
+            const areaIds = new Set(ingresosRaw.map(it => it.area_id).filter(Boolean));
+
+            const visitantesMap = {};
+            if (visitanteIds.size > 0) {
+                const { data: visitantes, error: visitantesError } = await supabase
+                    .from('visitantes')
+                    .select('id, nombre')
+                    .in('id', Array.from(visitanteIds));
+
+                if (visitantesError) {
+                    console.error('Error al cargar visitantes:', visitantesError);
+                } else {
+                    (visitantes || []).forEach(visitante => {
+                        visitantesMap[visitante.id] = visitante.nombre;
+                    });
+                }
+            }
+
+            const areasMap = {};
+            if (areaIds.size > 0) {
+                const { data: areas, error: areasError } = await supabase
+                    .from('areas_visitante')
+                    .select('id, nombre')
+                    .in('id', Array.from(areaIds));
+
+                if (areasError) {
+                    console.error('Error al cargar áreas de visitantes:', areasError);
+                } else {
+                    (areas || []).forEach(area => {
+                        areasMap[area.id] = area.nombre;
+                    });
+                }
+            }
+
+            return ingresosRaw.map(it => ({
+                fecha: it.fecha,
+                visitante: visitantesMap[it.visitante_id] || '',
+                area: areasMap[it.area_id] || ''
+            }));
+        }
+            
         let charts = {};
 
         // Inicializar el dashboard
@@ -396,8 +451,9 @@
             loading.style.display = 'block';
             dashboard.style.opacity = '0.5';
 
-            obtenerDatosCompletos().then(registros => {
+            Promise.all([obtenerDatosCompletos(), obtenerDatosVisitantes()]).then(([registros, visitantes]) => {
                 datosCompletos = registros;
+                datosVisitantes = visitantes;
                 actualizarVista();
 
                 loading.style.display = 'none';
@@ -407,8 +463,9 @@
 
         function actualizarVista() {
             const datosFiltrados = filtrarDatos(datosCompletos, filtrosInteractivos);
+            const visitantesFiltrados = filtrarVisitantes(datosVisitantes);
             actualizarMetricas(datosFiltrados);
-            actualizarGraficos(datosFiltrados);
+            actualizarGraficos(datosFiltrados, visitantesFiltrados);
             actualizarTabla(datosFiltrados);
             renderizarFiltrosInteractivos();
         }
@@ -451,6 +508,22 @@
             });
         }
 
+        function filtrarVisitantes(datos) {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            const fechaInicioDate = fechaInicio ? new Date(`${fechaInicio}T00:00:00`) : null;
+            const fechaFinDate = fechaFin ? new Date(`${fechaFin}T23:59:59`) : null;
+
+            return datos.filter(item => {
+                if (!item.fecha) return false;
+                const fechaItem = new Date(item.fecha);
+                if (Number.isNaN(fechaItem.getTime())) return false;
+                if (fechaInicioDate && fechaItem < fechaInicioDate) return false;
+                if (fechaFinDate && fechaItem > fechaFinDate) return false;
+                return true;
+            });
+        }
+
         // Actualizar métricas
         function actualizarMetricas(datos) {
             const totalRegistros = datos.length;
@@ -465,16 +538,16 @@
         }
 
         // Actualizar gráficos
-        function actualizarGraficos(datos) {
+        function actualizarGraficos(datos, visitantes) {
             crearGraficoLlegadasTarde(datos);
             crearGraficoSalidas(datos);
             crearGraficoMotivos(datos);
             crearGraficoEvolucionTemporal(datos);
             crearGraficoTendencia(datos);
             crearGraficoGrados(datos);
-            crearGraficoVisitantesPorMes(datos);
-            crearGraficoVisitantesRecurrentes(datos);
-            crearGraficoSitiosVisitados(datos);
+            crearGraficoVisitantesPorMes(visitantes);
+            crearGraficoVisitantesRecurrentes(visitantes);
+            crearGraficoSitiosVisitados(visitantes);
         }
 
         function crearGraficoLlegadasTarde(datos) {
@@ -743,20 +816,14 @@
                 }]
             });
             charts.visitantesMes.off('click');
-            charts.visitantesMes.on('click', params => {
-                actualizarFiltroInteractivo({
-                    mes: params.name,
-                    fecha: null
-                });
-            });
         }
 
         function crearGraficoVisitantesRecurrentes(datos) {
             const conteoVisitantes = {};
 
             datos.forEach(item => {
-                if (!item.estudiante) return;
-                conteoVisitantes[item.estudiante] = (conteoVisitantes[item.estudiante] || 0) + 1;
+                if (!item.visitante) return;
+                conteoVisitantes[item.visitante] = (conteoVisitantes[item.visitante] || 0) + 1;
             });
 
             const recurrentes = Object.entries(conteoVisitantes)
@@ -786,16 +853,13 @@
                 }]
             });
             charts.visitantesRecurrentes.off('click');
-            charts.visitantesRecurrentes.on('click', params => {
-                actualizarFiltroInteractivo({ estudiante: params.name });
-            });
         }
 
         function crearGraficoSitiosVisitados(datos) {
             const conteoSitios = {};
 
             datos.forEach(item => {
-                const sitio = (item.motivo || '').trim();
+                const sitio = (item.area || '').trim();
                 if (!sitio) return;
                 conteoSitios[sitio] = (conteoSitios[sitio] || 0) + 1;
             });
@@ -831,9 +895,6 @@
                 }]
             });
             charts.sitiosVisitados.off('click');
-            charts.sitiosVisitados.on('click', params => {
-                actualizarFiltroInteractivo({ motivo: params.name });
-            });
         }
 
         function actualizarFiltroInteractivo(nuevosFiltros) {
