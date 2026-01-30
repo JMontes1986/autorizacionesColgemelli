@@ -469,6 +469,7 @@
             crearGraficoLlegadasTarde(datos);
             crearGraficoSalidas(datos);
             crearGraficoMotivos(datos);
+            crearGraficoEvolucionTemporal(datos);
             crearGraficoTendencia(datos);
             crearGraficoGrados(datos);
             crearGraficoVisitantesPorMes(datos);
@@ -599,6 +600,48 @@
             });
         }
 
+        function crearGraficoEvolucionTemporal(datos) {
+            const conteoPorFecha = {};
+
+            datos.forEach(item => {
+                if (!item.fecha) return;
+                conteoPorFecha[item.fecha] = (conteoPorFecha[item.fecha] || 0) + 1;
+            });
+
+            const fechas = Object.keys(conteoPorFecha).sort();
+            const valores = fechas.map(fecha => conteoPorFecha[fecha]);
+
+            const dom = document.getElementById('evolucionChart');
+            if (charts.evolucion) charts.evolucion.dispose();
+
+            charts.evolucion = echarts.init(dom);
+            charts.evolucion.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: {
+                    type: 'category',
+                    data: fechas,
+                    axisLabel: {
+                        hideOverlap: true
+                    }
+                },
+                yAxis: { type: 'value' },
+                series: [{
+                    type: 'line',
+                    smooth: true,
+                    data: valores,
+                    areaStyle: { color: 'rgba(25, 135, 84, 0.2)' },
+                    lineStyle: { color: 'rgba(25, 135, 84, 0.9)' }
+                }]
+            });
+            charts.evolucion.off('click');
+            charts.evolucion.on('click', params => {
+                actualizarFiltroInteractivo({
+                    fecha: params.name,
+                    mes: null
+                });
+            });
+        }
+            
         function crearGraficoTendencia(datos) {
             const conteoPorFecha = {};
 
