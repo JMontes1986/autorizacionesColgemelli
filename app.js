@@ -505,7 +505,8 @@
                         type: 'pie',
                         radius: ['40%', '70%'],
                         avoidLabelOverlap: false,
-                        label: { show: false },
+                        label: { show: true, formatter: '{b}: {c}' },
+                        labelLine: { show: true },
                         data: [
                             { value: pendingCount, name: '🟢 Pendientes' },
                             { value: confirmedCount, name: '🔵 Confirmadas' }
@@ -578,8 +579,8 @@
                         xAxis: { type: 'category', data: labels },
                         yAxis: { type: 'value', min: 0 },
                         series: [
-                            { name: '🟢 Pendientes', type: 'bar', data: pendingData, itemStyle: { color: '#2ecc71' } },
-                            { name: '🔵 Confirmadas', type: 'bar', data: confirmedData, itemStyle: { color: '#3498db' } }
+                            { name: '🟢 Pendientes', type: 'bar', data: pendingData, itemStyle: { color: '#2ecc71' }, label: { show: true, position: 'top' } },
+                            { name: '🔵 Confirmadas', type: 'bar', data: confirmedData, itemStyle: { color: '#3498db' }, label: { show: true, position: 'top' } }
                         ]
                      };
                 }
@@ -639,7 +640,9 @@
                         series: [{
                             type: 'pie',
                             radius: '70%',
-                            data: seriesData
+                            data: seriesData,
+                            label: { show: true, formatter: '{b}: {c}' },
+                            labelLine: { show: true }
                         }]
                     };
                 }
