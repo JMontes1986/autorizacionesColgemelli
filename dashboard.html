@@ -837,9 +837,29 @@
             const dom = document.getElementById('visitantesRecurrentesChart');
             if (charts.visitantesRecurrentes) charts.visitantesRecurrentes.dispose();
 
+            const formatearEtiquetaEje = (texto) => {
+                const limite = 10;
+                if (!texto || texto.length <= limite) return texto;
+                const segmentos = [];
+                for (let i = 0; i < texto.length; i += limite) {
+                    segmentos.push(texto.slice(i, i + limite));
+                }
+                return segmentos.join('\n');
+            };
+            
             charts.visitantesRecurrentes = echarts.init(dom);
             charts.visitantesRecurrentes.setOption({
-                xAxis: { type: 'category', data: nombres },
+                grid: { bottom: 80, left: 40, right: 20, top: 20 },
+                xAxis: {
+                    type: 'category',
+                    data: nombres,
+                    axisLabel: {
+                        interval: 0,
+                        hideOverlap: false,
+                        rotate: 30,
+                        formatter: formatearEtiquetaEje
+                    }
+                },
                 yAxis: { type: 'value' },
                 series: [{
                     type: 'bar',
@@ -872,14 +892,27 @@
             const dom = document.getElementById('sitiosVisitadosChart');
             if (charts.sitiosVisitados) charts.sitiosVisitados.dispose();
 
+            const formatearEtiquetaEje = (texto) => {
+                const limite = 10;
+                if (!texto || texto.length <= limite) return texto;
+                const segmentos = [];
+                for (let i = 0; i < texto.length; i += limite) {
+                    segmentos.push(texto.slice(i, i + limite));
+                }
+                return segmentos.join('\n');
+            };
+
             charts.sitiosVisitados = echarts.init(dom);
             charts.sitiosVisitados.setOption({
+                grid: { bottom: 80, left: 40, right: 20, top: 20 },
                 xAxis: {
                     type: 'category',
                     data: sitios,
                     axisLabel: {
                         interval: 0,
-                        hideOverlap: true
+                        hideOverlap: false,
+                        rotate: 30,
+                        formatter: formatearEtiquetaEje
                     }
                 },
                 yAxis: { type: 'value' },
