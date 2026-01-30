@@ -75,6 +75,12 @@
             </div>
         </div>
 
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="filtrosInteractivos">
+            <span class="text-muted small">Filtros interactivos:</span>
+            <div class="d-flex flex-wrap gap-2" id="filtrosBadges"></div>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" id="limpiarFiltros" type="button">Limpiar filtros</button>
+        </div>
+        
         <div class="loading text-center mb-4" id="loading">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
@@ -249,6 +255,14 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let datosCompletos = [];
+        const filtrosInteractivos = {
+            estudiante: null,
+            motivo: null,
+            gradoId: null,
+            fecha: null,
+            mes: null,
+            tipo: null
+        };
 
         async function obtenerDatosCompletos() {
             const [salidasRes, llegadasRes] = await Promise.all([
@@ -382,18 +396,23 @@
 
             obtenerDatosCompletos().then(registros => {
                 datosCompletos = registros;
-                const datosFiltrados = filtrarDatos(datosCompletos);
-                actualizarMetricas(datosFiltrados);
-                actualizarGraficos(datosFiltrados);
-                actualizarTabla(datosFiltrados);
+                actualizarVista();
 
                 loading.style.display = 'none';
                 dashboard.style.opacity = '1';
             });
         }
 
+        function actualizarVista() {
+            const datosFiltrados = filtrarDatos(datosCompletos, filtrosInteractivos);
+            actualizarMetricas(datosFiltrados);
+            actualizarGraficos(datosFiltrados);
+            actualizarTabla(datosFiltrados);
+            renderizarFiltrosInteractivos();
+        }
+            
         // Filtrar datos según los controles
-        function filtrarDatos(datos) {
+        function filtrarDatos(datos, filtros) {
             const fechaInicio = document.getElementById('fechaInicio').value;
             const fechaFin = document.getElementById('fechaFin').value;
             const grado = document.getElementById('filtroGrado').value;
@@ -411,7 +430,22 @@
                 const cumpleGrado = !grado || String(item.gradoId || '') === String(grado);
                 const cumpleTipo = !tipo || item.tipo === tipo;
 
-                return cumpleFecha && cumpleGrado && cumpleTipo;
+                const cumpleTipoInteractivo = !filtros.tipo || item.tipo === filtros.tipo;
+                const cumpleEstudiante = !filtros.estudiante || item.estudiante === filtros.estudiante;
+                const cumpleMotivo = !filtros.motivo || item.motivo === filtros.motivo;
+                const cumpleFechaInteractiva = !filtros.fecha || item.fecha === filtros.fecha;
+                const cumpleMes = !filtros.mes || item.fecha?.startsWith(filtros.mes);
+                const cumpleGradoInteractivo = !filtros.gradoId || String(item.gradoId || '') === String(filtros.gradoId);
+
+                return cumpleFecha
+                    && cumpleGrado
+                    && cumpleTipo
+                    && cumpleTipoInteractivo
+                    && cumpleEstudiante
+                    && cumpleMotivo
+                    && cumpleFechaInteractiva
+                    && cumpleMes
+                    && cumpleGradoInteractivo;
             });
         }
 
@@ -464,6 +498,13 @@
                     itemStyle: { color: 'rgba(255, 99, 132, 0.8)' }
                 }]
             });
+            charts.chegadasTarde.off('click');
+            charts.chegadasTarde.on('click', params => {
+                actualizarFiltroInteractivo({
+                    estudiante: params.name,
+                    tipo: 'llegada_tarde'
+                });
+            });
         }
 
         function crearGraficoSalidas(datos) {
@@ -490,6 +531,13 @@
                     itemStyle: { color: 'rgba(54, 162, 235, 0.8)' }
                 }]
             });
+            charts.salidas.off('click');
+            charts.salidas.on('click', params => {
+                actualizarFiltroInteractivo({
+                    estudiante: params.name,
+                    tipo: 'salida'
+                });
+            });
         }
 
         function crearGraficoMotivos(datos) {
@@ -512,6 +560,10 @@
                     radius: ['40%', '70%'],
                     data: motivos.map((m, i) => ({ value: valores[i], name: m }))
                 }]
+            });
+            charts.motivos.off('click');
+            charts.motivos.on('click', params => {
+                actualizarFiltroInteractivo({ motivo: params.name });
             });
         }
 
@@ -536,6 +588,13 @@
                     type: 'line',
                     data: valores
                 }]
+            });
+            charts.tendencia.off('click');
+            charts.tendencia.on('click', params => {
+                actualizarFiltroInteractivo({
+                    fecha: params.name,
+                    mes: null
+                });
             });
         }
 
@@ -562,6 +621,13 @@
                     data: valores,
                     itemStyle: { color: 'rgba(153, 102, 255, 0.8)' }
                 }]
+            });
+            charts.grados.off('click');
+            charts.grados.on('click', params => {
+                const gradoSeleccionado = datos.find(item => item.grado === params.name && item.gradoId);
+                actualizarFiltroInteractivo({
+                    gradoId: gradoSeleccionado?.gradoId || null
+                });
             });
         }
 
@@ -590,6 +656,13 @@
                     data: valores,
                     itemStyle: { color: 'rgba(25, 135, 84, 0.8)' }
                 }]
+            });
+            charts.visitantesMes.off('click');
+            charts.visitantesMes.on('click', params => {
+                actualizarFiltroInteractivo({
+                    mes: params.name,
+                    fecha: null
+                });
             });
         }
 
@@ -622,6 +695,10 @@
                     itemStyle: { color: 'rgba(255, 193, 7, 0.8)' }
                 }]
             });
+            charts.visitantesRecurrentes.off('click');
+            charts.visitantesRecurrentes.on('click', params => {
+                actualizarFiltroInteractivo({ estudiante: params.name });
+            });
         }
 
         function crearGraficoSitiosVisitados(datos) {
@@ -651,6 +728,72 @@
                     itemStyle: { color: 'rgba(13, 110, 253, 0.8)' }
                 }]
             });
+            charts.sitiosVisitados.off('click');
+            charts.sitiosVisitados.on('click', params => {
+                actualizarFiltroInteractivo({ motivo: params.name });
+            });
+        }
+
+        function actualizarFiltroInteractivo(nuevosFiltros) {
+            Object.keys(nuevosFiltros).forEach(key => {
+                if (nuevosFiltros[key] !== undefined) {
+                    filtrosInteractivos[key] = nuevosFiltros[key];
+                }
+            });
+            actualizarVista();
+        }
+
+        function limpiarFiltrosInteractivos() {
+            filtrosInteractivos.estudiante = null;
+            filtrosInteractivos.motivo = null;
+            filtrosInteractivos.gradoId = null;
+            filtrosInteractivos.fecha = null;
+            filtrosInteractivos.mes = null;
+            filtrosInteractivos.tipo = null;
+            actualizarVista();
+        }
+
+        function renderizarFiltrosInteractivos() {
+            const contenedor = document.getElementById('filtrosBadges');
+            const botonLimpiar = document.getElementById('limpiarFiltros');
+            contenedor.innerHTML = '';
+
+            const etiquetas = [];
+            if (filtrosInteractivos.tipo) {
+                etiquetas.push({ key: 'tipo', label: `Tipo: ${filtrosInteractivos.tipo === 'salida' ? 'Salida' : 'Llegada Tarde'}` });
+            }
+            if (filtrosInteractivos.estudiante) {
+                etiquetas.push({ key: 'estudiante', label: `Estudiante: ${filtrosInteractivos.estudiante}` });
+            }
+            if (filtrosInteractivos.motivo) {
+                etiquetas.push({ key: 'motivo', label: `Motivo: ${filtrosInteractivos.motivo}` });
+            }
+            if (filtrosInteractivos.gradoId) {
+                const gradoTexto = document.querySelector(`#filtroGrado option[value="${filtrosInteractivos.gradoId}"]`)?.textContent || filtrosInteractivos.gradoId;
+                etiquetas.push({ key: 'gradoId', label: `Grado: ${gradoTexto}` });
+            }
+            if (filtrosInteractivos.fecha) {
+                etiquetas.push({ key: 'fecha', label: `Fecha: ${filtrosInteractivos.fecha}` });
+            }
+            if (filtrosInteractivos.mes) {
+                etiquetas.push({ key: 'mes', label: `Mes: ${filtrosInteractivos.mes}` });
+            }
+
+            if (etiquetas.length === 0) {
+                contenedor.innerHTML = '<span class="text-muted small">Sin filtros activos</span>';
+                botonLimpiar.disabled = true;
+                return;
+            }
+
+            etiquetas.forEach(etiqueta => {
+                const badge = document.createElement('button');
+                badge.type = 'button';
+                badge.className = 'btn btn-sm btn-outline-primary';
+                badge.dataset.filtro = etiqueta.key;
+                badge.textContent = `${etiqueta.label} ✕`;
+                contenedor.appendChild(badge);
+            });
+            botonLimpiar.disabled = false;
         }
             
         function actualizarTabla(datos) {
@@ -676,7 +819,16 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', inicializarDashboard);
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarDashboard();
+            document.getElementById('limpiarFiltros').addEventListener('click', limpiarFiltrosInteractivos);
+            document.getElementById('filtrosBadges').addEventListener('click', event => {
+                const filtro = event.target.dataset.filtro;
+                if (!filtro) return;
+                filtrosInteractivos[filtro] = null;
+                actualizarVista();
+            });
+        });
     </script>
     <div id="toast-container" class="toast-container"></div>
     <script src="toast.js"></script>
