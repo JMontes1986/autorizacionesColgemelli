@@ -343,10 +343,11 @@
             const salidas = salidasRaw.map(it => {
                 const student = studentsMap[it.estudiante_id] || {};
                 const gradoId = student.grado_id || '';
+                const gradoNombre = (gradeMap[gradoId] || '').trim() || 'Sin grado';
                 return {
                     fecha: it.fecha_salida,
                     estudiante: student.nombre || '',
-                    grado: gradeMap[gradoId] || '',
+                    grado: gradoNombre,
                     gradoId,
                     tipo: 'salida',
                     motivo: motivoMap[it.motivo_id] || '',
@@ -357,10 +358,11 @@
             const llegadas = llegadasRaw.map(it => {
                 const student = studentsMap[it.estudiante_id] || {};
                 const gradoId = it.grado_id || student.grado_id || '';
+                const gradoNombre = (gradeMap[gradoId] || '').trim() || 'Sin grado';
                 return {
                     fecha: it.fecha,
                     estudiante: student.nombre || '',
-                    grado: gradeMap[gradoId] || '',
+                    grado: gradoNombre,
                     gradoId,
                     tipo: 'llegada_tarde',
                     motivo: it.observacion || '',
@@ -632,7 +634,7 @@
             const conteoPorGrado = {};
 
             datos.forEach(item => {
-                const grado = item.grado || 'Sin grado';
+                const grado = (item.grado || '').trim() || 'Sin grado';
                 conteoPorGrado[grado] = (conteoPorGrado[grado] || 0) + 1;
             });
 
