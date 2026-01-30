@@ -479,7 +479,8 @@
             const conteoEstudiantes = {};
 
             llegadasTarde.forEach(item => {
-                conteoEstudiantes[item.estudiante] = (conteoEstudiantes[item.estudiante] || 0) + 1;
+                const estudiante = item.estudiante?.trim() || 'Sin nombre';
+                conteoEstudiantes[estudiante] = (conteoEstudiantes[estudiante] || 0) + 1;
             });
 
             const estudiantes = Object.keys(conteoEstudiantes).sort((a, b) => conteoEstudiantes[b] - conteoEstudiantes[a]).slice(0, 10);
@@ -490,7 +491,14 @@
 
             charts.chegadasTarde = echarts.init(dom);
             charts.chegadasTarde.setOption({
-                xAxis: { type: 'category', data: estudiantes },
+                xAxis: {
+                    type: 'category',
+                    data: estudiantes,
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 20
+                    }
+                },
                 yAxis: { type: 'value' },
                 series: [{
                     type: 'bar',
@@ -517,7 +525,8 @@
             const conteoEstudiantes = {};
 
             salidas.forEach(item => {
-                conteoEstudiantes[item.estudiante] = (conteoEstudiantes[item.estudiante] || 0) + 1;
+                const estudiante = item.estudiante?.trim() || 'Sin nombre';
+                conteoEstudiantes[estudiante] = (conteoEstudiantes[estudiante] || 0) + 1;
             });
 
             const estudiantes = Object.keys(conteoEstudiantes).sort((a, b) => conteoEstudiantes[b] - conteoEstudiantes[a]).slice(0, 10);
@@ -528,7 +537,14 @@
 
             charts.salidas = echarts.init(dom);
             charts.salidas.setOption({
-                xAxis: { type: 'category', data: estudiantes },
+                xAxis: {
+                    type: 'category',
+                    data: estudiantes,
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 20
+                    }
+                },
                 yAxis: { type: 'value' },
                 series: [{
                     type: 'bar',
