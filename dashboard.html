@@ -749,7 +749,14 @@
 
             charts.sitiosVisitados = echarts.init(dom);
             charts.sitiosVisitados.setOption({
-                xAxis: { type: 'category', data: sitios },
+                xAxis: {
+                    type: 'category',
+                    data: sitios,
+                    axisLabel: {
+                        interval: 0,
+                        hideOverlap: true
+                    }
+                },
                 yAxis: { type: 'value' },
                 series: [{
                     type: 'bar',
