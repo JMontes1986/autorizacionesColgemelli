@@ -1638,6 +1638,7 @@ function abrirReporteVisitantes() {
         let promotionStudentsCache = [];
         let adminStudentsCache = [];
         let visitorExitTrackingAvailable = true;
+        let visitorEntrySubmitting = false;
 
         // Configuración de seguridad
         const MAX_LOGIN_ATTEMPTS = 5;
@@ -3736,8 +3737,9 @@ function abrirReporteVisitantes() {
             }
 
             const visitorForm = document.getElementById('visitorEntryForm');
-            if (visitorForm) {
+            if (visitorForm && visitorForm.dataset.submitBound !== 'true') {
                 visitorForm.addEventListener('submit', saveVisitorEntry);
+                visitorForm.dataset.submitBound = 'true';
             }
 
                             
@@ -4461,7 +4463,18 @@ function abrirReporteVisitantes() {
         async function saveVisitorEntry(event) {
             event.preventDefault();
 
-            try {
+            if (visitorEntrySubmitting) {
+                showWarning('El registro del ingreso ya está en proceso. Espera un momento.', 'visitorInfo');
+                return;
+            }
+
+            visitorEntrySubmitting = true;
+            const submitButton = event?.target?.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+                
+             try {
                 if (!validateSession()) {
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.', 'visitorError');
                     logout();
@@ -4567,6 +4580,11 @@ function abrirReporteVisitantes() {
                 await logSecurityEvent('error', 'Error al registrar visitante', {
                     error: error.message.substring(0, 200)
                 }, false);
+            } finally {
+                visitorEntrySubmitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
             }
         }
 
