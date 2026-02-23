@@ -425,28 +425,59 @@
 
                 const { data: activityData, error: activityError } = await supabaseClient
                     .from('autorizaciones_salida')
-                    .select(`
-                        id,
-                        estudiante_id,
-                        motivo_id,
-                        hora_salida,
-                        salida_efectiva,
-                        fecha_creacion,
-                        usuario_autorizador_id,
-                        vigilante_id,
-                        estudiante:estudiantes(id, nombre, apellidos, grado:grados(nombre)),
-                        usuario:usuarios!autorizaciones_salida_usuario_autorizador_id_fkey(id, nombre),
-                        vigilante:usuarios!autorizaciones_salida_vigilante_id_fkey(id, nombre)
-                    `)
+                    .select('id, estudiante_id, motivo_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
                     .in('id', authorizationIds);
 
-                   if (activityError) {
+                if (activityError) {
                     throw activityError;
                 }
 
+                const studentIds = [...new Set((activityData || []).map(auth => auth.estudiante_id).filter(Boolean))];
+                const userIds = [...new Set((activityData || [])
+                    .flatMap(auth => [auth.usuario_autorizador_id, auth.vigilante_id])
+                    .filter(Boolean))];
+
+                const [studentsResponse, usersResponse] = await Promise.all([
+                    studentIds.length > 0
+                        ? supabaseClient
+                            .from('estudiantes')
+                            .select('id, nombre, apellidos, grado:grados(nombre)')
+                            .in('id', studentIds)
+                        : Promise.resolve({ data: [], error: null }),
+                    userIds.length > 0
+                        ? supabaseClient
+                            .from('usuarios')
+                            .select('id, nombre')
+                            .in('id', userIds)
+                        : Promise.resolve({ data: [], error: null })
+                ]);
+
+                if (studentsResponse.error) {
+                    throw studentsResponse.error;
+                }
+
+                if (usersResponse.error) {
+                    throw usersResponse.error;
+                }
+
+                const studentMap = {};
+                (studentsResponse.data || []).forEach(student => {
+                    studentMap[student.id] = student;
+                });
+
+                const userMap = {};
+                (usersResponse.data || []).forEach(user => {
+                    userMap[user.id] = user;
+                });
+                    
                 const activityMap = {};
                 (activityData || []).forEach(activity => {
-                    activityMap[activity.id] = activity;
+                    activityMap[activity.id] = {
+                        ...activity,
+                        estudiante: studentMap[activity.estudiante_id] || null,
+                        usuario: userMap[activity.usuario_autorizador_id] || null,
+                        vigilante: userMap[activity.vigilante_id] || null
+                    };
                 });
 
                  const enrichedForActivity = authorizations
