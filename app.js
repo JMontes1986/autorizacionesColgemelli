@@ -223,42 +223,31 @@
                 
                 const todayColombia = getColombiaDate();
                 console.log('📅 Fecha Colombia para consulta:', todayColombia);
-                
-                // Consulta simplificada - solo datos básicos primero
-                const { data: todayAuthorizations, error: authError } = await supabaseClient
-                    .from('autorizaciones_salida')
-                    .select('id, estudiante_id, motivo_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
-                    .eq('fecha_salida', todayColombia)
-                    .eq('autorizada', true)
-                    .order('fecha_creacion', { ascending: false });
 
-                if (authError) {
-                    console.error('❌ Error en consulta de autorizaciones:', authError);
-                    throw authError;
+                const { data: dashboardSummary, error: summaryError } = await supabaseClient
+                    .rpc('get_dashboard_salidas_summary', { p_fecha: todayColombia });
+
+                if (summaryError) {
+                    console.error('❌ Error en RPC de resumen de dashboard:', summaryError);
+                    throw summaryError;
                 }
 
-                const authorizations = todayAuthorizations || [];
-                console.log(`📊 Autorizaciones encontradas: ${authorizations.length}`);
+               const summary = Array.isArray(dashboardSummary) && dashboardSummary.length > 0
+                    ? dashboardSummary[0]
+                    : { pendientes: 0, confirmadas: 0, total: 0, actividad_reciente: 0 };
+                    
+                const pendingCount = Number(summary.pendientes || 0);
+                const confirmedCount = Number(summary.confirmadas || 0);
+                const totalCount = Number(summary.total || 0);
+                const recentCount = Number(summary.actividad_reciente || 0);
 
-                // Procesar estadísticas básicas
-                const pending = authorizations.filter(auth => !auth.salida_efectiva);
-                const confirmed = authorizations.filter(auth => auth.salida_efectiva);
-                
-                console.log(`📈 Estadísticas: ${pending.length} pendientes, ${confirmed.length} confirmadas`);
-                
-                // Actividad de la última hora
-                const oneHourAgo = new Date();
-                oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-                const recentActivity = authorizations.filter(auth => 
-                    new Date(auth.fecha_creacion) > oneHourAgo || 
-                    (auth.salida_efectiva && new Date(auth.salida_efectiva) > oneHourAgo)
-                );
+                console.log(`📈 Estadísticas: ${pendingCount} pendientes, ${confirmedCount} confirmadas`);
 
                 // Actualizar estadísticas básicas primero
-                document.getElementById('dashPendingCount').textContent = pending.length;
-                document.getElementById('dashConfirmedCount').textContent = confirmed.length;
-                document.getElementById('dashTotalCount').textContent = authorizations.length;
-                document.getElementById('dashRecentCount').textContent = recentActivity.length;
+                document.getElementById('dashPendingCount').textContent = pendingCount;
+                document.getElementById('dashConfirmedCount').textContent = confirmedCount;
+                document.getElementById('dashTotalCount').textContent = totalCount;
+                document.getElementById('dashRecentCount').textContent = recentCount;
 
                 console.log('✅ Estadísticas básicas actualizadas');
 
@@ -269,21 +258,21 @@
                         const echartsAvailable = await ensureEChartsLoaded();
                         if (echartsAvailable) {
                             console.log('✅ ECharts disponible, cargando gráficos completos...');
-                            await loadDashboardCharts(authorizations);
+                            await loadDashboardCharts(todayColombia, pendingCount, confirmedCount);
                         } else {
                             console.log('⚠️ ECharts no disponible, usando gráficos simples...');
                             createSimpleCharts();
-                            updateSimpleCharts(pending.length, confirmed.length);
+                            updateSimpleCharts(pendingCount, confirmedCount);
                         }
                     } catch (chartError) {
                         console.error('❌ Error al cargar gráficos:', chartError);
                         createSimpleCharts();
-                        updateSimpleCharts(pending.length, confirmed.length);
+                        updateSimpleCharts(pendingCount, confirmedCount);
                     }
                 })();
 
                 // Cargar actividad reciente mientras se procesan los gráficos
-                await loadDashboardActivity(authorizations);
+                await loadDashboardActivity(todayColombia);
                 await chartsPromise;
 
                 console.log('✅ Dashboard completamente cargado');
@@ -327,106 +316,48 @@
             console.log('📊 Dashboard inicializado con datos vacíos');
         }
 
-        async function loadDashboardCharts(authorizations) {
+        async function loadDashboardCharts(fechaColombia, pendingCount, confirmedCount) {
             try {
                 console.log('📊 Cargando datos para gráficos...');
                 
-                // Obtener datos relacionados para gráficos
-                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
-                const reasonIds = [...new Set(authorizations.map(auth => auth.motivo_id))];
+                 const [gradeAggRes, reasonAggRes, timelineAggRes] = await Promise.all([
+                    supabaseClient.rpc('get_dashboard_salidas_by_grade', { p_fecha: fechaColombia }),
+                    supabaseClient.rpc('get_dashboard_salidas_by_reason', { p_fecha: fechaColombia }),
+                    supabaseClient.rpc('get_dashboard_salidas_timeline', { p_fecha: fechaColombia })
+                ]);             
 
-                let students = [];
-                let reasons = [];
+                if (gradeAggRes.error) throw gradeAggRes.error;
+                if (reasonAggRes.error) throw reasonAggRes.error;
+                if (timelineAggRes.error) throw timelineAggRes.error;
 
-                // Consultas separadas más robustas
-                if (studentIds.length > 0) {
-                    const { data: studentsData, error: studentsError } = await supabaseClient
-                        .from('estudiantes')
-                        .select(`
-                            id, 
-                            nombre, 
-                            apellidos,
-                            grado:grados(nombre)
-                        `)
-                        .in('id', studentIds);
-
-                    if (studentsError) {
-                        console.error('Error cargando estudiantes:', studentsError);
-                    } else {
-                        students = studentsData || [];
-                    }
-                }
-
-                if (reasonIds.length > 0) {
-                    const { data: reasonsData, error: reasonsError } = await supabaseClient
-                        .from('motivos')
-                        .select('id, nombre')
-                        .in('id', reasonIds);
-
-                    if (reasonsError) {
-                        console.error('Error cargando motivos:', reasonsError);
-                    } else {
-                        reasons = reasonsData || [];
-                    }
-                }
-
-                // Crear mapas para búsqueda rápida
-                const studentMap = {};
-                const reasonMap = {};
-
-                students.forEach(student => {
-                    studentMap[student.id] = student;
-                });
-
-                reasons.forEach(reason => {
-                    reasonMap[reason.id] = reason;
-                });
-
-                // Enriquecer datos de autorizaciones
-                const enrichedAuthorizations = authorizations.map(auth => ({
-                    ...auth,
-                    estudiante: studentMap[auth.estudiante_id],
-                    motivo: reasonMap[auth.motivo_id]
-                }));
-
-                // Crear gráficos con datos enriquecidos
-                const pending = enrichedAuthorizations.filter(auth => !auth.salida_efectiva);
-                const confirmed = enrichedAuthorizations.filter(auth => auth.salida_efectiva);
-
-                createStatusChart(pending.length, confirmed.length);
-                createGradeChart(enrichedAuthorizations);
-                createReasonChart(enrichedAuthorizations);
-                createTimelineChart(enrichedAuthorizations);
+                createStatusChart(pendingCount, confirmedCount);
+                createGradeChart(gradeAggRes.data || []);
+                createReasonChart(reasonAggRes.data || []);
+                createTimelineChart(timelineAggRes.data || []);
 
                 console.log('✅ Gráficos creados exitosamente');
 
             } catch (error) {
                 console.error('❌ Error cargando datos para gráficos:', error);
                 // Crear gráficos básicos en caso de error
-                const pending = authorizations.filter(auth => !auth.salida_efectiva);
-                const confirmed = authorizations.filter(auth => auth.salida_efectiva);
-                createStatusChart(pending.length, confirmed.length);
+                createStatusChart(pendingCount, confirmedCount);
                 createGradeChart([]);
                 createReasonChart([]);
                 createTimelineChart([]);
             }
         }
 
-        async function loadDashboardActivity(authorizations) {
+        async function loadDashboardActivity(fechaColombia) {
             try {
                 console.log('📊 Cargando actividad reciente...');
 
-               const authorizationIds = [...new Set((authorizations || []).map(auth => auth.id).filter(Boolean))];
-
-                    if (authorizationIds.length === 0) {
-                    displayRecentActivity([]);
-                    return;
-                }
-
                 const { data: activityData, error: activityError } = await supabaseClient
                     .from('autorizaciones_salida')
-                    .select('id, estudiante_id, motivo_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
-                    .in('id', authorizationIds);
+                    .select('id, estudiante_id, hora_salida, salida_efectiva, fecha_creacion, usuario_autorizador_id, vigilante_id')
+                    .eq('fecha_salida', fechaColombia)
+                    .eq('autorizada', true)
+                    .order('fecha_creacion', { ascending: false })
+                    .limit(15);
 
                 if (activityError) {
                     throw activityError;
@@ -480,17 +411,16 @@
                     };
                 });
 
-                 const enrichedForActivity = authorizations
-                    .map(auth => activityMap[auth.id] || auth)
-                    .slice(0, 15);
-
+                 const enrichedForActivity = (activityData || [])
+                    .map(auth => activityMap[auth.id] || auth);
+                    
                 displayRecentActivity(enrichedForActivity);
                 console.log('✅ Actividad reciente cargada');
 
             } catch (error) {
                 console.error('❌ Error cargando actividad:', error);
                 // Mostrar actividad básica
-                displayRecentActivity(authorizations.slice(0, 10));
+                displayRecentActivity([]);
             }
         }
 
@@ -548,7 +478,7 @@
             }
         }
 
-        function createGradeChart(authorizations) {
+        function createGradeChart(gradeAggregation) {
             try {
                 const el = document.getElementById('gradeChart');
                 if (!el) {
@@ -563,21 +493,9 @@
                 if (dashboardCharts.gradeChart) {
                 dashboardCharts.gradeChart.dispose();
                 }
-                const gradeData = {};
-                authorizations.forEach(auth => {
-                    const gradeName = auth.estudiante?.grado?.nombre || 'Sin grado';
-                    if (!gradeData[gradeName]) {
-                        gradeData[gradeName] = { pending: 0, confirmed: 0 };
-                    }
-                    if (auth.salida_efectiva) {
-                        gradeData[gradeName].confirmed++;
-                    } else {
-                        gradeData[gradeName].pending++;
-                    }
-                });
-                const labels = Object.keys(gradeData);
-                const pendingData = labels.map(g => gradeData[g].pending);
-                const confirmedData = labels.map(g => gradeData[g].confirmed);
+                const labels = gradeAggregation.map(item => item.grado || 'Sin grado');
+                const pendingData = gradeAggregation.map(item => Number(item.pendientes || 0));
+                const confirmedData = gradeAggregation.map(item => Number(item.confirmadas || 0));
                 const chart = echarts.init(el);
                 let option;
                 if (labels.length === 0) {
@@ -610,7 +528,7 @@
             }
         }
 
-        function createReasonChart(authorizations) {
+        function createReasonChart(reasonAggregation) {
             try {
                 const el = document.getElementById('reasonChart');
                 if (!el) {
@@ -625,13 +543,8 @@
                 if (dashboardCharts.reasonChart) {
                     dashboardCharts.reasonChart.dispose();
                 }
-                const reasonData = {};
-                authorizations.forEach(auth => {
-                    const reasonName = auth.motivo?.nombre || 'Sin motivo';
-                    reasonData[reasonName] = (reasonData[reasonName] || 0) + 1;
-                });
-                const labels = Object.keys(reasonData);
-                const data = Object.values(reasonData);
+                const labels = reasonAggregation.map(item => item.motivo || 'Sin motivo');
+                const data = reasonAggregation.map(item => Number(item.total || 0));
                 const colors = ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
                 const chart = echarts.init(el);
                 const seriesData = labels.map((label, i) => ({
@@ -672,7 +585,7 @@
             }
         }
 
-        function createTimelineChart(authorizations) {
+        function createTimelineChart(timelineAggregation) {
             try {
                 const el = document.getElementById('timelineChart');
                 if (!el) {
@@ -691,16 +604,11 @@
                 for (let i = 6; i <= 18; i++) {
                     hourlyData[i] = { pending: 0, confirmed: 0 };
                 }
-                authorizations.forEach(auth => {
-                    if (auth.hora_salida) {
-                        const hour = parseInt(auth.hora_salida.split(':')[0]);
-                        if (hour >= 6 && hour <= 18) {
-                            if (auth.salida_efectiva) {
-                                hourlyData[hour].confirmed++;
-                            } else {
-                                hourlyData[hour].pending++;
-                            }
-                        }
+                timelineAggregation.forEach(item => {
+                    const hour = Number(item.hora || 0);
+                    if (hour >= 6 && hour <= 18) {
+                        hourlyData[hour].pending = Number(item.pendientes || 0);
+                        hourlyData[hour].confirmed = Number(item.confirmadas || 0);
                     }
                 });
 const labels = Object.keys(hourlyData).map(h => `${h}:00`);
