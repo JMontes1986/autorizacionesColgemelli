@@ -803,7 +803,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 const [studentResponse, staffExitResponse, staffReturnResponse] = await Promise.all([
                     supabaseClient
                         .from('autorizaciones_salida')
-                        select(`
+                        .select(`
                             *,
                             estudiante:estudiantes(id, nombre, apellidos, grado:grados(nombre), foto_url),
                             motivo:motivos(id, nombre),
