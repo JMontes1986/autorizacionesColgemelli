@@ -5540,7 +5540,48 @@ function abrirReporteVisitantes() {
 
                 const { data, error } = dbResult;
 
-                if (error) throw error;
+                if (error) {
+                    if (!currentExitAuthId && isPrimaryKeyConflict(error, 'uq_autorizaciones_salida_estudiante_fecha_pendiente')) {
+                        const raceMessage = 'Otro usuario registró una salida pendiente para este estudiante mientras guardabas. Se cargaron los datos para editar.';
+                        showWarning(raceMessage);
+
+                        const { data: conflictingRecords, error: conflictError } = await supabaseClient
+                            .from('autorizaciones_salida')
+                            .select('id, motivo_id, fecha_salida, hora_salida, observaciones')
+                            .eq('estudiante_id', studentId)
+                            .eq('fecha_salida', exitDate)
+                            .eq('autorizada', true)
+                            .is('salida_efectiva', null)
+                            .order('fecha_creacion', { ascending: false })
+                            .limit(1);
+
+                        if (!conflictError && conflictingRecords?.length) {
+                            const record = conflictingRecords[0];
+                            document.getElementById('reasonSelect').value = record.motivo_id;
+                            document.getElementById('exitDate').value = record.fecha_salida;
+                            document.getElementById('exitTime').value = record.hora_salida || '';
+                            document.getElementById('observations').value = record.observaciones || '';
+
+                            const reasonSelectElement = document.getElementById('reasonSelect');
+                            currentExitOriginalData = {
+                                motivo_id: record.motivo_id,
+                                hora_salida: record.hora_salida,
+                                observaciones: record.observaciones || '',
+                                motivo_nombre: getOptionTextByValue(reasonSelectElement, record.motivo_id) || ''
+                            };
+                            currentExitAuthId = record.id;
+                            currentExitLockedStudentId = studentId;
+                            currentExitLockedGradeId = gradeId;
+                            if (exitEditUser) {
+                                lockStudentSelection(true);
+                            }
+                        }
+
+                        sendNotification('Salida pendiente existente', raceMessage);
+                        return;
+                    }
+                    throw error;
+                }
 
                 const gradeSelect = document.getElementById('gradeSelect');
                 const studentSelect = document.getElementById('studentSelect');
