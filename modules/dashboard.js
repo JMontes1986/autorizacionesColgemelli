@@ -1042,6 +1042,8 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
             link.click();
             document.body.removeChild(link);
         }
+const runDashboardDiagnostics = debugDashboard;
+const forceLoadECharts = forceReloadCharts;
 
         function showDetailedView() {
     window.open('diagnostico.html', '_blank');
@@ -1153,6 +1155,7 @@ const dashboardApi = {
     showMyConfirmedExits,
     refreshDashboard,
     runDashboardDiagnostics,
+    debugDashboard,
     exportDashboardData,
     generateCSVFromData,
     generateCSVFromLogs,
