@@ -6512,6 +6512,12 @@ function abrirReporteVisitantes() {
 
                 showSuccess('Salida eliminada correctamente.');
                 await loadPendingExits();
+
+            const searchSection = document.getElementById('searchSection');
+                const searchInput = document.getElementById('studentSearch');
+                if (searchSection && searchInput && searchSection.style.display !== 'none' && searchInput.value.trim().length >= 3) {
+                    await searchStudent();
+                }
             } catch (error) {
                 await logSecurityEvent('error', 'Error al eliminar salida de estudiante', {
                     authId,
@@ -9198,44 +9204,9 @@ function abrirReporteVisitantes() {
   async function cargarVerificaciones() {
     if (!supabaseClient || !validateSession()) return;
 
-    const contenedor = document.getElementById("verificaciones");
-    if (!contenedor) {
-      console.warn("Contenedor de verificaciones no encontrado");
-      return;
-    }
-
-    contenedor.innerHTML = "";
-
-    const { data: salidas, error: errorSalidas } = await supabaseClient
-      .from("autorizaciones")
-      .select("documento, motivo, hora");
-
-    if (errorSalidas) {
-      console.error("Error cargando salidas:", errorSalidas.message);
-      return;
-    }
-
-    for (const salida of salidas) {
-      const { data: estudiante, error: errorEst } = await supabaseClient
-        .from("estudiantes")
-        .select("nombre, grado, foto_url")
-        .eq("documento", salida.documento)
-        .single();
-
-      const div = document.createElement("div");
-      div.className = "verificacion-card";
-      div.style = "border:1px solid #ddd; padding:10px; border-radius:10px; margin:10px 0; text-align:center;";
-
-      div.innerHTML = `
-        <img src="${estudiante?.foto_url || 'assets/img/placeholder-student.png'}"
-          alt="Foto estudiante"
-          style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid #bbb;margin-bottom:10px;">
-        <h3>${estudiante?.nombre || 'Estudiante'}</h3>
-        <p><strong>Grado:</strong> ${estudiante?.grado || '--'}</p>
-        <p><strong>Motivo:</strong> ${salida?.motivo || '--'}</p>
-        <p><strong>Hora:</strong> ${salida?.hora || '--:--'}</p>
-      `;
-      contenedor.appendChild(div);
+    // Función legacy: la sección de Control de Salidas ahora se carga con
+    // loadPendingExits()/loadPendingStaffExits()/loadPendingVisitorExits().
+    // Se mantiene para no romper llamadas existentes.
     }
   }
 
