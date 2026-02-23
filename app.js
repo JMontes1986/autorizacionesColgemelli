@@ -262,7 +262,10 @@
                         }
                     }
                 });
-                
+
+                 // Exponer referencia global para módulos extraídos (ej. dashboardModule)
+                globalThis.supabaseClient = supabaseClient;
+                   
                 console.log('✅ Cliente Supabase creado con configuración segura');
                 
                 // Verificar conexión
@@ -454,6 +457,7 @@
                 // Limpiar datos de sesión
                 currentUser = null;
                 sessionToken = null;
+                globalThis.supabaseClient = null;
                 sessionStartTime = null;
                 lastActivityTime = null;
                 clearTimeout(sessionTimeout);
