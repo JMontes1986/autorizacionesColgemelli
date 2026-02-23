@@ -2778,13 +2778,33 @@ function abrirReporteVisitantes() {
 
         function requestNotificationPermission() {
             if (!('Notification' in window)) return;
+            if (Notification.permission === 'granted') return;
+            if (Notification.permission === 'denied') {
+                console.info('🔕 Notificaciones bloqueadas por el navegador.');
+                return;
+            }
+                
             try {
                 Notification.requestPermission().then(permission => {
                     console.log('🔔 Permiso de notificación:', permission);
                 });
             } catch (e) {
                 console.error('Error solicitando permiso de notificación:', e);
+                    
             }
+        }
+        function setupNotificationPermissionRequest() {
+            if (!('Notification' in window)) return;
+            if (Notification.permission !== 'default') return;
+
+            const requestOnce = () => {
+                requestNotificationPermission();
+                document.removeEventListener('click', requestOnce);
+                document.removeEventListener('keydown', requestOnce);
+            };
+
+            document.addEventListener('click', requestOnce, { once: true });
+            document.addEventListener('keydown', requestOnce, { once: true });
         }
 
         function sendNotification(title, body) {
@@ -9420,7 +9440,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function attachEventHandlers() {
-    requestNotificationPermission();
+    setupNotificationPermissionRequest();
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', (event) => {
