@@ -1410,7 +1410,11 @@
                 // Cargar dashboard con manejo de ECharts
                 setTimeout(async () => {
                     try {
-                        await loadDashboard();
+                        const loadDashboardFn = window.dashboardModule?.loadDashboard || window.loadDashboard;
+                        if (typeof loadDashboardFn !== 'function') {
+                            throw new ReferenceError('loadDashboard is not available in window.dashboardModule');
+                        }
+                        await loadDashboardFn();
                     } catch (error) {
                         console.error('❌ Error cargando dashboard desde showSection:', error);
                         showError('Error al cargar el dashboard. Usa el botón Debug para más información.');
