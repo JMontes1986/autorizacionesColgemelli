@@ -194,3 +194,105 @@ create table if not exists public.audit_logs (
 -- Index para consultas por fecha
 create index if not exists idx_audit_logs_timestamp
     on public.audit_logs (timestamp);
+
+
+-- ========================================
+-- Agregaciones del dashboard de salidas
+-- ========================================
+
+create or replace function public.get_dashboard_salidas_summary(p_fecha date)
+returns table (
+    pendientes bigint,
+    confirmadas bigint,
+    total bigint,
+    actividad_reciente bigint
+)
+language sql
+stable
+as $$
+    select
+        count(*) filter (where a.salida_efectiva is null) as pendientes,
+        count(*) filter (where a.salida_efectiva is not null) as confirmadas,
+        count(*) as total,
+        count(*) filter (
+            where a.fecha_creacion >= now() - interval '1 hour'
+               or (a.salida_efectiva is not null and a.salida_efectiva >= now() - interval '1 hour')
+        ) as actividad_reciente
+    from public.autorizaciones_salida a
+    where a.fecha_salida = p_fecha
+      and a.autorizada = true;
+$$;
+
+create or replace function public.get_dashboard_salidas_by_grade(p_fecha date)
+returns table (
+    grado text,
+    pendientes bigint,
+    confirmadas bigint
+)
+language sql
+stable
+as $$
+    select
+        coalesce(g.nombre, 'Sin grado') as grado,
+        count(*) filter (where a.salida_efectiva is null) as pendientes,
+        count(*) filter (where a.salida_efectiva is not null) as confirmadas
+    from public.autorizaciones_salida a
+    left join public.estudiantes e on e.id = a.estudiante_id
+    left join public.grados g on g.id = e.grado_id
+    where a.fecha_salida = p_fecha
+      and a.autorizada = true
+    group by coalesce(g.nombre, 'Sin grado')
+    order by coalesce(g.nombre, 'Sin grado');
+$$;
+
+create or replace function public.get_dashboard_salidas_by_reason(p_fecha date)
+returns table (
+    motivo text,
+    total bigint
+)
+language sql
+stable
+as $$
+    select
+        coalesce(m.nombre, 'Sin motivo') as motivo,
+        count(*) as total
+    from public.autorizaciones_salida a
+    left join public.motivos m on m.id = a.motivo_id
+    where a.fecha_salida = p_fecha
+      and a.autorizada = true
+    group by coalesce(m.nombre, 'Sin motivo')
+    order by total desc, coalesce(m.nombre, 'Sin motivo');
+$$;
+
+create or replace function public.get_dashboard_salidas_timeline(p_fecha date)
+returns table (
+    hora int,
+    pendientes bigint,
+    confirmadas bigint
+)
+language sql
+stable
+as $$
+    with horas as (
+        select generate_series(6, 18) as hora
+    ),
+    agregados as (
+        select
+            extract(hour from a.hora_salida)::int as hora,
+            count(*) filter (where a.salida_efectiva is null) as pendientes,
+            count(*) filter (where a.salida_efectiva is not null) as confirmadas
+        from public.autorizaciones_salida a
+        where a.fecha_salida = p_fecha
+          and a.autorizada = true
+          and a.hora_salida is not null
+          and extract(hour from a.hora_salida)::int between 6 and 18
+        group by extract(hour from a.hora_salida)::int
+    )
+    select
+        h.hora,
+        coalesce(ag.pendientes, 0) as pendientes,
+        coalesce(ag.confirmadas, 0) as confirmadas
+    from horas h
+    left join agregados ag on ag.hora = h.hora
+    order by h.hora;
+$$;
