@@ -161,6 +161,12 @@ alter table if exists public.autorizaciones_salida
 alter table if exists public.autorizaciones_salida
     add column if not exists detalle_modificaciones text;
 
+-- Prevent duplicate pending exit authorizations for the same student/date.
+-- This closes a race condition where two users can pass the application-level
+-- pre-check concurrently and insert duplicated pending records.
+create unique index if not exists uq_autorizaciones_salida_pendiente_estudiante_fecha
+    on public.autorizaciones_salida (estudiante_id, fecha_salida)
+    where salida_efectiva is null;
 
 -- Rol de Talento Humano
 insert into public.roles (nombre, descripcion)
