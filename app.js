@@ -6085,7 +6085,8 @@ function abrirReporteVisitantes() {
                     supabaseClient
                         .from('estudiantes')
                         .select('id, nombre, apellidos, grado:grados(nombre), foto_url')
-                        .in('id', studentIds),
+                        .in('id', studentIds)
+                        .eq('activo', true),
                     supabaseClient
                         .from('motivos')
                         .select('id, nombre')
@@ -6104,6 +6105,20 @@ function abrirReporteVisitantes() {
                     studentMap[student.id] = student;
                 });
 
+                const activeAuthorizations = authorizations.filter(auth => Boolean(studentMap[auth.estudiante_id]));
+
+                if (activeAuthorizations.length === 0) {
+                    const currentTime = getColombiaTime();
+                    pendingList.innerHTML = `
+                        <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
+                            <h3>✅ ¡Todo en orden!</h3>
+                            <p><strong>No hay salidas pendientes para estudiantes activos</strong></p>
+                            <p>Fecha: ${formatDate(todayColombia)} - Hora: ${currentTime}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                    
                 reasonsResult.data?.forEach(reason => {
                     reasonMap[reason.id] = reason;
                 });
@@ -6116,10 +6131,10 @@ function abrirReporteVisitantes() {
                 const canDeleteStudentExit = (currentUser?.email || '').toLowerCase() === 'sistemas@colgemelli.edu.co';
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas pendientes de confirmación: <strong>${authorizations.length}</strong></p>
+                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas pendientes de confirmación: <strong>${activeAuthorizations.length}</strong></p>
                 </div>`;
                 
-                authorizations.forEach(auth => {
+                activeAuthorizations.forEach(auth => {
                     const student = studentMap[auth.estudiante_id] || null;
                     const reason = reasonMap[auth.motivo_id] || null;
                     const user = userMap[auth.usuario_autorizador_id] || null;
