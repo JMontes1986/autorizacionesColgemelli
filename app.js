@@ -5907,6 +5907,7 @@ function abrirReporteVisitantes() {
                 });
 
                 const currentTime = getColombiaTime();
+                const canDeleteStudentExit = (currentUser?.email || '').toLowerCase() === 'sistemas@colgemelli.edu.co';
                 let html = `<div style="text-align: center; margin-bottom: 20px; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
                     <p style="color: #2c3e50; font-size: 15px; font-weight: bold;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
                 </div>`;
@@ -5972,6 +5973,11 @@ function abrirReporteVisitantes() {
                                 <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
                                     ✅ CONFIRMAR SALIDA
                                 </button>
+                                ${canDeleteStudentExit ? `
+                                    <button class="btn btn-danger btn-eliminar" onclick="deleteStudentExit(${auth.id})" style="font-size: 16px; padding: 12px 32px; margin-top: 10px; margin-left: 8px;">
+                                        🗑️ BORRAR SALIDA
+                                    </button>
+                                ` : ''}
                             </div>
                         `;
                     }
@@ -6107,6 +6113,7 @@ function abrirReporteVisitantes() {
                 });
 
                 const currentTime = getColombiaTime();
+                const canDeleteStudentExit = (currentUser?.email || '').toLowerCase() === 'sistemas@colgemelli.edu.co';
                 let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
                     <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
                     <p style="color: #7f8c8d; margin-top: 8px;">Salidas pendientes de confirmación: <strong>${authorizations.length}</strong></p>
@@ -6176,6 +6183,11 @@ function abrirReporteVisitantes() {
                                 <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
                                     ✅ CONFIRMAR SALIDA
                                 </button>
+                                ${canDeleteStudentExit ? `
+                                    <button class="btn btn-danger btn-eliminar" onclick="deleteStudentExit(${auth.id})" style="font-size: 16px; padding: 12px 32px; margin-top: 10px; margin-left: 8px;">
+                                        🗑️ BORRAR SALIDA
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
                     `;
@@ -6467,7 +6479,49 @@ function abrirReporteVisitantes() {
             }
         }
 
-         function removePendingStaffCard(authId, cardType) {
+        async function deleteStudentExit(authId) {
+            try {
+                if (!validateSession()) {
+                    showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                    logout();
+                    return;
+                }
+
+                const userEmail = (currentUser?.email || '').toLowerCase();
+                if (userEmail !== 'sistemas@colgemelli.edu.co') {
+                    showError('No tienes permisos para borrar salidas de estudiantes.');
+                    return;
+                }
+
+                const confirmed = confirm('¿Seguro que deseas borrar esta salida del estudiante? Esta acción no se puede deshacer.');
+                if (!confirmed) {
+                    return;
+                }
+
+                const { error } = await supabaseClient
+                    .from('autorizaciones_salida')
+                    .delete()
+                    .eq('id', authId);
+
+                if (error) throw error;
+
+                await logSecurityEvent('delete', 'Salida de estudiante eliminada desde Control de Salidas', {
+                    authId,
+                    deletedBy: currentUser.id
+                }, true);
+
+                showSuccess('Salida eliminada correctamente.');
+                await loadPendingExits();
+            } catch (error) {
+                await logSecurityEvent('error', 'Error al eliminar salida de estudiante', {
+                    authId,
+                    error: error.message.substring(0, 200)
+                }, false);
+                showError('No se pudo eliminar la salida: ' + error.message);
+            }
+        }
+
+        function removePendingStaffCard(authId, cardType) {
             const card = document.querySelector(`.staff-card[data-auth-id="${authId}"][data-card-type="${cardType}"]`);
             if (card) {
                 card.remove();
