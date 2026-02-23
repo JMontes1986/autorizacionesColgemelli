@@ -235,6 +235,8 @@
         // Inicializar Supabase con seguridad mejorada
         async function initSupabase() {
                 if (supabaseClient) {
+                // Restaurar referencia global (puede haberse limpiado en logout)
+                globalThis.supabaseClient = supabaseClient;
                 return true;
             }
 
@@ -457,6 +459,8 @@
                 // Limpiar datos de sesión
                 currentUser = null;
                 sessionToken = null;
+                supabaseClient = null;
+                supabaseInitPromise = null;
                 globalThis.supabaseClient = null;
                 sessionStartTime = null;
                 lastActivityTime = null;
