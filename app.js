@@ -416,61 +416,44 @@
             try {
                 console.log('📊 Cargando actividad reciente...');
 
-                const studentIds = [...new Set(authorizations.map(auth => auth.estudiante_id))];
-                const userIds = [...new Set(authorizations
-                    .flatMap(auth => [auth.usuario_autorizador_id, auth.usuario_modifico_id])
-                    .filter(Boolean))];
-                const vigilanteIds = [...new Set(authorizations.filter(auth => auth.vigilante_id).map(auth => auth.vigilante_id))];
-                const allUserIds = [...new Set([...userIds, ...vigilanteIds])];
+               const authorizationIds = [...new Set((authorizations || []).map(auth => auth.id).filter(Boolean))];
 
-                let students = [];
-                let users = [];
-
-                if (studentIds.length > 0) {
-                    const { data: studentsData, error: studentsError } = await supabaseClient
-                        .from('estudiantes')
-                        .select('id, nombre, apellidos, grado:grados(nombre)')
-                        .in('id', studentIds);
-
-                    if (studentsError) {
-                        console.error('Error cargando estudiantes:', studentsError);
-                    } else {
-                        students = studentsData || [];
-                    }
+                    if (authorizationIds.length === 0) {
+                    displayRecentActivity([]);
+                    return;
                 }
 
-                if (allUserIds.length > 0) {
-                    const { data: usersData, error: usersError } = await supabaseClient
-                        .from('usuarios')
-                        .select('id, nombre')
-                        .in('id', allUserIds);
+                const { data: activityData, error: activityError } = await supabaseClient
+                    .from('autorizaciones_salida')
+                    .select(`
+                        id,
+                        estudiante_id,
+                        motivo_id,
+                        hora_salida,
+                        salida_efectiva,
+                        fecha_creacion,
+                        usuario_autorizador_id,
+                        vigilante_id,
+                        estudiante:estudiantes(id, nombre, apellidos, grado:grados(nombre)),
+                        usuario:usuarios!autorizaciones_salida_usuario_autorizador_id_fkey(id, nombre),
+                        vigilante:usuarios!autorizaciones_salida_vigilante_id_fkey(id, nombre)
+                    `)
+                    .in('id', authorizationIds);
 
-                    if (usersError) {
-                        console.error('Error cargando usuarios:', usersError);
-                    } else {
-                        users = usersData || [];
-                    }
+                   if (activityError) {
+                    throw activityError;
                 }
 
-                const studentMap = {};
-                students.forEach(student => {
-                    studentMap[student.id] = student;
+                const activityMap = {};
+                (activityData || []).forEach(activity => {
+                    activityMap[activity.id] = activity;
                 });
 
-                const userMap = {};
-                users.forEach(user => {
-                    userMap[user.id] = user;
-                });
+                 const enrichedForActivity = authorizations
+                    .map(auth => activityMap[auth.id] || auth)
+                    .slice(0, 15);
 
-                // Enriquecer con datos de estudiantes y usuarios
-                const enrichedForActivity = authorizations.map(auth => ({
-                    ...auth,
-                    estudiante: studentMap[auth.estudiante_id],
-                    usuario: userMap[auth.usuario_autorizador_id],
-                    vigilante: userMap[auth.vigilante_id]
-                }));
-
-                displayRecentActivity(enrichedForActivity.slice(0, 15));
+                displayRecentActivity(enrichedForActivity);
                 console.log('✅ Actividad reciente cargada');
 
             } catch (error) {
@@ -805,7 +788,8 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
             const confirmedList = document.getElementById('myConfirmedList');
                 
             try {
-                if (!validateSession()) {
+                if (!currentUser?.id) {
+                    console.error('❌ Usuario no autenticado para cargar confirmaciones');
                     showError('Sesión expirada. Por favor, inicia sesión de nuevo.');
                     logout();
                     return;
@@ -819,21 +803,37 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 const [studentResponse, staffExitResponse, staffReturnResponse] = await Promise.all([
                     supabaseClient
                         .from('autorizaciones_salida')
-                        .select('*')
+                        select(`
+                            *,
+                            estudiante:estudiantes(id, nombre, apellidos, grado:grados(nombre), foto_url),
+                            motivo:motivos(id, nombre),
+                            usuario:usuarios!autorizaciones_salida_usuario_autorizador_id_fkey(id, nombre, email),
+                            usuario_modifico:usuarios!autorizaciones_salida_usuario_modifico_id_fkey(id, nombre)
+                        `)
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_id', currentUser.id)
                         .not('salida_efectiva', 'is', null)
                         .order('salida_efectiva', { ascending: false }),
                     supabaseClient
                         .from('autorizaciones_personal')
-                        .select('*')
+                        .select(`
+                            *,
+                            colaborador:personal_colegio(id, nombre, cargo, cedula),
+                            motivo:motivos(id, nombre),
+                            usuario:usuarios!autorizaciones_personal_usuario_autorizador_id_fkey(id, nombre, email)
+                        `)
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_id', currentUser.id)
                         .not('salida_efectiva', 'is', null)
                         .order('salida_efectiva', { ascending: false }),
                     supabaseClient
                         .from('autorizaciones_personal')
-                        .select('*')
+                        .select(`
+                            *,
+                            colaborador:personal_colegio(id, nombre, cargo, cedula),
+                            motivo:motivos(id, nombre),
+                            usuario:usuarios!autorizaciones_personal_usuario_autorizador_id_fkey(id, nombre, email)
+                        `)
                         .eq('fecha_salida', todayColombia)
                         .eq('vigilante_regreso_id', currentUser.id)
                         .not('regreso_efectivo', 'is', null)
@@ -849,7 +849,7 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 const myStaffReturnConfirmations = staffReturnResponse.data || [];
                 const totalRecords = myConfirmations.length + myStaffExitConfirmations.length + myStaffReturnConfirmations.length;
                     
-                 if (totalRecords === 0) {
+                if (totalRecords === 0) {
                     const currentTime = getColombiaTime();
                     confirmedList.innerHTML = `
                         <div class="verification-card" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
@@ -862,62 +862,10 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                     return;
                 }
 
-                 console.log('📊 Confirmaciones encontradas:', {
+                console.log('📊 Confirmaciones encontradas:', {
                     estudiantes: myConfirmations.length,
                     personal: myStaffExitConfirmations.length,
                     regresos: myStaffReturnConfirmations.length
-                });
-
-                
-                const studentIds = [...new Set(myConfirmations.map(auth => auth.estudiante_id))];
-                const staffIds = [...new Set([
-                    ...myStaffExitConfirmations.map(auth => auth.colaborador_id),
-                    ...myStaffReturnConfirmations.map(auth => auth.colaborador_id)
-                ])];
-                const reasonIds = [...new Set([
-                    ...myConfirmations.map(auth => auth.motivo_id),
-                    ...myStaffExitConfirmations.map(auth => auth.motivo_id),
-                    ...myStaffReturnConfirmations.map(auth => auth.motivo_id)
-                ].filter(Boolean))];
-                const userIds = [...new Set([
-                    ...myConfirmations.map(auth => auth.usuario_autorizador_id),
-                    ...myStaffExitConfirmations.map(auth => auth.usuario_autorizador_id),
-                    ...myStaffReturnConfirmations.map(auth => auth.usuario_autorizador_id)
-                ])];
-
-                const [studentsResult, staffResult, reasonsResult, usersResult] = await Promise.all([
-                    studentIds.length > 0
-                        ? supabaseClient.from('estudiantes').select('id, nombre, apellidos, grado:grados(nombre), foto_url').in('id', studentIds)
-                        : Promise.resolve({ data: [] }),
-                    staffIds.length > 0
-                        ? supabaseClient.from('personal_colegio').select('id, nombre, cargo, cedula').in('id', staffIds)
-                        : Promise.resolve({ data: [] }),
-                    reasonIds.length > 0
-                        ? supabaseClient.from('motivos').select('id, nombre').in('id', reasonIds)
-                        : Promise.resolve({ data: [] }),
-                    userIds.length > 0
-                        ? supabaseClient.from('usuarios').select('id, nombre, email').in('id', userIds)
-                        : Promise.resolve({ data: [] })
-                ]);
-                const studentMap = {};
-                const staffMap = {};
-                const reasonMap = {};
-                const userMap = {};
-
-                studentsResult.data?.forEach(student => {
-                    studentMap[student.id] = student;
-                });
-
-                staffResult.data?.forEach(staff => {
-                    staffMap[staff.id] = staff;
-                });
-                    
-                reasonsResult.data?.forEach(reason => {
-                    reasonMap[reason.id] = reason;
-                });
-
-                usersResult.data?.forEach(user => {
-                    userMap[user.id] = user;
                 });
 
                 const currentTime = getColombiaTime();
@@ -927,10 +875,10 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 </div>`;
                     
                 myConfirmations.forEach(auth => {
-                    const student = studentMap[auth.estudiante_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
-                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const student = auth.estudiante;
+                    const reason = auth.motivo;
+                    const user = auth.usuario;
+                    const modifier = auth.usuario_modifico || null;
                     const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
                     const modificationHtml = auth.detalle_modificaciones ? `
                         <div class="verification-card-update">
@@ -969,9 +917,9 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 });
 
                 myStaffExitConfirmations.forEach(auth => {
-                    const staff = staffMap[auth.colaborador_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
+                    const staff = auth.colaborador;
+                    const reason = auth.motivo;
+                    const user = auth.usuario;
 
                     html += `
                         <div class="verification-card verified">
@@ -1002,9 +950,9 @@ const labels = Object.keys(hourlyData).map(h => `${h}:00`);
                 });
 
                 myStaffReturnConfirmations.forEach(auth => {
-                    const staff = staffMap[auth.colaborador_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
+                    const staff = auth.colaborador;
+                    const reason = auth.motivo;
+                    const user = auth.usuario;
 
                     html += `
                         <div class="verification-card verified">
@@ -6025,10 +5973,10 @@ function abrirReporteVisitantes() {
                 </div>`;
                 
                 matchingAuth.forEach(auth => {
-                    const student = studentMap[auth.estudiante_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
-                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const student = auth.estudiante;
+                    const reason = auth.motivo;
+                    const user = auth.usuario;
+                    const modifier = auth.usuario_modifico || null;
                     const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
                     const modificationHtml = auth.detalle_modificaciones ? `
                         <div class="verification-card-update">
@@ -6226,10 +6174,10 @@ function abrirReporteVisitantes() {
                 </div>`;
                 
                 authorizations.forEach(auth => {
-                    const student = studentMap[auth.estudiante_id];
-                    const reason = reasonMap[auth.motivo_id];
-                    const user = userMap[auth.usuario_autorizador_id];
-                    const modifier = auth.usuario_modifico_id ? userMap[auth.usuario_modifico_id] : null;
+                    const student = auth.estudiante;
+                    const reason = auth.motivo;
+                    const user = auth.usuario;
+                    const modifier = auth.usuario_modifico || null;
                     const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
                     const modificationHtml = auth.detalle_modificaciones ? `
                         <div class="verification-card-update">
