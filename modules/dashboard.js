@@ -6,6 +6,33 @@
 
         let dashboardCharts = {};
 
+        function requireGlobalFunction(functionName) {
+            const fn = globalThis[functionName];
+            if (typeof fn !== 'function') {
+                throw new ReferenceError(`${functionName} no está disponible en window`);
+            }
+            return fn;
+        }
+
+        const supabaseClient = new Proxy({}, {
+            get(_target, property) {
+                const client = globalThis.supabaseClient;
+                if (!client) {
+                    throw new ReferenceError('supabaseClient no está disponible en window');
+                }
+
+                const value = client[property];
+                return typeof value === 'function' ? value.bind(client) : value;
+            }
+        });
+
+        const validateSession = (...args) => requireGlobalFunction('validateSession')(...args);
+        const showError = (...args) => requireGlobalFunction('showError')(...args);
+        const logout = (...args) => requireGlobalFunction('logout')(...args);
+        const getColombiaDate = (...args) => requireGlobalFunction('getColombiaDate')(...args);
+        const logSecurityEvent = (...args) => requireGlobalFunction('logSecurityEvent')(...args);
+        const showSuccess = (...args) => requireGlobalFunction('showSuccess')(...args);
+
         async function loadDashboard() {
             try {
                 if (!validateSession()) {
