@@ -33,6 +33,20 @@
         const logSecurityEvent = (...args) => requireGlobalFunction('logSecurityEvent')(...args);
         const showSuccess = (...args) => requireGlobalFunction('showSuccess')(...args);
 
+        async function waitForSupabaseClient(maxWaitMs = 3000, intervalMs = 100) {
+            const start = Date.now();
+
+            while (!globalThis.supabaseClient && Date.now() - start < maxWaitMs) {
+                await new Promise((resolve) => setTimeout(resolve, intervalMs));
+            }
+
+            if (!globalThis.supabaseClient) {
+                throw new ReferenceError('supabaseClient no está disponible en window');
+            }
+
+            return globalThis.supabaseClient;
+        }
+
         async function loadDashboard() {
             try {
                 if (!validateSession()) {
@@ -48,7 +62,9 @@
                 document.getElementById('dashConfirmedCount').textContent = '...';
                 document.getElementById('dashTotalCount').textContent = '...';
                 document.getElementById('dashRecentCount').textContent = '...';
-                
+
+                await waitForSupabaseClient();
+                    
                 const todayColombia = getColombiaDate();
                 console.log('📅 Fecha Colombia para consulta:', todayColombia);
 
