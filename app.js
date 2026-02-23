@@ -9207,7 +9207,6 @@ function abrirReporteVisitantes() {
     // Función legacy: la sección de Control de Salidas ahora se carga con
     // loadPendingExits()/loadPendingStaffExits()/loadPendingVisitorExits().
     // Se mantiene para no romper llamadas existentes.
-    }
   }
 
 
