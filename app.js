@@ -7268,6 +7268,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+function getDashboardHandler(handlerName) {
+    return (...args) => {
+        const handler = window.dashboardModule?.[handlerName] || window[handlerName];
+        if (typeof handler !== 'function') {
+            console.warn(`⚠️ Handler de dashboard no disponible: ${handlerName}`);
+            return;
+        }
+        return handler(...args);
+    };
+}
+
 function attachEventHandlers() {
     setupNotificationPermissionRequest();
     const loginForm = document.getElementById('loginForm');
@@ -7284,7 +7295,7 @@ function attachEventHandlers() {
     ['#testConnectionBtn', testConnection],
     ['#loadPendingBtn', loadPendingExits],
     ['#toggleSearchBtn', toggleSearch],
-    ['#showMyConfirmedBtn', showMyConfirmedExits],
+    ['#showMyConfirmedBtn', getDashboardHandler('showMyConfirmedExits')],
     ['#btnAdminStudents', () => showAdminSection('students')],
     ['#btnAdminUsers', () => showAdminSection('users')],
     ['#btnAdminReasons', () => showAdminSection('reasons')],
@@ -7310,10 +7321,10 @@ function attachEventHandlers() {
     ['#filterHistoryBtn', () => loadHistory()],
     ['#viewAllHistoryBtn', () => loadHistory(true)],
     ['#debugHistoryBtn', debugHistory],
-    ['#refreshDashboardBtn', refreshDashboard],
-    ['#exportDashboardBtn', exportDashboardData],
-    ['#showDetailedViewBtn', showDetailedView],
-    ['#debugDashboardBtn', debugDashboard],
+    ['#refreshDashboardBtn', getDashboardHandler('refreshDashboard')],
+    ['#exportDashboardBtn', getDashboardHandler('exportDashboardData')],
+    ['#showDetailedViewBtn', getDashboardHandler('showDetailedView')],
+    ['#debugDashboardBtn', getDashboardHandler('debugDashboard')],
     ['#loadLogsBtn', loadSecurityLogs],
     ['#exportLogsBtn', exportLogs],
     ['#cancelEditExitBtn', cancelExitEdit],
@@ -7433,11 +7444,11 @@ function attachEventHandlers() {
 
 document.addEventListener('DOMContentLoaded', attachEventHandlers);
 // Expose helpers for inline event handlers
-window.mostrarReporteMensual = mostrarReporteMensual;
-window.mostrarReporteLlegadas = mostrarReporteLlegadas;
-window.abrirReportePersonal = abrirReportePersonal;
-window.abrirReporte = abrirReporte;
+window.mostrarReporteMensual = (...args) => getDashboardHandler('mostrarReporteMensual')(...args);
+window.mostrarReporteLlegadas = (...args) => getDashboardHandler('mostrarReporteLlegadas')(...args);
+window.abrirReportePersonal = (...args) => getDashboardHandler('abrirReportePersonal')(...args);
+window.abrirReporte = (...args) => getDashboardHandler('abrirReporte')(...args);
 window.loadSecurityLogs = loadSecurityLogs;
-window.abrirReporteVisitantes = abrirReporteVisitantes;
+window.abrirReporteVisitantes = (...args) => getDashboardHandler('abrirReporteVisitantes')(...args);
 window.loadSecurityStats = loadSecurityStats;
 window.exportLogs = exportLogs;
