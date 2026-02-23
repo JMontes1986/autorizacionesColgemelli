@@ -150,6 +150,12 @@ create index if not exists idx_autorizaciones_personal_fecha
 create index if not exists idx_autorizaciones_personal_colaborador
     on public.autorizaciones_personal (colaborador_id);
 
+-- Evita duplicados de autorizaciones pendientes para un mismo estudiante y fecha.
+-- Se permite más de un registro histórico siempre que las salidas ya hayan sido
+-- confirmadas (salida_efectiva no sea NULL).
+create unique index if not exists uq_autorizaciones_salida_estudiante_fecha_pendiente
+    on public.autorizaciones_salida (estudiante_id, fecha_salida)
+    where salida_efectiva is null;
 
 -- Seguimiento de modificaciones en autorizaciones de estudiantes
 alter table if exists public.autorizaciones_salida
