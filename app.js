@@ -6113,10 +6113,10 @@ function abrirReporteVisitantes() {
                 </div>`;
                 
                 authorizations.forEach(auth => {
-                    const student = auth.estudiante;
-                    const reason = auth.motivo;
-                    const user = auth.usuario;
-                    const modifier = auth.usuario_modifico || null;
+                    const student = studentMap[auth.estudiante_id] || null;
+                    const reason = reasonMap[auth.motivo_id] || null;
+                    const user = userMap[auth.usuario_autorizador_id] || null;
+                    const modifier = auth.usuario_modifico_id ? (userMap[auth.usuario_modifico_id] || null) : null;
                     const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
                     const modificationHtml = auth.detalle_modificaciones ? `
                         <div class="verification-card-update">
