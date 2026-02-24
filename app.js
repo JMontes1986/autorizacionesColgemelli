@@ -4337,7 +4337,7 @@
 
                 const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_personal')
-                    ..select(`
+                    .select(`
                         *,
                         colaborador:personal_colegio(id, nombre, cargo, cedula),
                         motivo:motivos(id, nombre),
