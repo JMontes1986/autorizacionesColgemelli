@@ -4017,7 +4017,119 @@
             }
         }
 
-        async function loadPendingExits() {
+
+       function createPendingExitCard(options = {}) {
+            const {
+                cardClass = '',
+                title = '',
+                imageSrc,
+                imageAlt = '',
+                leftInfo = [],
+                rightInfo = [],
+                footerInfo = [],
+                observations = '',
+                modification,
+                extraFooterText = '',
+                primaryAction,
+                secondaryAction,
+                dataset = {}
+            } = options;
+
+            const card = document.createElement('div');
+            card.className = `verification-card ${cardClass}`.trim();
+            Object.entries(dataset).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) card.dataset[key] = String(value);
+            });
+
+            const titleEl = document.createElement('h3');
+            titleEl.textContent = title;
+            card.appendChild(titleEl);
+
+            if (imageSrc) {
+                const img = document.createElement('img');
+                img.src = imageSrc;
+                img.alt = imageAlt;
+                img.style.cssText = 'width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;';
+                card.appendChild(img);
+            }
+
+            const content = document.createElement('div');
+            content.className = 'verification-card-content';
+            [leftInfo, rightInfo].forEach(items => {
+                const col = document.createElement('div');
+                col.className = 'verification-card-info';
+                items.forEach(({ label, value }) => {
+                    const row = document.createElement('p');
+                    const strong = document.createElement('strong');
+                    strong.textContent = `${label}:`;
+                    const span = document.createElement('span');
+                    span.className = 'info-value';
+                    span.textContent = value;
+                    row.append(strong, document.createTextNode(' '), span);
+                    col.appendChild(row);
+                });
+                content.appendChild(col);
+            });
+            card.appendChild(content);
+
+            const footer = document.createElement('div');
+            footer.className = 'verification-card-footer';
+
+            footerInfo.forEach(({ label, value }) => {
+                const row = document.createElement('p');
+                const strong = document.createElement('strong');
+                strong.textContent = `${label}:`;
+                row.append(strong, document.createTextNode(` ${value}`));
+                footer.appendChild(row);
+            });
+
+            if (observations) {
+                const obs = document.createElement('div');
+                obs.className = 'verification-card-obs';
+                const strong = document.createElement('strong');
+                strong.textContent = '📝 Observaciones:';
+                obs.append(strong, document.createElement('br'), document.createTextNode(observations));
+                footer.appendChild(obs);
+            }
+
+            if (modification?.details) {
+                const update = document.createElement('div');
+                update.className = 'verification-card-update';
+                const strong = document.createElement('strong');
+                strong.textContent = `🔄 Cambios recientes${modification.by ? ` por ${modification.by}` : ''}`;
+                const details = document.createElement('span');
+                details.className = 'change-details';
+                details.textContent = modification.details;
+                update.append(strong, details);
+                if (modification.date) {
+                    const date = document.createElement('small');
+                    date.textContent = `Actualizado el ${modification.date}`;
+                    update.appendChild(date);
+                }
+                footer.appendChild(update);
+            }
+
+            if (extraFooterText) {
+                const extra = document.createElement('p');
+                extra.style.cssText = 'margin-top: 10px; font-weight: 600;';
+                extra.textContent = extraFooterText;
+                footer.appendChild(extra);
+            }
+
+            [primaryAction, secondaryAction].filter(Boolean).forEach(action => {
+                const btn = document.createElement('button');
+                btn.className = action.className;
+                btn.style.cssText = action.style;
+                btn.textContent = action.text;
+                btn.addEventListener('click', action.onClick);
+                footer.appendChild(btn);
+            });
+
+            card.appendChild(footer);
+            return card;
+        }
+
+       async function loadPendingExits() {
             const pendingList = document.getElementById('pendingExitsList');
                 
             try {
@@ -4114,86 +4226,69 @@
 
                 const currentTime = getColombiaTime();
                 const canDeleteStudentExit = (currentUser?.email || '').toLowerCase() === 'sistemas@colgemelli.edu.co';
-                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;">
-                    <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Salidas pendientes de confirmación: <strong>${activeAuthorizations.length}</strong></p>
-                </div>`;
                 
+                pendingList.textContent = '';
+                const summary = document.createElement('div');
+                summary.style.cssText = 'text-align: center; margin-bottom: 25px; background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 10px;';
+                const summaryDate = document.createElement('p');
+                summaryDate.style.cssText = 'color: #2c3e50; font-weight: bold; font-size: 16px;';
+                summaryDate.textContent = `📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)`;
+                const summaryCount = document.createElement('p');
+                summaryCount.style.cssText = 'color: #7f8c8d; margin-top: 8px;';
+                summaryCount.textContent = `Salidas pendientes de confirmación: ${activeAuthorizations.length}`;
+                summary.append(summaryDate, summaryCount);
+                pendingList.appendChild(summary);
+
+                const fragment = document.createDocumentFragment();
+                   
                 activeAuthorizations.forEach(auth => {
                     const student = studentMap[auth.estudiante_id] || null;
                     const reason = reasonMap[auth.motivo_id] || null;
                     const user = userMap[auth.usuario_autorizador_id] || null;
                     const modifier = auth.usuario_modifico_id ? (userMap[auth.usuario_modifico_id] || null) : null;
-                    const modificationDate = auth.ultima_modificacion ? sanitizeHtml(formatDateTime(auth.ultima_modificacion)) : '';
-                    const modificationHtml = auth.detalle_modificaciones ? `
-                        <div class="verification-card-update">
-                            <strong>🔄 Cambios recientes${modifier ? ` por ${sanitizeHtml(modifier.nombre)}` : ''}</strong>
-                            <span class="change-details">${sanitizeHtml(auth.detalle_modificaciones)}</span>
-                            ${modificationDate ? `<small>Actualizado el ${modificationDate}</small>` : ''}
-                        </div>
-                    ` : '';
-
-                     let cardClass = 'authorized';
-                    const authEmail = (user?.email || '').toLowerCase();
-                    if (authEmail === 'enfermeria@colgemelli.edu.co') {
-                        cardClass = 'authorized-enfermeria';
-                    } else if (authEmail === 'convivencia@colgemelli.edu.co') {
-                        cardClass = 'authorized-convivencia';
-                    } else if (authEmail === 'gformativa@colgemelli.edu.co') {
-                        cardClass = 'authorized-formativa';
-                    }
                     
-                    html += `
-                        <div class="verification-card ${cardClass}">
-                            <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
-                            <img src="${student?.foto_url || 'assets/img/placeholder-student.png'}" alt="Foto estudiante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-bottom: 10px;">
-                            
-                            <div class="verification-card-content">
-                                <div class="verification-card-info">
-                                    <p>
-                                        <strong>👨‍🎓 Estudiante:</strong>
-                                        <span class="info-value">${student ? sanitizeHtml(`${student.nombre} ${student.apellidos}`) : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🎓 Grado:</strong>
-                                        <span class="info-value">${student?.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'No encontrado'}</span>
-                                    </p>
-                                </div>
-                                <div class="verification-card-info">
-                                    <p>
-                                        <strong>📝 Motivo de Salida:</strong>
-                                        <span class="info-value">${reason?.nombre ? sanitizeHtml(reason.nombre) : 'No encontrado'}</span>
-                                    </p>
-                                    <p>
-                                        <strong>🕐 Hora Autorizada:</strong>
-                                        <span class="info-value">${formatTime(auth.hora_salida)}</span>
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div class="verification-card-footer">
-                                <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                ${auth.observaciones ? `
-                                    <div class="verification-card-obs">
-                                        <strong>📝 Observaciones:</strong><br>
-                                        ${sanitizeHtml(auth.observaciones)}
-                                    </div>
-                                ` : ''}
-                                ${modificationHtml}
-                                <button class="btn btn-success" onclick="confirmExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
-                                    ✅ CONFIRMAR SALIDA
-                                </button>
-                                ${canDeleteStudentExit ? `
-                                    <button class="btn btn-danger btn-eliminar" onclick="deleteStudentExit(${auth.id})" style="font-size: 16px; padding: 12px 32px; margin-top: 10px; margin-left: 8px;">
-                                        🗑️ BORRAR SALIDA
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
+                    let cardClass = 'authorized';
+                    const authEmail = (user?.email || '').toLowerCase();
+                    if (authEmail === 'enfermeria@colgemelli.edu.co') cardClass = 'authorized-enfermeria';
+                    else if (authEmail === 'convivencia@colgemelli.edu.co') cardClass = 'authorized-convivencia';
+                    else if (authEmail === 'gformativa@colgemelli.edu.co') cardClass = 'authorized-formativa';
+
+                    fragment.appendChild(createPendingExitCard({
+                        cardClass,
+                        title: '⏳ PENDIENTE CONFIRMAR SALIDA',
+                        imageSrc: student?.foto_url || 'assets/img/placeholder-student.png',
+                        imageAlt: 'Foto estudiante',
+                        leftInfo: [
+                            { label: '👨‍🎓 Estudiante', value: student ? `${student.nombre} ${student.apellidos}` : 'No encontrado' },
+                            { label: '🎓 Grado', value: student?.grado?.nombre || 'No encontrado' }
+                        ],
+                        rightInfo: [
+                            { label: '📝 Motivo de Salida', value: reason?.nombre || 'No encontrado' },
+                            { label: '🕐 Hora Autorizada', value: formatTime(auth.hora_salida) }
+                        ],
+                        footerInfo: [{ label: '✅ Autorizado por', value: user?.nombre || 'No encontrado' }],
+                        observations: auth.observaciones || '',
+                        modification: auth.detalle_modificaciones ? {
+                            by: modifier?.nombre || '',
+                            details: auth.detalle_modificaciones,
+                            date: auth.ultima_modificacion ? formatDateTime(auth.ultima_modificacion) : ''
+                        } : null,
+                        primaryAction: {
+                            className: 'btn btn-success',
+                            style: 'font-size: 18px; padding: 15px 40px; margin-top: 15px;',
+                            text: '✅ CONFIRMAR SALIDA',
+                            onClick: () => confirmExit(auth.id)
+                        },
+                        secondaryAction: canDeleteStudentExit ? {
+                            className: 'btn btn-danger btn-eliminar',
+                            style: 'font-size: 16px; padding: 12px 32px; margin-top: 10px; margin-left: 8px;',
+                            text: '🗑️ BORRAR SALIDA',
+                            onClick: () => deleteStudentExit(auth.id)
+                        } : null
+                    }));
                 });
 
-                pendingList.innerHTML = html;
+                pendingList.appendChild(fragment);
                 console.log('✅ Lista de salidas pendientes cargada');
 
             } catch (error) {
@@ -4292,13 +4387,26 @@
 
                 const currentTime = getColombiaTime();
                 const totalPending = pendingExitAuths.length + pendingReturnAuths.length;
-                let html = `<div style="text-align: center; margin-bottom: 25px; background: rgba(198, 156, 114, 0.25); padding: 20px; border-radius: 10px;">
-                    <p style="color: #2c3e50; font-weight: bold; font-size: 16px;">📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)</p>
-                    <p style="color: #7f8c8d; margin-top: 8px;">Gestiones pendientes del personal: <strong>${totalPending}</strong> (Salidas: ${pendingExitAuths.length} • Regresos: ${pendingReturnAuths.length})</p>
-                </div>`;
+                
+                pendingList.textContent = '';
+                const summary = document.createElement('div');
+                summary.style.cssText = 'text-align: center; margin-bottom: 25px; background: rgba(198, 156, 114, 0.25); padding: 20px; border-radius: 10px;';
+                const summaryDate = document.createElement('p');
+                summaryDate.style.cssText = 'color: #2c3e50; font-weight: bold; font-size: 16px;';
+                summaryDate.textContent = `📅 ${formatDate(todayColombia)} - 🕐 ${currentTime} (Hora Colombia)`;
+                const summaryCount = document.createElement('p');
+                summaryCount.style.cssText = 'color: #7f8c8d; margin-top: 8px;';
+                summaryCount.textContent = `Gestiones pendientes del personal: ${totalPending} (Salidas: ${pendingExitAuths.length} • Regresos: ${pendingReturnAuths.length})`;
+                summary.append(summaryDate, summaryCount);
+                pendingList.appendChild(summary);
 
+                const fragment = document.createDocumentFragment();
+                   
                 if (pendingExitAuths.length > 0) {
-                    html += '<h4 style="color: #2c3e50; margin: 25px 0 15px 0;">🚶‍♀️ Salidas por confirmar</h4>';
+                    const title = document.createElement('h4');
+                    title.style.cssText = 'color: #2c3e50; margin: 25px 0 15px 0;';
+                    title.textContent = '🚶‍♀️ Salidas por confirmar';
+                    fragment.appendChild(title);
                     pendingExitAuths.forEach(auth => {
                         const staff = staffMap[auth.colaborador_id];
                         const reason = reasonMap[auth.motivo_id];
@@ -4307,36 +4415,40 @@
                             ? (auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida')
                             : null;
 
-                        html += `
-                            <div class="verification-card staff-card" data-auth-id="${auth.id}" data-card-type="exit">
-                                <h3>⏳ PENDIENTE CONFIRMAR SALIDA</h3>
-                                <div class="verification-card-content">
-                                    <div class="verification-card-info">
-                                        <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
-                                        <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
-                                    </div>
-                                    <div class="verification-card-info">
-                                        <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
-                                        <p><strong>🕐 Hora Autorizada:</strong> <span class="info-value">${formatTime(auth.hora_salida)}</span></p>
-                                        ${auth.requiere_regreso ? `<p><strong>🔁 Hora de regreso:</strong> <span class="info-value">${sanitizeHtml(expectedReturn)}</span></p>` : ''}
-                                    </div>
-                                </div>
-                                 <div class="verification-card-footer">
-                                    <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                    ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
-                                    ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
-                                    ${auth.requiere_regreso ? `<p style="margin-top: 10px; font-weight: 600;">🔁 Se debe registrar el regreso cuando vuelva el colaborador.</p>` : ''}
-                                    <button class="btn btn-success" onclick="confirmStaffExit(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
-                                        ✅ CONFIRMAR SALIDA
-                                    </button>
-                                </div>
-                            </div>
-                             `;
+                        fragment.appendChild(createPendingExitCard({
+                            cardClass: 'staff-card',
+                            title: '⏳ PENDIENTE CONFIRMAR SALIDA',
+                            leftInfo: [
+                                { label: '👥 Colaborador', value: staff?.nombre || 'No encontrado' },
+                                { label: '💼 Cargo', value: staff?.cargo || 'No registrado' }
+                            ],
+                            rightInfo: [
+                                { label: '🧾 Cédula', value: staff?.cedula || 'N/A' },
+                                { label: '🕐 Hora autorizada', value: formatTime(auth.hora_salida) },
+                                ...(auth.requiere_regreso ? [{ label: '🔁 Hora de regreso', value: expectedReturn }] : [])
+                            ],
+                            footerInfo: [
+                                { label: '✅ Autorizado por', value: user?.nombre || 'No encontrado' },
+                                ...(reason?.nombre ? [{ label: '📝 Motivo', value: reason.nombre }] : [])
+                            ],
+                            observations: auth.observaciones || '',
+                            extraFooterText: auth.requiere_regreso ? '🔁 Se debe registrar el regreso cuando vuelva el colaborador.' : '',
+                            primaryAction: {
+                                className: 'btn btn-success',
+                                style: 'font-size: 18px; padding: 15px 40px; margin-top: 15px;',
+                                text: '✅ CONFIRMAR SALIDA',
+                                onClick: () => confirmStaffExit(auth.id)
+                            },
+                            dataset: { authId: auth.id, cardType: 'exit' }
+                        }));
                     });
                 }
 
                 if (pendingReturnAuths.length > 0) {
-                    html += '<h4 style="color: #2c3e50; margin: 35px 0 15px 0;">🔁 Regresos por registrar</h4>';
+                    const title = document.createElement('h4');
+                    title.style.cssText = 'color: #2c3e50; margin: 35px 0 15px 0;';
+                    title.textContent = '🔁 Regresos por registrar';
+                    fragment.appendChild(title);
                     pendingReturnAuths.forEach(auth => {
                         const staff = staffMap[auth.colaborador_id];
                         const reason = reasonMap[auth.motivo_id];
@@ -4344,35 +4456,36 @@
                         const exitTime = auth.salida_efectiva ? formatDateTime(auth.salida_efectiva) : formatTime(auth.hora_salida);
                         const expectedReturn = auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida';
 
-                        html += `
-                            <div class="verification-card staff-card return-pending" data-auth-id="${auth.id}" data-card-type="return">
-                                <h3>🔁 PENDIENTE REGISTRAR REGRESO</h3>
-                                <div class="verification-card-content">
-                                    <div class="verification-card-info">
-                                        <p><strong>👥 Colaborador:</strong> <span class="info-value">${staff ? sanitizeHtml(staff.nombre) : 'No encontrado'}</span></p>
-                                        <p><strong>💼 Cargo:</strong> <span class="info-value">${staff?.cargo ? sanitizeHtml(staff.cargo) : 'No registrado'}</span></p>
-                                    </div>
-                                    <div class="verification-card-info">
-                                        <p><strong>🧾 Cédula:</strong> <span class="info-value">${staff?.cedula ? sanitizeHtml(staff.cedula) : 'N/A'}</span></p>
-                                        <p><strong>✅ Salida confirmada:</strong> <span class="info-value">${sanitizeHtml(exitTime)}</span></p>
-                                        <p><strong>🔁 Hora de regreso:</strong> <span class="info-value">${sanitizeHtml(expectedReturn)}</span></p>
-                                    </div>
-                                </div>
-                                <div class="verification-card-footer">
-                                    <p><strong>✅ Autorizado por:</strong> ${user?.nombre ? sanitizeHtml(user.nombre) : 'No encontrado'}</p>
-                                    ${reason?.nombre ? `<p><strong>📝 Motivo:</strong> ${sanitizeHtml(reason.nombre)}</p>` : ''}
-                                    ${auth.observaciones ? `<div class="verification-card-obs"><strong>📝 Observaciones:</strong><br>${sanitizeHtml(auth.observaciones)}</div>` : ''}
-                                    <p style="margin-top: 10px; font-weight: 600;">📝 Registra la hora exacta de regreso al confirmar.</p>
-                                    <button class="btn btn-success" onclick="confirmStaffReturn(${auth.id})" style="font-size: 18px; padding: 15px 40px; margin-top: 15px;">
-                                        ✅ REGISTRAR REGRESO
-                                    </button>
-                                </div>
-                            </div>
-                                `;
+                        fragment.appendChild(createPendingExitCard({
+                            cardClass: 'staff-card return-pending',
+                            title: '🔁 PENDIENTE REGISTRAR REGRESO',
+                            leftInfo: [
+                                { label: '👥 Colaborador', value: staff?.nombre || 'No encontrado' },
+                                { label: '💼 Cargo', value: staff?.cargo || 'No registrado' }
+                            ],
+                            rightInfo: [
+                                { label: '🧾 Cédula', value: staff?.cedula || 'N/A' },
+                                { label: '✅ Salida confirmada', value: exitTime },
+                                { label: '🔁 Hora de regreso', value: expectedReturn }
+                            ],
+                            footerInfo: [
+                                { label: '✅ Autorizado por', value: user?.nombre || 'No encontrado' },
+                                ...(reason?.nombre ? [{ label: '📝 Motivo', value: reason.nombre }] : [])
+                            ],
+                            observations: auth.observaciones || '',
+                            extraFooterText: '📝 Registra la hora exacta de regreso al confirmar.',
+                            primaryAction: {
+                                className: 'btn btn-success',
+                                style: 'font-size: 18px; padding: 15px 40px; margin-top: 15px;',
+                                text: '✅ REGISTRAR REGRESO',
+                                onClick: () => confirmStaffReturn(auth.id)
+                            },
+                            dataset: { authId: auth.id, cardType: 'return' }
+                        }));
                     });
                 }
                     
-                pendingList.innerHTML = html;
+                pendingList.appendChild(fragment);
 
             } catch (error) {
                 console.error('❌ Error al cargar salidas del personal:', error);
