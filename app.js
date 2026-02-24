@@ -2121,36 +2121,92 @@
             if (!list) return;
 
             if (!records.length) {
-                list.innerHTML = '<p style="color: #666;">No se encontraron ingresos previos.</p>';
+                const emptyMessage = document.createElement('p');
+                emptyMessage.style.color = '#666';
+                emptyMessage.textContent = 'No se encontraron ingresos previos.';
+                list.replaceChildren(emptyMessage);
                 return;
             }
 
-            list.innerHTML = records.map(record => {
+            const fragment = document.createDocumentFragment();
+
+            records.forEach(record => {
                 const dateText = formatDate(record.fecha);
                 const timeText = record.hora ? ` - 🕒 ${formatTime(record.hora)}` : '';
-                const areaText = record.area?.nombre ? sanitizeHtml(record.area.nombre) : 'Sin área';
-                const statusText = record.estado?.nombre ? sanitizeHtml(record.estado.nombre) : 'Sin estado';
-                const guardText = record.vigilante?.nombre ? sanitizeHtml(record.vigilante.nombre) : 'Sin vigilante';
-                const motivoText = record.motivo ? sanitizeHtml(record.motivo) : 'Sin motivo';
-                const obsText = record.observaciones ? sanitizeHtml(record.observaciones) : '';
+                const areaText = record.area?.nombre || 'Sin área';
+                const statusText = record.estado?.nombre || 'Sin estado';
+                const guardText = record.vigilante?.nombre || 'Sin vigilante';
+                const motivoText = record.motivo || 'Sin motivo';
+                const obsText = record.observaciones || '';
                 const exitTime = record.salida_efectiva ? formatDateTime(record.salida_efectiva) : null;
-                const exitGuardText = record.salida_vigilante?.nombre ? sanitizeHtml(record.salida_vigilante.nombre) : '';
-                const exitObsText = record.salida_observaciones ? sanitizeHtml(record.salida_observaciones) : '';
-                return `
-                    <div class="visitor-entry">
-                        <div class="visitor-entry-header">
-                            <span>📅 ${dateText}${timeText}</span>
-                            <span>${statusText}</span>
-                        </div>
-                        <div class="visitor-entry-meta"><strong>Área:</strong> ${areaText}</div>
-                        <div class="visitor-entry-meta"><strong>Motivo:</strong> ${motivoText}</div>
-                        <div class="visitor-entry-meta"><strong>Vigilante:</strong> ${guardText}</div>
-                        ${obsText ? `<div class="visitor-entry-meta"><strong>Observaciones:</strong> ${obsText}</div>` : ''}
-                        ${exitTime ? `<div class="visitor-entry-meta"><strong>Salida:</strong> ${exitTime}${exitGuardText ? ` · ${exitGuardText}` : ''}</div>` : '<div class="visitor-entry-meta"><strong>Salida:</strong> Pendiente</div>'}
-                        ${exitObsText ? `<div class="visitor-entry-meta"><strong>Observaciones salida:</strong> ${exitObsText}</div>` : ''}
-                    </div>
-                `;
-            }).join('');
+                const exitGuardText = record.salida_vigilante?.nombre || '';
+                const exitObsText = record.salida_observaciones || '';
+
+                const entry = document.createElement('div');
+                entry.className = 'visitor-entry';
+
+                const header = document.createElement('div');
+                header.className = 'visitor-entry-header';
+                const dateSpan = document.createElement('span');
+                dateSpan.textContent = `📅 ${dateText}${timeText}`;
+                const statusSpan = document.createElement('span');
+                statusSpan.textContent = statusText;
+                header.append(dateSpan, statusSpan);
+
+                const areaMeta = document.createElement('div');
+                areaMeta.className = 'visitor-entry-meta';
+                const areaLabel = document.createElement('strong');
+                areaLabel.textContent = 'Área:';
+                areaMeta.append(areaLabel, ` ${areaText}`);
+
+                const motivoMeta = document.createElement('div');
+                motivoMeta.className = 'visitor-entry-meta';
+                const motivoLabel = document.createElement('strong');
+                motivoLabel.textContent = 'Motivo:';
+                motivoMeta.append(motivoLabel, ` ${motivoText}`);
+
+                const guardMeta = document.createElement('div');
+                guardMeta.className = 'visitor-entry-meta';
+                const guardLabel = document.createElement('strong');
+                guardLabel.textContent = 'Vigilante:';
+                guardMeta.append(guardLabel, ` ${guardText}`);
+
+                entry.append(header, areaMeta, motivoMeta, guardMeta);
+
+                if (obsText) {
+                    const obsMeta = document.createElement('div');
+                    obsMeta.className = 'visitor-entry-meta';
+                    const obsLabel = document.createElement('strong');
+                    obsLabel.textContent = 'Observaciones:';
+                    obsMeta.append(obsLabel, ` ${obsText}`);
+                    entry.append(obsMeta);
+                }
+
+                const exitMeta = document.createElement('div');
+                exitMeta.className = 'visitor-entry-meta';
+                const exitLabel = document.createElement('strong');
+                exitLabel.textContent = 'Salida:';
+                exitMeta.append(
+                    exitLabel,
+                    exitTime
+                        ? ` ${exitTime}${exitGuardText ? ` · ${exitGuardText}` : ''}`
+                        : ' Pendiente'
+                );
+                entry.append(exitMeta);
+
+                if (exitObsText) {
+                    const exitObsMeta = document.createElement('div');
+                    exitObsMeta.className = 'visitor-entry-meta';
+                    const exitObsLabel = document.createElement('strong');
+                    exitObsLabel.textContent = 'Observaciones salida:';
+                    exitObsMeta.append(exitObsLabel, ` ${exitObsText}`);
+                    entry.append(exitObsMeta);
+                }
+
+                fragment.append(entry);
+            });
+
+            list.replaceChildren(fragment);
         }
 
         function renderVisitorObservations(records) {
@@ -2158,22 +2214,37 @@
             if (!list) return;
 
             if (!records.length) {
-                list.innerHTML = '<p style="color: #666;">No hay observaciones registradas.</p>';
+                const emptyMessage = document.createElement('p');
+                emptyMessage.style.color = '#666';
+                emptyMessage.textContent = 'No hay observaciones registradas.';
+                list.replaceChildren(emptyMessage);
                 return;
             }
 
-            list.innerHTML = records.map(record => {
+            const fragment = document.createDocumentFragment();
+
+            records.forEach(record => {
                 const dateText = formatDateTime(record.created_at);
-                const author = record.registrado_por?.nombre ? sanitizeHtml(record.registrado_por.nombre) : 'Sin responsable';
-                return `
-                    <div class="visitor-observation">
-                        <div class="visitor-entry-header">
-                            <span>🗒️ ${sanitizeHtml(record.observacion)}</span>
-                        </div>
-                        <div class="visitor-entry-meta">📌 ${author} · ${dateText}</div>
-                    </div>
-                `;
-            }).join('');
+                const author = record.registrado_por?.nombre || 'Sin responsable';
+
+                const observation = document.createElement('div');
+                observation.className = 'visitor-observation';
+
+                const header = document.createElement('div');
+                header.className = 'visitor-entry-header';
+                const observationText = document.createElement('span');
+                observationText.textContent = `🗒️ ${record.observacion || ''}`;
+                header.append(observationText);
+
+                const meta = document.createElement('div');
+                meta.className = 'visitor-entry-meta';
+                meta.textContent = `📌 ${author} · ${dateText}`;
+
+                observation.append(header, meta);
+                fragment.append(observation);
+            });
+
+            list.replaceChildren(fragment);
         }
 
         function resetVisitorHistory() {
