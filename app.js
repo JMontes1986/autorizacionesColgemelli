@@ -369,20 +369,17 @@
 
                 console.log('🔐 Intentando login seguro para:', email.substring(0, 5) + '...');
                 
-                // Buscar usuario en la base de datos
-                const { data: user, error } = await supabaseClient
-                    .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
-                    .eq('email', email)
-                    .eq('activo', true)
-                    .single();
+                // Autenticar directamente con Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
 
-                if (error || !user) {
+                if (authError || !authData?.user) {
                     recordFailedAttempt();
-                    await logSecurityEvent('login', 'Usuario no encontrado', { email: email.substring(0, 20) + '...' }, false);
+                    await logSecurityEvent('login', 'Credenciales inválidas en Supabase Auth', {
+                        email: email.substring(0, 20) + '...'
+                    }, false);
                     showError('Credenciales incorrectas');
                     resetCaptcha();
                     loginBtn.disabled = false;
@@ -390,16 +387,28 @@
                     return;
                 }
 
-                console.log('✅ Usuario encontrado:', user.nombre);
+                // Buscar perfil interno sin exponer password_hash en frontend
+                const { data: user, error: userError } = await supabaseClient
+                    .from('usuarios')
+                    .select(`
+                        id,
+                        nombre,
+                        email,
+                        rol_id,
+                        activo,
+                        rol:roles(nombre, descripcion)
+                    `)
+                    .eq('email', email)
+                    .eq('activo', true)
+                    .single();
 
-                // Verificar contraseña con cifrado
-                if (!verifyPassword(password, user.password_hash)) {
+                 if (userError || !user) {
+                    await supabaseClient.auth.signOut();
                     recordFailedAttempt();
-                    await logSecurityEvent('login', 'Contraseña incorrecta', { 
-                        email: email.substring(0, 20) + '...',
-                        userId: user.id 
+                     await logSecurityEvent('login', 'Usuario sin perfil activo', {
+                        email: email.substring(0, 20) + '...'
                     }, false);
-                    showError('Credenciales incorrectas');
+                    showError('Tu usuario no tiene acceso activo');
                     resetCaptcha();
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Iniciar Sesión';
@@ -463,6 +472,11 @@
                     }, true);
                 }
                 
+                // Cerrar sesión en Supabase Auth
+                if (supabaseClient) {
+                    await supabaseClient.auth.signOut();
+                }
+                   
                 // Limpiar datos de sesión
                 currentUser = null;
                 sessionToken = null;
