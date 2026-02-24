@@ -1,11 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+GROQ_API_KEY="${GROQ_API_KEY:-}"
+
 cat > env.js <<EOL
 window.process = {
   env: {
     SUPABASE_URL: "$SUPABASE_URL",
-   SUPABASE_ANON_KEY: "$SUPABASE_ANON_KEY"
+    SUPABASE_ANON_KEY: "$SUPABASE_ANON_KEY",
+    GROQ_API_KEY: "$GROQ_API_KEY"
   }
 };
 EOL
