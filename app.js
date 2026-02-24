@@ -12,6 +12,9 @@
 
         const SUPABASE_URL = appConfig.SUPABASE_URL || '';
         const SUPABASE_ANON_KEY = appConfig.SUPABASE_ANON_KEY || '';
+        const GROQ_API_KEY = appConfig.GROQ_API_KEY || '';
+        const GROQ_API_BASE_URL = appConfig.GROQ_API_BASE_URL || 'https://api.groq.com/openai/v1';
+        const GROQ_MODEL = appConfig.GROQ_MODEL || 'openai/gpt-oss-120b';
         const STORAGE_BUCKET = appConfig.STORAGE_BUCKET || 'autorizaciones';
         const EXIT_EDIT_USERS = appConfig.EXIT_EDIT_USERS || [
             'convivencia@colgemelli.edu.co',
@@ -386,10 +389,9 @@
                         email,
                         rol_id,
                         activo,
-                        auth_user_id,
                         rol:roles(nombre, descripcion)
                     `)
-                    .eq('auth_user_id', authData.user.id)
+                    .eq('email', email)
                     .eq('activo', true)
                     .single();
 
