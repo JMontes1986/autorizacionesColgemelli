@@ -313,7 +313,6 @@
                 } else {
                     log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
                     log(`   Email: ${user.email}`, 'info');
-                    log(`   Password hash: ${user.password_hash}`, 'info');
                     log(`   Rol ID: ${user.rol_id}`, 'info');
                     log(`   Activo: ${user.activo}`, 'info');
                 }
@@ -327,40 +326,41 @@
             const email = document.getElementById('testEmail').value;
             const password = document.getElementById('testPassword').value;
             
-            log('=== PRUEBA DE LOGIN ===');
+            log('=== PRUEBA DE LOGIN (SUPABASE AUTH) ===');
             log(`Intentando login con: ${email}`);
             
             try {
-                const { data: user, error } = await supabase
+                 const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error || !data?.user) {
+                    log(`❌ Credenciales incorrectas: ${error?.message || 'Sin sesión'}`, 'error');
+                    updateStatus('❌ Login fallido', 'error');
+                    return;
+                }
+
+                log(`✅ Login exitoso en Supabase Auth: ${data.user.email}`, 'success');
+
+                const { data: perfil, error: perfilError } = await supabase
                     .from('usuarios')
-                    .select(`
-                        *,
-                        rol:roles(nombre, descripcion)
-                    `)
+                    .select('id, nombre, email, rol_id, activo')
                     .eq('email', email)
                     .eq('activo', true)
                     .single();
 
-                if (error) {
-                    log(`❌ Error en login: ${error.message}`, 'error');
-                    log(`Código: ${error.code}`, 'error');
-                } else if (!user) {
-                    log('❌ Usuario no encontrado', 'error');
+                if (perfilError || !perfil) {
+                    log(`⚠️ Usuario autenticado sin perfil activo en public.usuarios`, 'warning');
                 } else {
-                    log(`✅ Usuario encontrado: ${user.nombre}`, 'success');
-                    
-                    if (user.password_hash === password) {
-                        log('✅ Contraseña correcta', 'success');
-                        log(`✅ LOGIN EXITOSO! Rol: ${user.rol.nombre}`, 'success');
-                        updateStatus('✅ Login exitoso', 'success');
-                    } else {
-                        log(`❌ Contraseña incorrecta`, 'error');
-                        log(`   Esperada: '${password}'`, 'error');
-                        log(`   En BD: '${user.password_hash}'`, 'error');
-                    }
+                    log(`✅ Perfil interno activo: ${perfil.nombre} (rol_id=${perfil.rol_id})`, 'success');
                 }
-            } catch (error) {
+
+                await supabase.auth.signOut();
+                updateStatus('✅ Login exitoso', 'success');
+            } catch (error) {                
                 log(`❌ Error general en login: ${error.message}`, 'error');
+                updateStatus('❌ Login fallido', 'error');
             }
         }
 
