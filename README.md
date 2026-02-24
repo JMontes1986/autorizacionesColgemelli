@@ -82,6 +82,7 @@ Para preparar el entorno local sigue los pasos:
 3. Asegúrate de que el archivo `env.js` se haya creado en la raíz del proyecto antes de abrir `index.html` en tu navegador.
 4. Ejecuta el script de base de datos `supabase/schema.sql` en tu instancia de Supabase. Además de actualizar las tablas existentes, este script creará la nueva tabla `audit_logs`. Vuelve a ejecutarlo cada vez que hagas pull y aparezcan columnas nuevas.
 5. Aplica las políticas RLS ejecutando `supabase/policies.sql` desde la CLI o la consola SQL de Supabase.
+6. Migra la autenticación al proveedor de Supabase Auth ejecutando `supabase/auth_migration.sql` y creando los usuarios en **Authentication > Users**.
 ## 4. index.html: Descripción Funcional
 
 ### 4.1 Inicio de Sesión
@@ -157,7 +158,7 @@ Cada función emplea llamadas a Supabase y muestra resultados en un log visible.
 
 - **Supabase**: Provee almacenamiento, autenticación y consultas.
 - **Chart.js**: Visualiza gráficos. Compatible con fallback si no se carga correctamente.
-- **Autenticación y Seguridad**: Protegida por un desafío aritmético y CryptoJS.
+- **Autenticación y Seguridad**: Protegida por desafío aritmético y autenticación delegada a Supabase Auth (`auth.signInWithPassword`).
 - **Auditoría**: Registro de eventos importantes como inicios de sesión o fallos.
 
 ---
@@ -272,7 +273,8 @@ Cuando la aplicación usa únicamente la clave anónima de Supabase, las políti
    
 ### Rol `talento_humano`
 * El script de esquema inserta el rol y el usuario `gadministrativa@colgemelli.edu.co` con acceso exclusivo para gestionar salidas del personal.
-* Las contraseñas se almacenan con un prefijo `sha256$`, soportado por `verifyPassword` en `app.js`.
+* La autenticación debe realizarse en Supabase Auth (no se debe consultar `password_hash` desde el frontend).
+* Usa [`supabase/auth_migration.sql`](supabase/auth_migration.sql) para vincular usuarios de `auth.users` con `public.usuarios`.
   
 ### Tabla `audit_logs`
 1. Habilita RLS:
