@@ -54,6 +54,15 @@
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-Token': CSRF_TOKEN
         };
+       const renderListWithFragment = window.uiUtils?.renderListWithFragment || function fallbackRenderListWithFragment(container, items, renderer) {
+            if (!container || typeof renderer !== 'function') return;
+            const fragment = document.createDocumentFragment();
+            (Array.isArray(items) ? items : []).forEach((item, index) => {
+                const node = renderer(item, index);
+                if (node instanceof Node) fragment.appendChild(node);
+            });
+            container.replaceChildren(fragment);
+        };
 
         // ========================================
         // CONFIGURACIÓN GROQ (CHAT COMPLETIONS)
@@ -5944,19 +5953,34 @@
             const tbody = document.querySelector('#studentsTable tbody');
             if (!tbody) return;
             
-            tbody.innerHTML = '';
-            students.forEach(student => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${sanitizeHtml(student.nombre)}</td>
-                    <td>${sanitizeHtml(student.apellidos)}</td>
-                    <td>${student.documento ? sanitizeHtml(student.documento) : 'N/A'}</td>
-                    <td>${student.grado?.nombre ? sanitizeHtml(student.grado.nombre) : 'Sin grado'}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editStudent(${student.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteStudent(${student.id})">Eliminar</button>
-                    </td>
-                `;
+            renderListWithFragment(tbody, students, student => {
+                const row = document.createElement('tr');
+                const fullNameCell = document.createElement('td');
+                fullNameCell.textContent = student.nombre || '';
+
+                const lastNameCell = document.createElement('td');
+                lastNameCell.textContent = student.apellidos || '';
+
+                const documentCell = document.createElement('td');
+                documentCell.textContent = student.documento || 'N/A';
+
+                const gradeCell = document.createElement('td');
+                gradeCell.textContent = student.grado?.nombre || 'Sin grado';
+
+                const actionsCell = document.createElement('td');
+                const editButton = document.createElement('button');
+                editButton.className = 'btn btn-secondary';
+                editButton.textContent = 'Editar';
+                editButton.addEventListener('click', () => editStudent(student.id));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-danger';
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.addEventListener('click', () => deleteStudent(student.id));
+
+                actionsCell.append(editButton, deleteButton);
+                row.append(fullNameCell, lastNameCell, documentCell, gradeCell, actionsCell);
+                return row;
             });
             
             // Configurar scroll después de actualizar la tabla
@@ -5967,19 +5991,35 @@
             const tbody = document.querySelector('#usersTable tbody');
             if (!tbody) return;
             
-            tbody.innerHTML = '';
-            users.forEach(user => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${sanitizeHtml(user.nombre)}</td>
-                    <td>${sanitizeHtml(user.email)}</td>
-                    <td>${user.rol?.descripcion ? sanitizeHtml(user.rol.descripcion) : 'Sin rol'}</td>
-                    <td>${user.activo ? 'Activo' : 'Inactivo'}</td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="editUser(${user.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteUser(${user.id})">Eliminar</button>
-                    </td>
-                `;
+            renderListWithFragment(tbody, users, user => {
+                const row = document.createElement('tr');
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = user.nombre || '';
+
+                const emailCell = document.createElement('td');
+                emailCell.textContent = user.email || '';
+
+                const roleCell = document.createElement('td');
+                roleCell.textContent = user.rol?.descripcion || 'Sin rol';
+
+                const statusCell = document.createElement('td');
+                statusCell.textContent = user.activo ? 'Activo' : 'Inactivo';
+
+                const actionsCell = document.createElement('td');
+                const editButton = document.createElement('button');
+                editButton.className = 'btn btn-secondary';
+                editButton.textContent = 'Editar';
+                editButton.addEventListener('click', () => editUser(user.id));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-danger';
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.addEventListener('click', () => deleteUser(user.id));
+
+                actionsCell.append(editButton, deleteButton);
+                row.append(nameCell, emailCell, roleCell, statusCell, actionsCell);
+                return row;
             });
             
             setTimeout(setupTableScroll, 50);
