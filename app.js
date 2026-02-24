@@ -421,10 +421,8 @@
                 
                 try {
                     localStorage.setItem('correo', user.email);
-                    localStorage.setItem('userRole', user.rol?.nombre || '');
-                    localStorage.setItem('userName', user.nombre || '');
                 } catch (storageError) {
-                    console.warn('No fue posible persistir la sesión en localStorage:', storageError);
+                    console.warn('No fue posible persistir el correo de sesión en localStorage:', storageError);
                 }
 
                 saveSessionState();
@@ -478,8 +476,6 @@
                 
                 try {
                     localStorage.removeItem('correo');
-                    localStorage.removeItem('userRole');
-                    localStorage.removeItem('userName');
                 } catch (storageError) {
                     console.warn('No fue posible limpiar los datos de sesión locales:', storageError);
                 }
@@ -1116,6 +1112,7 @@
             if (logoutBtn) logoutBtn.style.display = 'block';
 
             setupNavigation();
+            applySessionScopedMenuVisibility();
             loadInitialData();
             resetSessionTimeout();
         }
@@ -7292,9 +7289,8 @@
             // Iniciar conexión a Supabase en cuanto las librerías estén listas
             console.log('🔗 Iniciando conexión a Supabase...');
             initSupabase().then((connected) => {
-                if (connected && restoreSessionState()) {
-                    showDashboard();
-                    updateSecurityIndicator('secure', 'Sesión Activa');
+                if (connected) {
+                    clearSessionState();
                 }
             });
 
@@ -7431,36 +7427,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-  const user = localStorage.getItem('correo');
-  const btnVerificar = document.getElementById('btnVerificarSalida');
-  const seccionVerificar = document.getElementById('verificarSectionDiv');
-
-  const permitidos = [
-    'convivencia@colgemelli.edu.co',
-    'vigilancia@colgemelli.edu.co',
-    'sistemas@colgemelli.edu.co'
-  ];
-
-  if (permitidos.includes(user)) {
-    if (btnVerificar) btnVerificar.style.display = 'inline-block';
-
-    // Solo convivencia en modo consulta
-    if (user === 'convivencia@colgemelli.edu.co') {
-      const observer = new MutationObserver(() => {
-        document.querySelectorAll('.btn-autorizacion').forEach(btn => btn.style.display = 'none');
-      });
-      if (seccionVerificar) {
-        observer.observe(seccionVerificar, { childList: true, subtree: true });
-      }
-    }
-  } else {
-    if (btnVerificar) btnVerificar.style.display = 'none';
-  }
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-  const user = localStorage.getItem('correo');
+function applySessionScopedMenuVisibility() {
+  const user = (currentUser?.email || '').toLowerCase();
   const btnVerificar = document.getElementById('btnVerificarSalida');
   const btnControl = document.getElementById('btnControlSalidas');
   const seccionVerificar = document.getElementById('verificarSectionDiv');
@@ -7472,30 +7440,36 @@ document.addEventListener('DOMContentLoaded', function () {
     'sistemas@colgemelli.edu.co'
   ];
 
-  if (permitidos.includes(user)) {
-    if (btnVerificar) btnVerificar.style.display = 'inline-block';
-
-    if (user === 'convivencia@colgemelli.edu.co') {
-      if (btnControl) btnControl.style.display = 'inline-block';
-      const observer1 = new MutationObserver(() => {
-        document.querySelectorAll('.btn-autorizacion').forEach(btn => btn.style.display = 'none');
-      });
-      if (seccionVerificar) {
-        observer1.observe(seccionVerificar, { childList: true, subtree: true });
-      }
-      const observer2 = new MutationObserver(() => {
-        document.querySelectorAll('.btn-eliminar').forEach(btn => btn.style.display = 'none');
-      });
-      if (seccionControl) {
-        observer2.observe(seccionControl, { childList: true, subtree: true });
-      }
-    } else {
-      if (btnControl) btnControl.style.display = 'inline-block';
-    }
-  } else {
+  if (!permitidos.includes(user)) {
     if (btnVerificar) btnVerificar.style.display = 'none';
     if (btnControl) btnControl.style.display = 'none';
+    return;
   }
+
+if (btnVerificar) btnVerificar.style.display = 'inline-block';
+  if (btnControl) btnControl.style.display = 'inline-block';
+       
+  if (user !== 'convivencia@colgemelli.edu.co') {
+    return;
+  }
+
+  const observer1 = new MutationObserver(() => {
+    document.querySelectorAll('.btn-autorizacion').forEach(btn => btn.style.display = 'none');
+  });
+  if (seccionVerificar) {
+    observer1.observe(seccionVerificar, { childList: true, subtree: true });
+  }
+
+    const observer2 = new MutationObserver(() => {
+    document.querySelectorAll('.btn-eliminar').forEach(btn => btn.style.display = 'none');
+  });
+  if (seccionControl) {
+    observer2.observe(seccionControl, { childList: true, subtree: true });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  applySessionScopedMenuVisibility();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
