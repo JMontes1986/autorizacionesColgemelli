@@ -1,13 +1,13 @@
 // Configuración de red/API extraída de app.js
 
-const envExists = typeof window !== 'undefined' && window.process && window.process.env;
+const appConfig = window.appConfig || {};
 
 const apiClientConfig = {
-  SUPABASE_URL: envExists ? window.process.env.SUPABASE_URL : '',
-  SUPABASE_ANON_KEY: envExists ? window.process.env.SUPABASE_ANON_KEY : '',
-  GROQ_API_KEY: envExists ? window.process.env.GROQ_API_KEY : '',
-  GROQ_API_BASE_URL: 'https://api.groq.com/openai/v1',
-  GROQ_MODEL: 'openai/gpt-oss-120b'
+  SUPABASE_URL: appConfig.SUPABASE_URL || '',
+  SUPABASE_ANON_KEY: appConfig.SUPABASE_ANON_KEY || '',
+  GROQ_API_KEY: appConfig.GROQ_API_KEY || '',
+  GROQ_API_BASE_URL: appConfig.GROQ_API_BASE_URL || 'https://api.groq.com/openai/v1',
+  GROQ_MODEL: appConfig.GROQ_MODEL || 'openai/gpt-oss-120b'
 };
 
 const GROQ_API_KEY = apiClientConfig.GROQ_API_KEY;
