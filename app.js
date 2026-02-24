@@ -1016,23 +1016,39 @@
                     }
                 });
 
-                tableBody.innerHTML = selectedStudents.map((student) => {
+                const rowsFragment = document.createDocumentFragment();
+
+                selectedStudents.forEach((student) => {
                     const monthCount = monthCounts.get(student.id) || 0;
                     const periodCount = periodCounts.get(student.id) || 0;
                     const lastArrival = lastArrivalMap.get(student.id);
                     const excuseLabel = lastArrival
                         ? (lastArrival.excusa ? 'Con excusa' : 'Sin excusa')
                         : 'Sin registros';
-                    return `
-                        <tr>
-                          <td>${sanitizeHtml(student.name)}</td>
-                          <td>${monthCount}</td>
-                          <td>${periodCount}</td>
-                          <td>${lastArrival ? formatDate(lastArrival.fecha) : 'Sin registros'}</td>
-                          <td>${excuseLabel}</td>
-                        </tr>
-                    `;
-                }).join('');
+
+                       const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    const monthCountCell = document.createElement('td');
+                    const periodCountCell = document.createElement('td');
+                    const lastArrivalCell = document.createElement('td');
+                    const excuseCell = document.createElement('td');
+
+                    nameCell.textContent = student.name || '';
+                    monthCountCell.textContent = String(monthCount);
+                    periodCountCell.textContent = String(periodCount);
+                    lastArrivalCell.textContent = lastArrival ? formatDate(lastArrival.fecha) : 'Sin registros';
+                    excuseCell.textContent = excuseLabel;
+
+                    row.appendChild(nameCell);
+                    row.appendChild(monthCountCell);
+                    row.appendChild(periodCountCell);
+                    row.appendChild(lastArrivalCell);
+                    row.appendChild(excuseCell);
+                    rowsFragment.appendChild(row);
+                });
+
+                tableBody.textContent = '';
+                tableBody.appendChild(rowsFragment);
 
                 summary.innerHTML = `
                     <p class="mb-0">
