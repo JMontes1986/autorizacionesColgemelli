@@ -4337,7 +4337,12 @@
 
                 const { data: authorizations, error } = await supabaseClient
                     .from('autorizaciones_personal')
-                    .select('*')
+                    ..select(`
+                        *,
+                        colaborador:personal_colegio(id, nombre, cargo, cedula),
+                        motivo:motivos(id, nombre),
+                        usuario:usuarios!autorizaciones_personal_usuario_autorizador_id_fkey(id, nombre, email)
+                    `)
                     .eq('fecha_salida', todayColombia)
                     .eq('autorizada', true)
                     .or('salida_efectiva.is.null,and(requiere_regreso.eq.true,regreso_efectivo.is.null)')
@@ -4345,7 +4350,7 @@
 
                 if (error) throw error;
 
-                 const records = authorizations || [];
+                const records = authorizations || [];
                 const pendingExitAuths = records.filter(auth => !auth.salida_efectiva);
                 const pendingReturnAuths = records.filter(auth => auth.salida_efectiva && auth.requiere_regreso && !auth.regreso_efectivo);
 
@@ -4358,41 +4363,6 @@
                     `;
                     return;
                 }
-
-                const relevantAuths = [...pendingExitAuths, ...pendingReturnAuths];
-                const staffIds = [...new Set(relevantAuths.map(auth => auth.colaborador_id))];
-                const reasonIds = [...new Set(relevantAuths.map(auth => auth.motivo_id).filter(Boolean))];
-                const userIds = [...new Set(relevantAuths.map(auth => auth.usuario_autorizador_id))];
-
-                const [staffResult, reasonsResult, usersResult] = await Promise.all([
-                    supabaseClient
-                        .from('personal_colegio')
-                        .select('id, nombre, cargo, cedula')
-                        .in('id', staffIds),
-                    reasonIds.length > 0
-                        ? supabaseClient.from('motivos').select('id, nombre').in('id', reasonIds)
-                        : Promise.resolve({ data: [] }),
-                    supabaseClient
-                        .from('usuarios')
-                        .select('id, nombre, email')
-                        .in('id', userIds)
-                ]);
-
-                const staffMap = {};
-                const reasonMap = {};
-                const userMap = {};
-
-                staffResult.data?.forEach(member => {
-                    staffMap[member.id] = member;
-                });
-
-                reasonsResult.data?.forEach(reason => {
-                    reasonMap[reason.id] = reason;
-                });
-
-                usersResult.data?.forEach(user => {
-                    userMap[user.id] = user;
-                });
 
                 const currentTime = getColombiaTime();
                 const totalPending = pendingExitAuths.length + pendingReturnAuths.length;
@@ -4417,9 +4387,9 @@
                     title.textContent = '🚶‍♀️ Salidas por confirmar';
                     fragment.appendChild(title);
                     pendingExitAuths.forEach(auth => {
-                        const staff = staffMap[auth.colaborador_id];
-                        const reason = reasonMap[auth.motivo_id];
-                        const user = userMap[auth.usuario_autorizador_id];
+                        const staff = auth.colaborador;
+                        const reason = auth.motivo;
+                        const user = auth.usuario;
                         const expectedReturn = auth.requiere_regreso
                             ? (auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida')
                             : null;
@@ -4459,9 +4429,9 @@
                     title.textContent = '🔁 Regresos por registrar';
                     fragment.appendChild(title);
                     pendingReturnAuths.forEach(auth => {
-                        const staff = staffMap[auth.colaborador_id];
-                        const reason = reasonMap[auth.motivo_id];
-                        const user = userMap[auth.usuario_autorizador_id];
+                        const staff = auth.colaborador;
+                        const reason = auth.motivo;
+                        const user = auth.usuario;
                         const exitTime = auth.salida_efectiva ? formatDateTime(auth.salida_efectiva) : formatTime(auth.hora_salida);
                         const expectedReturn = auth.hora_regreso_estimada ? formatTime(auth.hora_regreso_estimada) : 'Sin hora definida';
 
