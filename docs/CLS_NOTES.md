@@ -13,3 +13,23 @@ Al modificar estas funciones procura:
 1. Definir alturas mínimas para contenedores antes de cargar contenido.
 2. Utilizar elementos posicionados de forma absoluta/fija para tarjetas temporales.
 3. Evitar reemplazar nodos grandes si basta con actualizar su contenido interno.
+
+## Guideline de render masivo (tablas/tarjetas)
+
+Para listas grandes reutiliza el helper `renderListWithFragment(container, items, renderer)` disponible en `modules/ui_utils.js`.
+
+- Construye nodos con `document.createElement` dentro de `renderer`.
+- Deja que el helper haga un único `replaceChildren(fragment)` al final.
+- Evita concatenar `innerHTML` dentro de bucles (`for`, `forEach`, `map`) porque aumenta reflows, GC y costo de mantenimiento.
+
+Ejemplo recomendado:
+
+```js
+renderListWithFragment(tbody, users, user => {
+  const row = document.createElement('tr');
+  const nameCell = document.createElement('td');
+  nameCell.textContent = user.nombre || '';
+  row.appendChild(nameCell);
+  return row;
+});
+```
