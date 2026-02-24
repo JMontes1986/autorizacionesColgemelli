@@ -324,13 +324,6 @@
                 const email = document.getElementById('email').value.trim().toLowerCase();
                 const password = document.getElementById('password').value;
 
-                const cryptoReady = ensureCryptoJSLoaded();
-                if (!cryptoReady) {
-                    showError('No se pudo cargar la librería de cifrado');
-                    resetCaptcha();
-                    return;
-                }
-
                 // Validaciones de seguridad
                 if (!email || !password) {
                     showError('Por favor, ingresa email y contraseña');
@@ -5333,12 +5326,6 @@
                 const password = document.getElementById('userPassword').value;
                 const roleId = document.getElementById('userRole').value;
 
-                const cryptoReady = ensureCryptoJSLoaded();
-                if (!cryptoReady) {
-                    showError('No se pudo cargar la librería de cifrado');
-                    return;
-                }
-
                 // Validaciones de seguridad
                 if (!name || !email || !roleId) {
                     showError('Por favor, completa todos los campos obligatorios');
@@ -5355,13 +5342,8 @@
                     return;
                 }
 
-                if (!currentEditingId && !password) {
-                    showError('La contraseña es obligatoria para nuevos usuarios');
-                    return;
-                }
-
-                if (password && !validatePassword(password)) {
-                    showError('La contraseña debe tener entre 8 y 50 caracteres');
+                if (password && password.trim() !== '') {
+                    showError('La contraseña se administra en Supabase Auth. Gestiona cambios desde Authentication > Users.');
                     return;
                 }
 
@@ -5372,10 +5354,6 @@
                         email: email,
                         rol_id: roleId
                     };
-                    
-                    if (password && password.trim() !== '') {
-                        updateData.password_hash = encryptPassword(password);
-                    }
 
                     result = await supabaseClient
                         .from('usuarios')
@@ -5393,7 +5371,6 @@
                         .insert([{
                             nombre: name,
                             email: email,
-                            password_hash: encryptPassword(password),
                             rol_id: roleId,
                             activo: true
                         }]);
@@ -5447,12 +5424,6 @@
                     return;
                 }
 
-                const cryptoReady = ensureCryptoJSLoaded();
-                if (!cryptoReady) {
-                    showError('No se pudo cargar la librería de cifrado');
-                    return;
-                }
-
                 if (!name || !email) {
                     showError('Por favor, completa todos los campos obligatorios');
                     return;
@@ -5468,13 +5439,8 @@
                     return;
                 }
 
-                if (!currentEditingId && !password) {
-                    showError('La contraseña es obligatoria para nuevos vigilantes');
-                    return;
-                }
-
-                if (password && !validatePassword(password)) {
-                    showError('La contraseña debe tener entre 8 y 50 caracteres');
+                 if (password && password.trim() !== '') {
+                    showError('La contraseña se administra en Supabase Auth. Gestiona cambios desde Authentication > Users.');
                     return;
                 }
 
@@ -5485,10 +5451,6 @@
                         email: email,
                         rol_id: guardRoleId
                     };
-
-                    if (password && password.trim() !== '') {
-                        updateData.password_hash = encryptPassword(password);
-                    }
 
                     result = await supabaseClient
                         .from('usuarios')
@@ -5506,7 +5468,6 @@
                         .insert([{
                             nombre: name,
                             email: email,
-                            password_hash: encryptPassword(password),
                             rol_id: guardRoleId,
                             activo: true
                         }]);
