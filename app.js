@@ -4945,41 +4945,56 @@
                 const usersById = await fetchUsersById(userIds);
 
                 const fragment = document.createDocumentFragment();
-                   
-                logs.forEach(log => {
-                    const row = document.createElement('tr');
-                    const typeClass = getLogTypeClass(log.tipo);
-                    let details = {};
-                    const user = log.usuario || usersById[log.usuario_id];
-                       
-                    try {
-                        details = log.detalles ? JSON.parse(log.detalles) : {};
-                    } catch (e) {
-                        details = { error: 'Error al parsear detalles' };
-                    }
-                    
-                    const detailsString = JSON.stringify(details);
 
-                    row.insertCell().textContent = formatDateTime(log.timestamp);
-                    row.insertCell().textContent = user ? sanitizeHtml(user.nombre) : 'Sistema';
+                try {
+                    logs.forEach(log => {
+                        const row = document.createElement('tr');
+                        const typeClass = getLogTypeClass(log.tipo);
+                        let details = {};
+                        const user = log.usuario || usersById[log.usuario_id];
 
-                    const typeCell = row.insertCell();
-                    const typeBadge = document.createElement('span');
-                    typeBadge.className = `log-type ${typeClass}`;
-                    typeBadge.textContent = sanitizeHtml(log.tipo);
-                    typeCell.appendChild(typeBadge);
+                        if (typeof log.detalles === 'string' && log.detalles.trim()) {
+                            try {
+                                details = JSON.parse(log.detalles);
+                            } catch (parseError) {
+                                details = { error: 'Error al parsear detalles' };
+                            }
+                        } else if (log.detalles && typeof log.detalles === 'object') {
+                            details = log.detalles;
+                        }
 
-                    row.insertCell().textContent = sanitizeHtml(log.accion);
+                            const detailsString = JSON.stringify(details);
 
-                    const detailsCell = row.insertCell();
-                    detailsCell.title = sanitizeHtml(detailsString);
-                    detailsCell.textContent = `${sanitizeHtml(detailsString.substring(0, 50))}...`;
+                        row.insertCell().textContent = formatDateTime(log.timestamp);
+                        row.insertCell().textContent = user ? sanitizeHtml(user.nombre) : 'Sistema';
 
-                    row.insertCell().textContent = sanitizeHtml(log.ip_address || 'N/A');
-                    fragment.appendChild(row);
-                });
+                        const typeCell = row.insertCell();
+                        const typeBadge = document.createElement('span');
+                        typeBadge.className = `log-type ${typeClass}`;
+                        typeBadge.textContent = sanitizeHtml(log.tipo);
+                        typeCell.appendChild(typeBadge);
 
-                tbody.appendChild(fragment);
+                        row.insertCell().textContent = sanitizeHtml(log.accion);
+
+                        const detailsCell = row.insertCell();
+                        detailsCell.title = sanitizeHtml(detailsString);
+                        detailsCell.textContent = `${sanitizeHtml(detailsString.substring(0, 50))}...`;
+
+                row.insertCell().textContent = sanitizeHtml(log.ip_address || 'N/A');
+                        fragment.appendChild(row);
+                    });
+
+                    tbody.appendChild(fragment);
+                } catch (renderError) {
+                    console.error('Error al renderizar logs:', renderError);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #b42318; padding: 20px;">
+                                No fue posible renderizar los logs de auditoría por datos malformados
+                            </td>
+                        </tr>
+                    `;
+                }
                    
                 showSuccess(`Se cargaron ${logs.length} registros de logs`);
                 
