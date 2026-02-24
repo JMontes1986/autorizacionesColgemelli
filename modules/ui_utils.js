@@ -372,6 +372,43 @@
             document.body.appendChild(quickActions);
         }
 
+/**
+         * Renderiza listas masivas usando DocumentFragment para reducir reflows/repaints.
+         * @param {Element} container - Nodo contenedor donde se agregan los elementos.
+         * @param {Array} items - Datos a renderizar.
+         * @param {(item: any, index: number) => Node|Node[]|null} renderer - Función que retorna nodo(s) por ítem.
+         * @example
+         * renderListWithFragment(tbody, students, (student) => {
+         *   const row = document.createElement('tr');
+         *   row.innerHTML = `<td>${sanitizeHtml(student.nombre)}</td>`;
+         *   return row;
+         * });
+         */
+        function renderListWithFragment(container, items, renderer) {
+            if (!container || typeof renderer !== 'function') return;
+
+            const fragment = document.createDocumentFragment();
+            const list = Array.isArray(items) ? items : [];
+
+            list.forEach((item, index) => {
+                const rendered = renderer(item, index);
+                if (!rendered) return;
+
+                if (Array.isArray(rendered)) {
+                    rendered.forEach(node => {
+                        if (node instanceof Node) fragment.appendChild(node);
+                    });
+                    return;
+                }
+
+                if (rendered instanceof Node) {
+                    fragment.appendChild(rendered);
+                }
+            });
+
+            container.replaceChildren(fragment);
+        }
+
 const uiUtilsApi = {
     ensureEChartsLoaded,
     ensureCryptoJSLoaded,
@@ -390,7 +427,8 @@ const uiUtilsApi = {
     enhanceTouchExperience,
     handleOrientationChange,
     optimizeViewport,
-    createMobileQuickActions
+    createMobileQuickActions,
+    renderListWithFragment
 };
 
 Object.assign(window, uiUtilsApi);
