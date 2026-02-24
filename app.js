@@ -7288,22 +7288,20 @@
             // Configurar listeners de actividad
             setupActivityListeners();
             
-            // Inicializar responsive design
-            detectDeviceAndAdjustUI();
+            // Inicializar utilidades de UI
             setupTableScroll();
             enhanceTouchExperience();
             optimizeViewport();
             createMobileQuickActions();
             
-            // Listeners para cambios de ventana
+            // Listener para cambios de ventana (solo indicadores de scroll)
             window.addEventListener('resize', () => {
                 clearTimeout(window.resizeTimeout);
                 window.resizeTimeout = setTimeout(() => {
-                    detectDeviceAndAdjustUI();
                     setupTableScroll();
                 }, 250);
             });
-            
+               
             window.addEventListener('orientationchange', handleOrientationChange);
             
             // Iniciar conexión a Supabase en cuanto las librerías estén listas
