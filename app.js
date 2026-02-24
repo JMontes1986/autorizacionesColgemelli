@@ -4965,28 +4965,43 @@
                 const userIds = [...new Set(logs.map(log => log.usuario_id).filter(Boolean))];
                 const usersById = await fetchUsersById(userIds);
 
+                const fragment = document.createDocumentFragment();
+                   
                 logs.forEach(log => {
-                    const row = tbody.insertRow();
+                    const row = document.createElement('tr');
                     const typeClass = getLogTypeClass(log.tipo);
                     let details = {};
                     const user = log.usuario || usersById[log.usuario_id];
-                        
+                       
                     try {
                         details = log.detalles ? JSON.parse(log.detalles) : {};
                     } catch (e) {
                         details = { error: 'Error al parsear detalles' };
                     }
                     
-                    row.innerHTML = `
-                        <td>${formatDateTime(log.timestamp)}</td>
-                        <td>${user ? sanitizeHtml(user.nombre) : 'Sistema'}</td>
-                        <td><span class="log-type ${typeClass}">${sanitizeHtml(log.tipo)}</span></td>
-                        <td>${sanitizeHtml(log.accion)}</td>
-                        <td title="${sanitizeHtml(JSON.stringify(details))}">${sanitizeHtml(JSON.stringify(details).substring(0, 50))}...</td>
-                        <td>${sanitizeHtml(log.ip_address || 'N/A')}</td>
-                    `;
+                    const detailsString = JSON.stringify(details);
+
+                    row.insertCell().textContent = formatDateTime(log.timestamp);
+                    row.insertCell().textContent = user ? sanitizeHtml(user.nombre) : 'Sistema';
+
+                    const typeCell = row.insertCell();
+                    const typeBadge = document.createElement('span');
+                    typeBadge.className = `log-type ${typeClass}`;
+                    typeBadge.textContent = sanitizeHtml(log.tipo);
+                    typeCell.appendChild(typeBadge);
+
+                    row.insertCell().textContent = sanitizeHtml(log.accion);
+
+                    const detailsCell = row.insertCell();
+                    detailsCell.title = sanitizeHtml(detailsString);
+                    detailsCell.textContent = `${sanitizeHtml(detailsString.substring(0, 50))}...`;
+
+                    row.insertCell().textContent = sanitizeHtml(log.ip_address || 'N/A');
+                    fragment.appendChild(row);
                 });
 
+                tbody.appendChild(fragment);
+                   
                 showSuccess(`Se cargaron ${logs.length} registros de logs`);
                 
                 // Configurar scroll después de cargar logs
