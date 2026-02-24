@@ -1,22 +1,22 @@
        // Módulos ES6 externos: ui_utils, dashboard, api_client y auth
       // Las funciones globales se registran en window desde /modules/*.js
 
-     // Configuración de Supabase
-        let envExists = false;
-        if (typeof window !== 'undefined' && window.process && window.process.env) {
-            envExists = true;
-        } else {
+     // Configuración de Supabase y app centralizada desde módulos ES6
+        const appConfig = window.appConfig || {};
+        const envExists = !!appConfig.envExists;
+
+        if (!envExists) {
             updateConnectionStatus(false, 'Configuración no encontrada');
             console.error('❌ process.env no disponible. Configuración no encontrada');
         }
 
-        const SUPABASE_URL = envExists ? window.process.env.SUPABASE_URL : '';
-        const SUPABASE_ANON_KEY = envExists ? window.process.env.SUPABASE_ANON_KEY : '';
-        const GROQ_API_KEY = envExists ? window.process.env.GROQ_API_KEY : '';
-        const GROQ_API_BASE_URL = 'https://api.groq.com/openai/v1';
-        const GROQ_MODEL = 'openai/gpt-oss-120b';
-        const STORAGE_BUCKET = 'autorizaciones';
-        const EXIT_EDIT_USERS = [
+        const SUPABASE_URL = appConfig.SUPABASE_URL || '';
+        const SUPABASE_ANON_KEY = appConfig.SUPABASE_ANON_KEY || '';
+        const GROQ_API_KEY = appConfig.GROQ_API_KEY || '';
+        const GROQ_API_BASE_URL = appConfig.GROQ_API_BASE_URL || 'https://api.groq.com/openai/v1';
+        const GROQ_MODEL = appConfig.GROQ_MODEL || 'openai/gpt-oss-120b';
+        const STORAGE_BUCKET = appConfig.STORAGE_BUCKET || 'autorizaciones';
+        const EXIT_EDIT_USERS = appConfig.EXIT_EDIT_USERS || [
             'convivencia@colgemelli.edu.co',
             'sistemas@colgemelli.edu.co'
         ];
