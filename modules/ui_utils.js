@@ -74,115 +74,6 @@
             if (simpleConfirmed) simpleConfirmed.textContent = confirmedCount;
         }
 
-        // Detectar tipo de dispositivo y ajustar UI
-        function detectDeviceAndAdjustUI() {
-            const isMobile = window.innerWidth <= 480;
-            const isTablet = window.innerWidth > 480 && window.innerWidth <= 768;
-            const isDesktop = window.innerWidth > 768;
-            
-            // Ajustar tabla en móvil
-            if (isMobile) {
-                adjustTablesForMobile();
-                adjustModalsForMobile();
-                adjustCardsForMobile();
-            }
-            
-            // Ajustar navegación según el dispositivo
-            adjustNavigationForDevice();
-            
-            // Ajustar captcha según el tamaño
-            adjustCaptchaSize();
-        }
-
-        function adjustTablesForMobile() {
-            const tables = document.querySelectorAll('.table');
-            tables.forEach(table => {
-                // Configurar scroll para la nueva estructura
-                const wrapper = table.closest('.table-wrapper');
-                if (wrapper) {
-                    updateScrollIndicators(wrapper);
-                }
-            });
-        }
-
-        function adjustModalsForMobile() {
-            const modals = document.querySelectorAll('.modal-content');
-            const isMobile = window.innerWidth <= 480;
-            
-            modals.forEach(modal => {
-                if (isMobile) {
-                    modal.style.margin = '2% auto';
-                    modal.style.width = '95%';
-                    modal.style.maxHeight = '95vh';
-                } else {
-                    modal.style.margin = '5% auto';
-                    modal.style.width = '90%';
-                    modal.style.maxHeight = '90vh';
-                }
-            });
-        }
-
-        function adjustCardsForMobile() {
-            const cards = document.querySelectorAll('.verification-card');
-            const isMobile = window.innerWidth <= 480;
-            
-            cards.forEach(card => {
-                const content = card.querySelector('.verification-card-content');
-                if (content) {
-                    if (isMobile) {
-                        content.style.gridTemplateColumns = '1fr';
-                        content.style.gap = '15px';
-                    } else {
-                        content.style.gridTemplateColumns = '1fr 1fr';
-                        content.style.gap = '20px';
-                    }
-                }
-            });
-        }
-
-        function adjustNavigationForDevice() {
-            const navButtons = document.getElementById('navButtons');
-            if (!navButtons) return;
-            
-            const isMobile = window.innerWidth <= 480;
-            
-            if (isMobile) {
-                navButtons.style.flexDirection = 'column';
-                navButtons.style.gap = '10px';
-                
-                // Hacer botones de navegación más grandes en móvil
-                const buttons = navButtons.querySelectorAll('.btn');
-                buttons.forEach(btn => {
-                    btn.style.width = '100%';
-                    btn.style.padding = '12px';
-                    btn.style.fontSize = '14px';
-                });
-            } else {
-                navButtons.style.flexDirection = 'row';
-                navButtons.style.gap = '15px';
-                
-                const buttons = navButtons.querySelectorAll('.btn');
-                buttons.forEach(btn => {
-                    btn.style.width = 'auto';
-                    btn.style.padding = '12px 24px';
-                    btn.style.fontSize = '16px';
-                });
-            }
-        }
-
-        function adjustCaptchaSize() {
-            const captchaContainer = document.querySelector('.captcha-container');
-            if (!captchaContainer) return;
-            
-            const isMobile = window.innerWidth <= 480;
-            
-            if (isMobile) {
-                captchaContainer.style.transform = 'scale(0.9)';
-                captchaContainer.style.transformOrigin = 'center';
-            } else {
-                captchaContainer.style.transform = 'scale(1)';
-            }
-        }
 
         function initMobileNavigation() {
             const mobileButtons = document.querySelectorAll('[data-mobile-target]');
@@ -291,8 +182,7 @@
         function handleOrientationChange() {
             // Esperar a que la orientación cambie completamente
             setTimeout(() => {
-                detectDeviceAndAdjustUI();
-                optimizeTableScroll();
+                setupTableScroll();
             }, 200);
         }
 
@@ -414,12 +304,6 @@ const uiUtilsApi = {
     ensureCryptoJSLoaded,
     createSimpleCharts,
     updateSimpleCharts,
-    detectDeviceAndAdjustUI,
-    adjustTablesForMobile,
-    adjustModalsForMobile,
-    adjustCardsForMobile,
-    adjustNavigationForDevice,
-    adjustCaptchaSize,
     initMobileNavigation,
     setupTableScroll,
     updateScrollIndicators,
