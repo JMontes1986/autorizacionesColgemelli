@@ -2635,8 +2635,28 @@
                     
                 const observationField = document.getElementById(`visitor-exit-observations-${normalizedEntryId}`);
                 const observations = observationField?.value.trim() || null;
-                    
-                const { error: updateError } = await supabaseClient
+                
+                const { data: currentEntry, error: currentEntryError } = await supabaseClient
+                    .from('ingresos_visitantes')
+                    .select('id, salida_efectiva')
+                    .eq('id', normalizedEntryId)
+                    .maybeSingle();
+
+                if (currentEntryError) throw currentEntryError;
+
+                if (!currentEntry) {
+                    showError('No se encontró el ingreso del visitante para registrar la salida.', 'visitorExitError');
+                    await loadPendingVisitorExits();
+                    return;
+                }
+
+                if (currentEntry.salida_efectiva) {
+                    showError('La salida de este visitante ya fue registrada anteriormente.', 'visitorExitError');
+                    await loadPendingVisitorExits();
+                    return;
+                }
+                   
+                const { data: updatedEntry, error: updateError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .update({
                         salida_efectiva: getColombiaDateTime(),
@@ -2644,10 +2664,16 @@
                         salida_vigilante_id: currentUser?.id || null
                     })
                     .eq('id', normalizedEntryId)
-                    .is('salida_efectiva', null);
+                    .select('id, salida_efectiva')
+                    .maybeSingle();
 
                 if (updateError) throw updateError;
-                 
+                if (!updatedEntry?.salida_efectiva) {
+                    showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
+                    await loadPendingVisitorExits();
+                    return;
+                }
+                   
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                 await loadPendingVisitorExits();
             } catch (error) {
