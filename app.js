@@ -2636,7 +2636,7 @@
                 const observationField = document.getElementById(`visitor-exit-observations-${normalizedEntryId}`);
                 const observations = observationField?.value.trim() || null;
                     
-                const { data: updatedEntry, error: updateError } = await supabaseClient
+                const { error: updateError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .update({
                         salida_efectiva: getColombiaDateTime(),
@@ -2644,14 +2644,10 @@
                         salida_vigilante_id: currentUser?.id || null
                     })
                     .eq('id', normalizedEntryId)
-                    .select('id, salida_efectiva')
-                    .maybeSingle();
+                    .is('salida_efectiva', null);
 
                 if (updateError) throw updateError;
-                if (!updatedEntry) {
-                    throw new Error('No fue posible actualizar el registro de salida del visitante. Verifica permisos e intenta de nuevo.');
-                }
-                    
+                 
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                 await loadPendingVisitorExits();
             } catch (error) {
