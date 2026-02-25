@@ -2668,15 +2668,17 @@
                 const observationField = document.getElementById(`visitor-exit-observations-${normalizedEntryId}`);
                 const observations = observationField?.value.trim() || null;
                 
-                const { data: currentEntry, error: currentEntryError } = await supabaseClient
+                const { data: currentEntryRows, error: currentEntryError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .select('id, salida_efectiva')
                     .eq('id', normalizedEntryId)
-                    .maybeSingle();
+                    .limit(1);
 
                 if (currentEntryError) throw currentEntryError;
 
-                const currentEntryRecord = currentEntry || null;
+                const currentEntryRecord = Array.isArray(currentEntryRows) && currentEntryRows.length > 0
+                    ? currentEntryRows[0]
+                    : null;
 
                 if (!currentEntryRecord) {
                     showError('No se encontró el ingreso del visitante para registrar la salida.', 'visitorExitError');
@@ -2690,21 +2692,19 @@
                     return;
                 }
                    
-                const { data: updatedEntry, error: updateError } = await supabaseClient
+                const { error: updateError, count: updatedRows } = await supabaseClient
                     .from('ingresos_visitantes')
                     .update({
                         salida_efectiva: getColombiaDateTime(),
                         salida_observaciones: observations,
                         salida_vigilante_id: currentUser?.id || null
-                    })
+                    }, { count: 'exact' })
                     .eq('id', normalizedEntryId)
-                    .select('id, salida_efectiva')
-                    .maybeSingle();
+                    .is('salida_efectiva', null);
 
                 if (updateError) throw updateError;
 
-                const updatedEntryRecord = updatedEntry || null;
-                if (!updatedEntryRecord?.salida_efectiva) {
+                if (!updatedRows) {
                     showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
                     await loadPendingVisitorExits();
                     return;
