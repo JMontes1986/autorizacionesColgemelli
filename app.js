@@ -2692,23 +2692,24 @@
                     return;
                 }
                    
-                const { error: updateError, count: updatedRows } = await supabaseClient
-                    .from('ingresos_visitantes')
-                    .update({
-                        salida_efectiva: getColombiaDateTime(),
-                        salida_observaciones: observations,
-                        salida_vigilante_id: currentUser?.id || null
-                    }, { count: 'exact' })
-                    .eq('id', normalizedEntryId)
-                    .is('salida_efectiva', null);
-
-                if (updateError) throw updateError;
-
-                if (!updatedRows) {
-                    showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
-                    await loadPendingVisitorExits();
-                    return;
-                }
+               const { data: updateData, error: updateError } = await supabaseClient
+                  .from('ingresos_visitantes')
+                  .update({
+                  salida_efectiva: getColombiaDateTime(),
+                  salida_observaciones: observations,
+                  salida_vigilante_id: currentUser?.id || null
+                  })
+                  .eq('id', normalizedEntryId)
+                  .is('salida_efectiva', null)
+                  .select();
+              
+              if (updateError) throw updateError;
+              
+              if (!updateData || updateData.length === 0) {
+                  showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
+                  await loadPendingVisitorExits();
+                  return;
+                     }
                    
                 showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                 await loadPendingVisitorExits();
