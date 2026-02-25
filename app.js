@@ -2376,6 +2376,38 @@
                     throw new Error('No se pudo registrar el visitante.');
                 }
 
+                const isMissingColumnError = (error, columnName) => {
+                    if (!error) return false;
+                    const messageParts = [error.message, error.details, error.hint]
+                        .filter(Boolean)
+                        .map(part => part.toString().toLowerCase());
+                    const combinedMessage = messageParts.join(' ');
+                    const column = columnName.toLowerCase();
+                    if (!combinedMessage.includes(column)) return false;
+                    if (error.code && ['42703', 'PGRST204'].includes(error.code)) return true;
+                    return /does not exist|undefined column|schema cache|no existe/.test(combinedMessage);
+                };
+
+                const { data: pendingEntries, error: pendingEntriesError } = await supabaseClient
+                    .from('ingresos_visitantes')
+                    .select('id, fecha, hora')
+                    .eq('visitante_id', visitorId)
+                    .is('salida_efectiva', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (pendingEntriesError && !isMissingColumnError(pendingEntriesError, 'salida_efectiva')) {
+                    throw pendingEntriesError;
+                }
+
+                if (pendingEntries && pendingEntries.length > 0) {
+                    const lastPendingEntry = pendingEntries[0];
+                    const pendingDate = lastPendingEntry?.fecha ? formatDate(lastPendingEntry.fecha) : 'fecha no registrada';
+                    const pendingTime = lastPendingEntry?.hora ? formatTime(lastPendingEntry.hora) : 'hora no registrada';
+                    showError(`Este proveedor ya tiene un ingreso pendiente de salida (${pendingDate} - ${pendingTime}). Primero registra su salida para evitar duplicados.`, 'visitorError');
+                    return;
+                }
+                    
                 const { error: entryError } = await supabaseClient
                     .from('ingresos_visitantes')
                     .insert({
@@ -2640,17 +2672,19 @@
                     .from('ingresos_visitantes')
                     .select('id, salida_efectiva')
                     .eq('id', normalizedEntryId)
-                    .maybeSingle();
+                    .limit(1);
 
                 if (currentEntryError) throw currentEntryError;
 
-                if (!currentEntry) {
+                const currentEntryRecord = currentEntry?.[0] || null;
+
+                if (!currentEntryRecord) {
                     showError('No se encontró el ingreso del visitante para registrar la salida.', 'visitorExitError');
                     await loadPendingVisitorExits();
                     return;
                 }
 
-                if (currentEntry.salida_efectiva) {
+                if (currentEntryRecord.salida_efectiva) {
                     showError('La salida de este visitante ya fue registrada anteriormente.', 'visitorExitError');
                     await loadPendingVisitorExits();
                     return;
@@ -2665,10 +2699,12 @@
                     })
                     .eq('id', normalizedEntryId)
                     .select('id, salida_efectiva')
-                    .maybeSingle();
+                    .limit(1);
 
                 if (updateError) throw updateError;
-                if (!updatedEntry?.salida_efectiva) {
+
+                const updatedEntryRecord = updatedEntry?.[0] || null;
+                if (!updatedEntryRecord?.salida_efectiva) {
                     showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
                     await loadPendingVisitorExits();
                     return;
