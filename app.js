@@ -2672,11 +2672,11 @@
                     .from('ingresos_visitantes')
                     .select('id, salida_efectiva')
                     .eq('id', normalizedEntryId)
-                    .limit(1);
+                    .maybeSingle();
 
                 if (currentEntryError) throw currentEntryError;
 
-                const currentEntryRecord = currentEntry?.[0] || null;
+                const currentEntryRecord = currentEntry || null;
 
                 if (!currentEntryRecord) {
                     showError('No se encontró el ingreso del visitante para registrar la salida.', 'visitorExitError');
@@ -2699,11 +2699,11 @@
                     })
                     .eq('id', normalizedEntryId)
                     .select('id, salida_efectiva')
-                    .limit(1);
+                    .maybeSingle();
 
                 if (updateError) throw updateError;
 
-                const updatedEntryRecord = updatedEntry?.[0] || null;
+                const updatedEntryRecord = updatedEntry || null;
                 if (!updatedEntryRecord?.salida_efectiva) {
                     showError('No fue posible confirmar la salida del visitante. Intenta recargar la página.', 'visitorExitError');
                     await loadPendingVisitorExits();
