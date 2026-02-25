@@ -2627,8 +2627,8 @@
                     return;
                 }
 
-                const normalizedEntryId = entryId?.toString().trim();
-                if (!normalizedEntryId) {
+                const normalizedEntryId = Number.parseInt(entryId?.toString().trim(), 10);
+                if (!Number.isFinite(normalizedEntryId)) {
                     showError('No se pudo identificar el ingreso del visitante.', 'visitorExitError');
                     return;
                 }
@@ -2661,7 +2661,7 @@
                     }
 
                     if (existingEntry?.salida_efectiva) {
-                        showError('La salida del visitante ya estaba registrada. Se actualizó la lista.', 'visitorExitError');
+                        showSuccess('Salida del visitante registrada correctamente.', 'visitorExitInfo');
                         await loadPendingVisitorExits();
                         return;
                     }
