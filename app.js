@@ -1665,7 +1665,7 @@
                 const { data: staff, error } = await supabaseClient
                     .from('personal_colegio')
                     .select('*')
-                    .eq('activo', true)
+                    .or('activo.eq.true,activo.is.null')
                     .order('nombre');
 
                 if (error) throw error;
