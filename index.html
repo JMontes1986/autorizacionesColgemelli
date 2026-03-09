@@ -1,102 +1,1204 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="5;url=https://sigagemelli.vercel.app/" />
-  <title>SIGA Gemelli · Redirección</title>
-  <style>
-    :root {
-      --bg: #080b10;
-      --surface: #0f1420;
-      --accent: #6366f1;
-      --accent2: #8b5cf6;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --border: rgba(255, 255, 255, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      font-family: "DM Sans", "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2), transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.18), transparent 40%),
-        var(--bg);
-    }
-
-    .card {
-      width: min(720px, 100%);
-      background: rgba(15, 20, 32, 0.95);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px 28px;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(2rem, 5vw, 3.4rem);
-      letter-spacing: 0.08em;
-    }
-
-    p {
-      margin: 14px 0 0;
-      color: var(--muted);
-      line-height: 1.6;
-      font-size: 1.06rem;
-    }
-
-    .badge {
-      display: inline-block;
-      margin-bottom: 14px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(99, 102, 241, 0.45);
-      background: rgba(99, 102, 241, 0.12);
-      color: #c7d2fe;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .cta {
-      display: inline-block;
-      margin-top: 26px;
-      padding: 12px 20px;
-      border-radius: 10px;
-      text-decoration: none;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: white;
-      font-weight: 700;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<!-- HEADERS DE SEGURIDAD MEJORADOS -->
+    <meta content="default-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://rbeaxpaoesuryshgpvfw.supabase.co https://*.sharepoint.com https://*.1drv.ms; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://mbosvnmhnbrslfwlfcxu.supabase.co https://rbeaxpaoesuryshgpvfw.supabase.co https://*.sharepoint.com https://*.1drv.ms; frame-src 'none'; connect-src 'self' blob: https://cdn.jsdelivr.net https://mbosvnmhnbrslfwlfcxu.supabase.co https://api.groq.com; worker-src 'self' blob:" http-equiv="Content-Security-Policy"/>
+<meta content="nosniff" http-equiv="X-Content-Type-Options"/>
+<meta content="1; mode=block" http-equiv="X-XSS-Protection"/>
+<meta content="strict-origin-when-cross-origin" http-equiv="Referrer-Policy"/>
+<meta content="geolocation=(), microphone=(), camera=()" http-equiv="Permissions-Policy"/>
+<meta content="noindex, nofollow" name="robots"/>
+<title>Sistema de Salidas - Colegio Gemelli</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<!-- Supabase CDN para GitHub -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- CryptoJS para cifrado de contraseñas -->
+<script defer src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+<!-- Animaciones con GSAP -->
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <!-- ECharts desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="assets/css/theme-gemelli.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
-<body>
-  <main class="card">
-    <div class="badge">Actualización de plataforma</div>
-    <h1>SIGA GEMELLI</h1>
-    <p>
-      Esta versión de la aplicación ya no está disponible.<br />
-      Te estamos redirigiendo a la nueva plataforma de SIGA.
-    </p>
-    <p>Si no ocurre automáticamente, haz clic en el botón:</p>
-    <a class="cta" href="https://sigagemelli.vercel.app/">Ir a la nueva plataforma</a>
-  </main>
-
-  <script>
-    setTimeout(() => {
-      window.location.replace('https://sigagemelli.vercel.app/');
-    }, 1800);
-  </script>
+<body class="login-active">
+<div class="login-page d-flex align-items-center justify-content-center min-vh-100" id="loginSection">
+  <div class="card login-card shadow-sm w-100">
+    <div class="card-body">
+      <div class="text-center mb-4">
+        <img alt="Logo Colegio Gemelli" class="login-logo mb-3" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg"/>
+        <h1 class="h4 mb-1">Colegio Gemelli</h1>
+        <p class="text-muted mb-0">Control de Salidas</p>
+          <a class="hub-link mt-3" href="https://hubcolgemelli.vercel.app/" rel="noopener noreferrer" target="_blank">
+          <span class="hub-logo" aria-hidden="true">
+            <img alt="Logo Hub Colgemelli" loading="lazy" src="https://rbeaxpaoesuryshgpvfw.supabase.co/storage/v1/object/sign/IMG/Molly%20Hub.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lNDdmNzIyZi01OTc4LTRkZmQtYjM4OC1jMGRlMWJiZTgzZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJTUcvTW9sbHkgSHViLnBuZyIsImlhdCI6MTc2Nzc5Mzk4NywiZXhwIjoxNzk5MzI5OTg3fQ.83wn0HGHIvA_yQgMGD_kv-2QJZl0vAyZ0ALGoytp5fU"/>
+          </span>
+          <span class="hub-text">Ir al Hub Colgemelli</span>
+        </a>
+      </div>
+      <div class="rate-limit-warning mb-3" id="rateLimitWarning" style="display: none;">
+        ⚠️ Demasiados intentos. Por favor espera antes de intentar de nuevo.
+      </div>
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input autocomplete="username" class="form-control" id="email" maxlength="100" oninput="validateEmailInput(this)" placeholder="sistemas@colgemelli.edu.co" required="True" title="Debe ser un correo institucional válido" type="email"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Contraseña</label>
+          <div class="input-group">
+            <input autocomplete="current-password" class="form-control" id="password" maxlength="50" oninput="validatePasswordInput(this)" placeholder="••••••••" type="password"/>
+            <button class="btn btn-outline-secondary toggle-password" type="button">👁️</button>
+          </div>
+          <div class="password-strength" id="passwordStrength" style="display: none;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="captchaQuestion" for="captchaAnswer">Pregunta</label>
+          <input class="form-control" id="captchaAnswer" inputmode="numeric" placeholder="Respuesta" type="number" aria-describedby="captchaHelp" required />
+          <div class="form-text" id="captchaHelp">Responde la suma para continuar.</div>
+        </div>
+        <button class="btn btn-primary w-100" id="loginBtn" type="submit">Iniciar Sesión</button>
+        <button class="btn btn-outline-secondary w-100 mt-2" id="testConnectionBtn" type="button">🔄 Probar Conexión</button>
+        <div class="login-messages mt-3" id="loginMessages">
+          <div class="alert alert-error notification-card" id="loginError" style="visibility: hidden;"></div>
+          <div class="alert alert-success notification-card" id="loginInfo" style="visibility: hidden;"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="app-shell" id="dashboard" style="display: none;">
+  <div class="offcanvas-lg offcanvas-start app-sidebar border-end" id="sidebarMenu" tabindex="-1">
+    <div class="p-3 border-bottom">
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="sidebar-brand-text">
+            <small class="text-muted">Control de Salidas</small>
+          </div>
+        </div>
+          <div class="d-flex align-items-center gap-2">
+          <button aria-label="Cerrar menú" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" type="button"></button>
+          <button aria-label="Colapsar menú" class="btn btn-outline-secondary btn-sm sidebar-collapse-btn" id="sidebarCollapseBtn" type="button">‹</button>
+        </div>
+      </div>
+    </div>
+    <div class="p-3">
+      <div class="nav-buttons" id="navButtons">
+        <!-- Botones se cargarán dinámicamente según el rol -->
+        <button class="btn btn-primary" data-label="Control de Salidas" id="btnControlSalidas">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Control de Salidas</span>
+        </button>
+      </div>
+    </div>
+    <div class="mt-auto p-3">
+      <button id="logoutBtn" class="btn btn-outline-danger w-100" data-label="Cerrar Sesión" type="button">
+        <span class="nav-icon">🚪</span>
+        <span class="nav-text">Cerrar Sesión</span>
+      </button>
+    </div>
+  </div>
+  <div class="app-main">
+    <header class="app-topbar d-flex align-items-center gap-3 flex-wrap">
+      <div>
+        <div class="app-title">Colegio Gemelli Control de Salidas</div>
+        <div class="text-muted small">Panel operativo</div>
+      </div>
+        <div class="app-topbar-logo">
+        <img alt="Logo Colegio Gemelli" class="app-topbar-logo-image" src="https://mbosvnmhnbrslfwlfcxu.supabase.co/storage/v1/object/sign/autorizaciones/fotos/Logo%20Slogan%20Nuevo%20FINAL-04.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zZDJkZjRmNC01MjI1LTQxNGItYmYyNS0zMzZlYTg2YzAzNGEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdXRvcml6YWNpb25lcy9mb3Rvcy9Mb2dvIFNsb2dhbiBOdWV2byBGSU5BTC0wNC5wbmciLCJpYXQiOjE3NTAyOTE0NjksImV4cCI6MTc4MTgyNzQ2OX0.j8YNCebnNTncMgM_sZLQ2GSuWvDtiTIFbM5VSrm1Xcg"/>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+        <div class="security-indicator secure" id="securityIndicator">🔒 Conexión Segura</div>
+        <div class="connection-status" id="connectionStatus">
+          <span id="connectionIcon">🔴</span>
+          <span id="connectionText">Verificando conexión...</span>
+        </div>
+        <span class="badge bg-light text-dark">@j.montes86</span>
+      </div>
+        <div class="app-topbar-nav nav-buttons d-lg-none w-100" id="navButtonsMobile"></div>
+    </header>
+      <nav class="app-mobile-nav d-lg-none" aria-label="Navegación rápida">
+      <button class="mobile-nav-btn" data-mobile-target="#authorizeSectionDiv" type="button">
+        <span class="mobile-nav-icon">✅</span>
+        <span class="mobile-nav-label">Autorizar</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-target="#authorizeStaffSectionDiv" type="button">
+        <span class="mobile-nav-icon">👥</span>
+        <span class="mobile-nav-label">Personal</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-target="#historySectionDiv" type="button">
+        <span class="mobile-nav-icon">🕒</span>
+        <span class="mobile-nav-label">Historial</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-target="#dashboardSectionDiv" type="button">
+        <span class="mobile-nav-icon">📊</span>
+        <span class="mobile-nav-label">Panel</span>
+      </button>
+    </nav>
+    <main class="container-fluid py-4">
+<!-- Sección para Autorizar Salidas -->
+<div class="section" id="authorizeSectionDiv">
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">✅ Autorizar Salida de Estudiante</h2>
+    </div>
+    <div class="card-body">
+      <form id="authorizeForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="gradeSelect">1. Seleccionar Grado: *</label>
+              <select class="form-select" id="gradeSelect" onchange="loadStudentsByGrade()" required="">
+                <option value="">Seleccionar grado primero...</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="studentSelect">2. Seleccionar Estudiante: *</label>
+              <select class="form-select" disabled="" id="studentSelect" required="">
+                <option value="">Primero selecciona un grado...</option>
+              </select>
+              <div class="text-center mt-2" id="authStudentImage"></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="reasonSelect">3. Motivo: *</label>
+              <select class="form-select" id="reasonSelect" required="">
+                <option value="">Seleccionar motivo...</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label" for="exitDate">4. Fecha de Salida: *</label>
+              <input class="form-control" id="exitDate" required="" type="date"/>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label" for="exitTime">5. Hora de Salida: *</label>
+              <input class="form-control" id="exitTime" required="" type="time"/>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="observations">Observaciones adicionales</label>
+          <textarea class="form-control" id="observations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
+        </div>
+        <div class="d-flex flex-wrap justify-content-end gap-2">
+          <button class="btn btn-success" type="submit">✅ Autorizar Salida</button>
+          <button class="btn btn-outline-secondary" id="cancelEditExitBtn" style="display: none;" type="button">↩️ Cancelar edición</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Sección para Autorizar Salidas del Personal -->
+<div class="section" id="authorizeStaffSectionDiv">
+    <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">👥 Autorizar Salida o Llegada de Personal</h2>
+    </div>
+    <div class="card-body">
+      <form id="staffAuthorizeForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="form-group">
+                <label class="form-label" for="staffSelect">1. Seleccionar Colaborador: *</label>
+              <select class="form-select" id="staffSelect" required="">
+                <option value="">Seleccionar colaborador...</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="staffReasonSelect">2. Motivo: *</label>
+              <select class="form-select" id="staffReasonSelect" required="">
+                <option value="">Seleccionar motivo...</option>
+              </select>
+            </div>
+            </div>
+            <div class="form-group">
+                <div class="form-group">
+              <label class="form-label" for="staffExitDate">3. Fecha de salida o llegada: *</label>
+              <input class="form-control" id="staffExitDate" required="" type="date"/>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="staffExitTime">4. Hora de salida o llegada (opcional):</label>
+              <input class="form-control" id="staffExitTime" type="time"/>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="staffHasReturn">5. ¿Tiene hora de regreso?</label>
+              <div class="return-time-toggle mt-2">
+               <input class="return-time-toggle__input return-time-toggle__input--hidden" id="staffHasReturn" type="checkbox"/>
+                <button class="btn btn-outline-primary btn-sm return-time-toggle__button" id="staffHasReturnButton" type="button" aria-pressed="false">
+                  ⏱️ Registrar hora de regreso
+                </button>
+                <span class="return-time-toggle__hint text-muted">Opcional</span>
+              </div>
+            </div>
+            </div>
+          <div class="col-md-4" id="staffReturnTimeGroup" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="staffReturnTime">6. Hora estimada de regreso:</label>
+              <input class="form-control" id="staffReturnTime" type="time"/>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="staffObservations">Observaciones adicionales</label>
+          <textarea class="form-control" id="staffObservations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones opcionales sobre la salida..." rows="3"></textarea>
+        </div>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-success" type="submit">✅ Autorizar registro del personal</button>
+        </div>
+        </form>
+    </div>
+  </div>
+</div>
+<!-- Sección para Verificar Salidas (Vigilante) -->
+<div class="section" id="verifySectionDiv">
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <h2 class="h5 mb-1">🔍 Control de Salidas - Vigilancia</h2>
+        <p class="text-muted small mb-0">Supervisa y confirma salidas en tiempo real.</p>
+      </div>
+      <div class="nav-buttons d-flex flex-wrap gap-2">
+        <button class="btn btn-success" onclick="loadPendingExits()">🔄 Actualizar Lista</button>
+        <button class="btn btn-outline-secondary" onclick="toggleSearch()">🔍 Buscar Estudiante</button>
+        <button class="btn btn-warning" onclick="showMyConfirmedExits()">👁️ Ver Mis Confirmaciones</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="searchSection" style="display: none;">
+        <h3 class="h6 mb-3">🔍 Búsqueda Manual de Estudiante</h3>
+        <input class="form-control mb-3" id="studentSearch" maxlength="100" oninput="validateSearchInput(this)" placeholder="Buscar estudiante específico por nombre..." type="text"/>
+        <div id="searchResult"></div>
+      </div>
+      <div id="myConfirmedSection" style="display: none;">
+        <h3 class="h6 mt-3 mb-3">✅ Salidas Confirmadas por Mí Hoy</h3>
+        <div id="myConfirmedList">
+          <div class="card text-center p-4">
+            <p class="text-muted mb-0">Cargando salidas confirmadas...</p>
+          </div>
+        </div>
+      </div>
+      <div id="pendingExitsSection">
+        <h3 class="h6 mt-3 mb-3">📋 Estudiantes con Salidas Pendientes para Hoy</h3>
+        <div id="pendingExitsList">
+          <div class="card text-center p-4">
+            <p class="text-muted mb-0">Cargando estudiantes con salidas pendientes...</p>
+          </div>
+        </div>
+        <h3 class="h6 mt-4 mb-3">👥 Personal del Colegio con Salidas Pendientes para Hoy</h3>
+        <div id="pendingStaffList">
+          <div class="card text-center p-4">
+            <p class="text-muted mb-0">Cargando salidas del personal...</p>
+          </div>
+        </div>
+        <div class="card mt-4">
+          <div class="card-body">
+            <h3 class="h6 mb-2">🚪 Personal externo en el colegio</h3>
+            <p class="text-muted mb-3">Selecciona a la persona para registrar su salida.</p>
+            <div id="pendingVisitorExitList">
+              <div class="card text-center p-4">
+                <p class="text-muted mb-0">Cargando personal externo en el colegio...</p>
+              </div>
+            </div>
+            <div class="login-messages mt-3" id="visitorExitMessages">
+              <div class="alert alert-error notification-card" id="visitorExitError" style="visibility: hidden;"></div>
+              <div class="alert alert-success notification-card" id="visitorExitInfo" style="visibility: hidden;"></div>
+               </div>
+            </div>
+         </div>
+       </div>
+    </div>
+</div>
+</div>
+<!-- Sección de Registro de Visitantes Externos -->
+<div class="section" id="visitorEntrySectionDiv">
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">🧾 Registro de Visitantes Externos</h2>
+    </div>
+<div class="card-body">
+      <form id="visitorEntryForm">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="visitorDate">Fecha *</label>
+              <input class="form-control" id="visitorDate" required="" type="date"/>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="visitorGuardSelect">Vigilante en turno</label>
+              <select class="form-select" id="visitorGuardSelect">
+                <option value="">Selecciona al vigilante</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="visitorProfileSelect">Perfil visitante *</label>
+              <select class="form-select" id="visitorProfileSelect" required="">
+                <option value="">Selecciona el perfil del visitante</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="visitorName">Nombre *</label>
+              <input class="form-control" id="visitorName" maxlength="120" oninput="validateNameInput(this)" required="" type="text"/>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="visitorDocument">Documento de identidad *</label>
+              <input class="form-control" id="visitorDocument" maxlength="20" oninput="validateDocumentInput(this)" required="" type="text"/>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="visitorReason">Motivo *</label>
+              <textarea class="form-control" id="visitorReason" maxlength="300" oninput="validateTextInput(this)" required="" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label" for="visitorAreaSelect">Área visitante *</label>
+              <select class="form-select" id="visitorAreaSelect" required="">
+                <option value="">Buscar elementos</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label" for="visitorStatusSelect">Estado del visitante *</label>
+              <select class="form-select" id="visitorStatusSelect" required="">
+                <option value="">Buscar elementos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="visitorObservations">Observaciones</label>
+          <textarea class="form-control" id="visitorObservations" maxlength="500" oninput="validateTextInput(this)" placeholder="Observaciones adicionales sobre la visita..." rows="3"></textarea>
+        </div>
+        <div class="login-messages mt-3" id="visitorMessages">
+          <div class="alert alert-error notification-card" id="visitorError" style="visibility: hidden;"></div>
+          <div class="alert alert-success notification-card" id="visitorInfo" style="visibility: hidden;"></div>
+        </div>
+          <div class="d-flex flex-wrap justify-content-end gap-2">
+          <button class="btn btn-success" type="submit">✅ Registrar ingreso</button>
+          <button class="btn btn-outline-secondary" id="visitorResetBtn" type="button">🧹 Limpiar</button>
+        </div>
+      </form>
+    </div>
+    </div>
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">Historial de ingresos</h3>
+          <div id="visitorHistoryList">
+            <p class="text-muted">Ingresa el documento para consultar el historial.</p>
+          </div>
+    </div>
+   </div>
+</div>
+      <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">Observaciones del personal</h3>
+          <div id="visitorObservationList">
+            <p class="text-muted">Ingresa el documento para ver observaciones registradas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Sección de Llegadas Tarde -->
+<div class="section" id="lateArrivalSectionDiv">
+<div class="card shadow-sm mb-4" id="lateArrivalCard">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">⏰ Registro de Llegadas Tarde</h2>
+    </div>
+    <div class="card-body">
+      <form id="lateArrivalForm">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="lateGradeSelect">Grado</label>
+              <select class="form-select" id="lateGradeSelect">
+                <option value="">Seleccionar grado...</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="lateTime">Hora de llegada</label>
+              <input class="form-control" id="lateTime" required="" type="time"/>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" for="lateExcuse">Excusa válida</label>
+              <select class="form-select" id="lateExcuse">
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="form-group students-group">
+              <label class="form-label" for="lateStudentList">Estudiantes</label>
+              <div class="checkbox-list" id="lateStudentList"></div>
+            </div>
+          </div>
+        </div>
+          <div class="d-flex justify-content-end">
+          <button class="btn btn-danger" type="submit">Registrar Llegada</button>
+        </div>
+      </form>
+      <div class="login-messages mt-3" id="lateArrivalMessages">
+        <div class="alert alert-error notification-card" id="lateArrivalError" style="visibility: hidden;"></div>
+        <div class="alert alert-success notification-card" id="lateArrivalInfo" style="visibility: hidden;"></div>
+        <div class="alert alert-warning notification-card" id="lateArrivalWarning" style="visibility: hidden;"></div>
+      </div>
+    </div>
+ </div>
+ <div class="card shadow-sm mb-4" id="lateArrivalHistoryCard">
+    <div class="card-header bg-white">
+      <h3 class="h6 mb-0">📅 Historial de llegadas tarde</h3>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label" for="lateHistoryStart">Inicio del período</label>
+          <input class="form-control" id="lateHistoryStart" type="date"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="lateHistoryEnd">Fin del período</label>
+          <input class="form-control" id="lateHistoryEnd" type="date"/>
+        </div>
+        <div class="col-md-4 d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-primary" id="lateHistoryRefresh" type="button">🔎 Consultar historial</button>
+          <button class="btn btn-outline-secondary" id="lateHistoryReset" type="button">📅 Mes actual</button>
+        </div>
+      </div>
+      <div class="mt-3" id="lateHistorySummary">
+        <p class="text-muted mb-0">Selecciona estudiantes para ver el historial.</p>
+      </div>
+      <div class="table-responsive mt-3">
+        <table class="table table-sm align-middle" id="lateHistoryTable">
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Este mes</th>
+              <th>Período</th>
+              <th>Última llegada</th>
+              <th>Excusa</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+ </div>
+</div>
+<!-- Sección de Administración -->
+<div class="section" id="adminSectionDiv">
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">⚙️ Panel de Administración</h2>
+    </div>
+    <div class="card-body">
+      <div class="nav-buttons d-flex flex-wrap gap-2">
+        <button id="btnAdminStudents" class="btn btn-outline-primary" onclick="showAdminSection('students')">Gestionar Estudiantes</button>
+        <button id="btnAdminUsers" class="btn btn-outline-primary" onclick="showAdminSection('users')">Gestionar Usuarios</button>
+        <button id="btnAdminReasons" class="btn btn-outline-primary" onclick="showAdminSection('reasons')">Gestionar Motivos</button>
+        <button id="btnAdminGrades" class="btn btn-outline-primary" onclick="showAdminSection('grades')">Gestionar Grados</button>
+        <button id="btnAdminPromotion" class="btn btn-outline-primary" onclick="showAdminSection('promotion')">Promoción de Estudiantes</button>
+        <button id="btnAdminGuards" class="btn btn-outline-primary" onclick="showAdminSection('guards')">Gestionar Vigilantes</button>
+        <button id="btnAdminVisitorProfiles" class="btn btn-outline-primary" onclick="showAdminSection('visitorProfiles')">Perfiles de Visitante</button>
+        <button id="btnAdminVisitorAreas" class="btn btn-outline-primary" onclick="showAdminSection('visitorAreas')">Áreas de Visita</button>
+        <button id="btnAdminVisitorStatuses" class="btn btn-outline-primary" onclick="showAdminSection('visitorStatuses')">Estados de Visitante</button>
+        <button id="btnAdminSecurity" class="btn btn-warning" onclick="showAdminSection('security')">🔒 Seguridad y Logs</button>
+      </div>
+    </div>
+  </div>
+<div class="admin-subsection" id="adminStudents" style="display: none;">
+<h3>👨‍🎓 Gestión de Estudiantes</h3>
+<div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+  <div class="flex-grow-1">
+    <label class="form-label" for="adminStudentSearch">Buscar estudiante</label>
+    <div class="input-group">
+      <input class="form-control" id="adminStudentSearch" type="search" placeholder="Nombre, apellido, documento o grado">
+      <button class="btn btn-outline-primary" id="adminStudentSearchBtn" type="button">Buscar</button>
+    </div>
+  </div>
+  <button class="btn btn-success" onclick="openModal('studentModal')">Agregar Estudiante</button>
+</div>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="studentsTable">
+<thead>
+<tr>
+<th style="min-width: 120px;">Nombre</th>
+<th style="min-width: 120px;">Apellidos</th>
+<th style="min-width: 100px;">Documento</th>
+<th style="min-width: 120px;">Grado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminPromotion" style="display: none;">
+<h3>🎯 Promoción de Estudiantes</h3>
+<p class="text-muted">Selecciona un grado y marca los estudiantes que pasarán al siguiente nivel o que ya no continúan.</p>
+<div class="row g-3 align-items-end">
+  <div class="col-md-5">
+    <label class="form-label" for="promotionGradeSelect">Grado actual</label>
+    <select class="form-select" id="promotionGradeSelect">
+      <option value="">Seleccionar grado...</option>
+    </select>
+  </div>
+  <div class="col-md-5">
+    <label class="form-label" for="promotionTargetGradeSelect">Grado destino</label>
+    <select class="form-select" id="promotionTargetGradeSelect">
+      <option value="">Seleccionar grado de destino...</option>
+    </select>
+  </div>
+  <div class="col-md-2 d-flex justify-content-md-end">
+    <div class="form-check mt-4">
+      <input class="form-check-input" type="checkbox" id="promotionSelectAll"/>
+      <label class="form-check-label" for="promotionSelectAll">Todos</label>
+    </div>
+  </div>
+</div>
+<div class="d-flex flex-wrap gap-2 mt-3">
+  <button class="btn btn-success" id="promotionApplyBtn">Promocionar seleccionados</button>
+  <button class="btn btn-danger" id="promotionRemoveBtn">Dar de baja seleccionados</button>
+</div>
+<div class="table-responsive table-wrapper mt-3">
+<table class="table table-striped table-hover align-middle" id="promotionStudentsTable">
+<thead>
+<tr>
+<th style="width: 60px;">Seleccionar</th>
+<th style="width: 70px;">N°</th>
+<th style="min-width: 140px;">Nombre</th>
+<th style="min-width: 140px;">Apellidos</th>
+<th style="min-width: 120px;">Documento</th>
+<th style="min-width: 160px;">Promociona a</th>
+<th style="min-width: 140px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminUsers" style="display: none;">
+<h3>👥 Gestión de Usuarios</h3>
+<button class="btn btn-success" onclick="openModal('userModal')">Agregar Usuario</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="usersTable">
+<thead>
+<tr>
+<th style="min-width: 120px;">Nombre</th>
+<th style="min-width: 200px;">Email</th>
+<th style="min-width: 120px;">Rol</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminReasons" style="display: none;">
+<h3>📝 Gestión de Motivos</h3>
+<button class="btn btn-success" onclick="openModal('reasonModal')">Agregar Motivo</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="reasonsTable">
+<thead>
+<tr>
+<th style="min-width: 120px;">Nombre</th>
+<th style="min-width: 200px;">Descripción</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminGrades" style="display: none;">
+<h3>🎓 Gestión de Grados</h3>
+<button class="btn btn-success" onclick="openModal('gradeModal')">Agregar Grado</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="gradesTable">
+<thead>
+<tr>
+<th style="min-width: 120px;">Nombre</th>
+<th style="min-width: 100px;">Nivel</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminGuards" style="display: none;">
+<h3>🛡️ Gestión de Vigilantes</h3>
+<button class="btn btn-success" onclick="openModal('guardModal')">Agregar Vigilante</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="guardsTable">
+<thead>
+<tr>
+<th style="min-width: 160px;">Nombre</th>
+<th style="min-width: 200px;">Email</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorProfiles" style="display: none;">
+<h3>🧾 Perfiles de Visitante</h3>
+<button class="btn btn-success" onclick="openModal('visitorProfileModal')">Agregar Perfil</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="visitorProfilesTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorAreas" style="display: none;">
+<h3>🏫 Áreas de Visita</h3>
+<button class="btn btn-success" onclick="openModal('visitorAreaModal')">Agregar Área</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="visitorAreasTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="admin-subsection" id="adminVisitorStatuses" style="display: none;">
+<h3>📌 Estados de Visitante</h3>
+<button class="btn btn-success" onclick="openModal('visitorStatusModal')">Agregar Estado</button>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="visitorStatusesTable">
+<thead>
+<tr>
+<th style="min-width: 180px;">Nombre</th>
+<th style="min-width: 80px;">Estado</th>
+<th style="min-width: 160px;">Acciones</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<!-- Sección de Seguridad -->
+<div class="admin-subsection" id="adminSecurity" style="display: none;">
+<h3 class="h5">🔒 Seguridad y Logs de Auditoría</h3>
+  <div class="row g-3 mb-3">
+    <div class="col-md-6 col-xl-3">
+      <div class="stat-card h-100">
+        <h4 class="h6">Accesos Hoy</h4>
+        <div class="display-6 fw-semibold" id="todayLogins">0</div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="stat-card h-100">
+        <h4 class="h6">Cambios Hoy</h4>
+        <div class="display-6 fw-semibold" id="todayChanges">0</div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="stat-card h-100">
+        <h4 class="h6">Intentos Fallidos</h4>
+        <div class="display-6 fw-semibold" id="failedAttempts">0</div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="stat-card h-100">
+        <h4 class="h6">Usuarios Activos</h4>
+        <div class="display-6 fw-semibold" id="activeUsers">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h4 class="h6">Filtros de Logs</h4>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" for="logDateFrom">Fecha Desde</label>
+          <input class="form-control" id="logDateFrom" type="date"/>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="logDateTo">Fecha Hasta</label>
+          <input class="form-control" id="logDateTo" type="date"/>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="logType">Tipo de Acción</label>
+          <select class="form-select" id="logType">
+            <option value="">Todos</option>
+            <option value="login">Inicio de Sesión</option>
+            <option value="logout">Cierre de Sesión</option>
+            <option value="create">Creación</option>
+            <option value="update">Actualización</option>
+            <option value="delete">Eliminación</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="logUser">Usuario</label>
+          <select class="form-select" id="logUser">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button class="btn btn-primary" id="loadLogsBtn" onclick="loadSecurityLogs()">🔍 Buscar Logs</button>
+        <button id="exportLogsBtn" class="btn btn-outline-secondary" onclick="exportLogs()">📥 Exportar Logs</button>
+      </div>
+      <div id="logExportMessage" class="alert notification-card mt-3" style="visibility: hidden;"></div>
+    </div>
+  </div>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="securityLogsTable">
+<thead>
+<tr>
+<th style="min-width: 140px;">Fecha/Hora</th>
+<th style="min-width: 120px;">Usuario</th>
+<th style="min-width: 80px;">Tipo</th>
+<th style="min-width: 140px;">Acción</th>
+<th style="min-width: 200px;">Detalles</th>
+<th style="min-width: 100px;">IP</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Sección de Dashboard (NUEVA) -->
+<div class="section" id="dashboardSectionDiv">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div>
+      <h2 class="h4 mb-1">📊 Dashboard de Salidas</h2>
+      <p class="text-muted mb-0">Resumen operativo y actividad del día.</p>
+    </div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Pendientes</div>
+          <div class="display-6 fw-semibold" id="dashPendingCount">0</div>
+          <div class="text-muted small">Salidas por confirmar</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Confirmadas</div>
+          <div class="display-6 fw-semibold" id="dashConfirmedCount">0</div>
+          <div class="text-muted small">Verificadas hoy</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Total hoy</div>
+          <div class="display-6 fw-semibold" id="dashTotalCount">0</div>
+          <div class="text-muted small">Movimientos registrados</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Última hora</div>
+          <div class="display-6 fw-semibold" id="dashRecentCount">0</div>
+          <div class="text-muted small">Actividad reciente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-xl-4 col-lg-6 col-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">🟢🔵 Estado de Salidas</h3>
+          <div class="chart-container">
+            <div id="statusChart" style="width:100%;height:100%;"></div>
+            <div id="statusChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+              <p>📊 Cargando gráfico...</p>
+              <p><small>Si no aparece, revisa que ECharts esté cargado</small></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-lg-6 col-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">🎓 Salidas por Grado</h3>
+          <div class="chart-container">
+            <div id="gradeChart" style="width:100%;height:100%;"></div>
+            <div id="gradeChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+              <p>📊 Cargando gráfico...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-lg-6 col-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">⏰ Actividad Reciente</h3>
+          <div class="recent-students" id="recentActivity">
+            <p class="text-muted text-center py-3">Cargando actividad reciente...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">📝 Motivos de Salida</h3>
+          <div class="chart-container">
+            <div id="reasonChart" style="width:100%;height:100%;"></div>
+            <div id="reasonChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+              <p>📊 Cargando gráfico...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6 col-lg-6 col-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h6">⏱️ Timeline de Salidas Hoy</h3>
+          <div class="chart-container">
+            <div id="timelineChart" style="width:100%;height:100%;"></div>
+            <div id="timelineChartFallback" style="display: none; text-align: center; padding: 20px; color: #666;">
+              <p>📊 Cargando gráfico...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- Filtros de Fecha para Dashboard Histórico -->
+<!-- Nuevos Gráficos Históricos -->
+<!-- Controles del Dashboard -->
+<div class="d-flex flex-wrap gap-2 mt-3" id="dashboardButtons">
+  <button class="btn btn-success" id="refreshDashboardBtn" onclick="refreshDashboard()">🔄 Actualizar Dashboard</button>
+  <button class="btn btn-outline-secondary" id="exportDashboardBtn">📥 Exportar Datos</button>
+  <button class="btn btn-warning" id="generalReportBtn" onclick="abrirReporte()" style="display:none;">📄 Reporte</button>
+  <button class="btn btn-warning" id="staffReportBtn" onclick="abrirReportePersonal()" style="display:none;">👥 Reporte Personal</button>
+  <button class="btn btn-warning" id="visitorReportBtn" onclick="abrirReporteVisitantes()" style="display:none;">🧾 Reporte Visitantes</button>
+  <button class="btn btn-outline-secondary" id="showReportBtn" onclick="showReport()" style="display:none;">📄 Reporte Diario</button>
+  <button class="btn btn-outline-primary" id="showDetailedViewBtn" onclick="showDetailedView()">📋 Diagnóstico</button>
+  <button class="btn btn-warning" id="debugDashboardBtn" onclick="debugDashboard()">🔧 Debug</button>
+  <button class="btn btn-danger" id="lateReportBtn" onclick="mostrarReporteLlegadas()" style="display:none;">📄 Reporte Llegadas</button>
+</div>
+<div id="echartsStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; text-align: center; display: none;">
+<p style="margin: 0; color: #666;"><strong>Estado ECharts:</strong> <span id="echartsStatusText">Verificando...</span></p>
+</div>
+</div>
+<!-- Sección de Historial -->
+<div class="section" id="historySectionDiv">
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h5 mb-0">📋 Historial de Autorizaciones</h2>
+    </div>
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" for="historyDate">Fecha</label>
+          <input class="form-control" id="historyDate" onchange="loadHistory()" type="date"/>
+        </div>
+        <div class="col-md-9 d-flex flex-wrap gap-2">
+          <button class="btn btn-primary" id="filterHistoryBtn" onclick="loadHistory()">Filtrar por Fecha</button>
+          <button class="btn btn-outline-secondary" id="viewAllHistoryBtn" onclick="loadHistory(true)">Ver Todo el Historial</button>
+          <button class="btn btn-warning" id="debugHistoryBtn" onclick="debugHistory()">🔍 Debug Historial</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<div id="historyDebug" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+<h4>🔧 Información de Debug:</h4>
+<div id="historyDebugContent"></div>
+</div>
+<div class="table-responsive table-wrapper">
+<table class="table table-striped table-hover align-middle" id="historyTable">
+<thead>
+<tr>
+<th style="min-width: 120px;">Tipo</th>
+<th style="min-width: 180px;">Persona</th>
+<th style="min-width: 150px;">Detalle</th>
+<th style="min-width: 140px;">Motivo</th>
+<th style="min-width: 110px;">Fecha Salida</th>
+<th style="min-width: 100px;">Hora Salida</th>
+<th style="min-width: 160px;">Autorizado por</th>
+<th style="min-width: 160px;">Estado</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+<div class="scroll-hint" style="text-align: center; font-size: 12px; color: #666; padding: 8px; background: #f8f9fa; border-top: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+💡 Desliza horizontalmente para ver toda la información
+     </main>
+  </div>
+</div>
+</div>
+<div id="seccion-reporte-mensual" style="display:none;">
+  <h2>📊 Reporte mensual de autorizaciones</h2>
+  <input type="month" id="mesReporte" onchange="mostrarReporteMensual()">
+  <div id="contenedor-reporte"></div>
+</div>
+<!-- Modals -->
+<div class="modal" id="studentModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('studentModal')">×</span>
+<h2>Agregar/Editar Estudiante</h2>
+<form id="studentForm">
+<div class="form-group">
+<label for="uploadStudentPhoto">Subir Foto:</label>
+<input accept="image/jpeg,image/png,image/gif" id="uploadStudentPhoto" onchange="handleImageUpload(event)" type="file"/>
+<img alt="Foto del estudiante" id="studentPhotoPreview" src="assets/img/placeholder-student.png" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin: 10px auto; border: 2px solid #ccc;"/>
+<small>Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.</small>
+</div>
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="studentName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Apellidos: *</label>
+<input id="studentLastName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Documento:</label>
+<input id="studentDocument" maxlength="20" oninput="validateDocumentInput(this)" pattern="[0-9]{4,20}" type="text"/>
+</div>
+<div class="form-group">
+<label>Grado: *</label>
+<select id="studentGrade" required="">
+<option value="">Seleccionar grado...</option>
+</select>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelStudentModal" class="btn btn-secondary" onclick="closeModal('studentModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="userModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('userModal')">×</span>
+<h2>Agregar/Editar Usuario</h2>
+<form id="userForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="userName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Email: *</label>
+<input id="userEmail" maxlength="100" oninput="validateEmailInput(this)" required="" type="email"/>
+</div>
+<div class="form-group">
+<label>Contraseña: <span id="passwordNote">(dejar vacío para mantener actual)</span></label>
+<div class="input-with-icon">
+<input id="userPassword" maxlength="50" oninput="validatePasswordInput(this)" onkeyup="checkPasswordStrength()" type="password"/>
+<span class="toggle-password">👁️</span>
+</div>
+<div class="password-strength" id="userPasswordStrength" style="display: none;"></div>
+</div>
+<div class="form-group">
+<label>Rol: *</label>
+<select id="userRole" required="">
+<option value="">Seleccionar rol...</option>
+</select>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelUserModal" class="btn btn-secondary" onclick="closeModal('userModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="reasonModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('reasonModal')">×</span>
+<h2>Agregar/Editar Motivo</h2>
+<form id="reasonForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="reasonName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Descripción:</label>
+<textarea id="reasonDescription" maxlength="200" oninput="validateTextInput(this)" rows="3"></textarea>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelReasonModal" class="btn btn-secondary" onclick="closeModal('reasonModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="gradeModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('gradeModal')">×</span>
+<h2>Agregar/Editar Grado</h2>
+<form id="gradeForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="gradeName" maxlength="20" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Nivel: *</label>
+<select id="gradeLevel" required="">
+<option value="">Seleccionar nivel...</option>
+<option value="Primaria">Primaria</option>
+<option value="Bachillerato">Bachillerato</option>
+</select>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelGradeModal" class="btn btn-secondary" onclick="closeModal('gradeModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="guardModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('guardModal')">×</span>
+<h2>Agregar/Editar Vigilante</h2>
+<form id="guardForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="guardName" maxlength="50" oninput="validateNameInput(this)" pattern="[A-Za-zÀ-ÿ\s]{2,50}" required="" type="text"/>
+</div>
+<div class="form-group">
+<label>Email: *</label>
+<input id="guardEmail" maxlength="100" oninput="validateEmailInput(this)" required="" type="email"/>
+</div>
+<div class="form-group">
+<label>Contraseña: <span id="guardPasswordNote">(obligatorio para nuevos vigilantes)</span></label>
+<div class="input-with-icon">
+<input id="guardPassword" maxlength="50" oninput="validatePasswordInput(this)" type="password"/>
+<span class="toggle-password">👁️</span>
+</div>
+<div class="password-strength" id="guardPasswordStrength" style="display: none;"></div>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelGuardModal" class="btn btn-secondary" onclick="closeModal('guardModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorProfileModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorProfileModal')">×</span>
+<h2>Agregar/Editar Perfil de Visitante</h2>
+<form id="visitorProfileForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorProfileName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorProfileModal" class="btn btn-secondary" onclick="closeModal('visitorProfileModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorAreaModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorAreaModal')">×</span>
+<h2>Agregar/Editar Área de Visita</h2>
+<form id="visitorAreaForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorAreaName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorAreaModal" class="btn btn-secondary" onclick="closeModal('visitorAreaModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="visitorStatusModal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('visitorStatusModal')">×</span>
+<h2>Agregar/Editar Estado de Visitante</h2>
+<form id="visitorStatusForm">
+<div class="form-group">
+<label>Nombre: *</label>
+<input id="visitorStatusName" maxlength="50" oninput="validateTextInput(this)" required="" type="text"/>
+</div>
+<button class="btn btn-success" type="submit">Guardar</button>
+<button id="cancelVisitorStatusModal" class="btn btn-secondary" onclick="closeModal('visitorStatusModal')" type="button">Cancelar</button>
+</form>
+</div>
+</div>
+<div class="modal" id="reportModal">
+<div class="modal-content" style="max-width:90%;width:95%;height:90vh;">
+<span class="close" onclick="closeModal('reportModal')">×</span>
+<div id="reportViewer" style="width:100%;height:100%;"></div>
+</div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script defer src="toast.js"></script>
+<script defer src="env.js"></script>
+<script defer src="version.js"></script>
+<script type="module" src="modules/app_config.js"></script>
+<script type="module" src="modules/api_client.js"></script>
+<script type="module" src="modules/auth.js"></script>
+<script type="module" src="modules/ui_utils.js"></script>
+<script type="module" src="modules/dashboard.js"></script>
+<script defer src="app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.APP_VERSION) {
+      const f = document.getElementById('appVersion');
+      if (f) {
+        f.textContent = `Versión v${window.APP_VERSION.version} – Compilación ${window.APP_VERSION.build}`;
+      }
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.error('Error registrando Service Worker:', err);
+      });
+    }
+  });
+</script>
+<footer id="appVersion"></footer>
 </body>
 </html>
